@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <application
+            android:name="com.commonground.client.android.App"
+            android:allowBackup="true"
+            android:label="Common Ground"
+            android:supportsRtl="true"
+            android:largeHeap="true">
+    </application>
+</manifest>
