@@ -37,6 +37,15 @@ dependencyResolutionManagement {
                     val android = version("logback.android", "3.0.0")
                 }
                 val ktor = version("ktor", "3.4.0")
+                val spring = object {
+                    val frameworkPlugin = version("spring.frameworkPlugin", "4.0.5")
+                    val dependencyManagement = version("spring.dependencyManagement", "1.1.7")
+                    val starterWeb = version("spring.starterWeb", "4.0.5")
+                    val starterTest = version("spring.starter", "4.0.5")
+                    val pluginSpring = version("spring.pluginSpring", "2.3.20")
+                }
+
+                val kotlinReflect = version("kotlinReflect", "1.9.0")
                 val compose = object {
                     val plugin = version("compose.jetbrains", "1.10.1")
                     val material3 = version("compose.material3", "1.9.0")
@@ -62,6 +71,10 @@ dependencyResolutionManagement {
             plugin("androidApplication", "com.android.application").versionRef(versions.android.agp)
             plugin("androidMultiplatform", "com.android.kotlin.multiplatform.library").versionRef(versions.android.agp)
 
+            plugin("springframework", "org.springframework.boot").versionRef(versions.spring.frameworkPlugin)
+            plugin("dependencyManagement", "io.spring.dependency-management").versionRef(versions.spring.dependencyManagement)
+            plugin("springPlugin", "org.jetbrains.kotlin.plugin.spring").versionRef(versions.spring.pluginSpring)
+
             library("compose.material3", "org.jetbrains.compose.material3", "material3").versionRef(versions.compose.material3)
             library("compose.windowSizeClass", "org.jetbrains.compose.material3", "material3-window-size-class").versionRef(versions.compose.material3)
             library("compose.materialIconsExtended", "org.jetbrains.compose.material", "material-icons-extended").versionRef(versions.compose.materialIconsExtended)
@@ -84,12 +97,6 @@ dependencyResolutionManagement {
             library("logback.android", "com.github.tony19", "logback-android").versionRef(versions.logback.android)
 
             library("ktor.serialization", "io.ktor", "ktor-serialization-kotlinx-json").versionRef(versions.ktor)
-            library("ktor.server.core", "io.ktor", "ktor-server-core").versionRef(versions.ktor)
-            library("ktor.server.engine.cio", "io.ktor", "ktor-server-cio").versionRef(versions.ktor)
-            library("ktor.server.engine.netty", "io.ktor", "ktor-server-netty").versionRef(versions.ktor)
-            library("ktor.server.logging", "io.ktor", "ktor-server-call-logging").versionRef(versions.ktor)
-            library("ktor.server.contentNegotiation", "io.ktor", "ktor-server-content-negotiation").versionRef(versions.ktor)
-            library("ktor.server.sse", "io.ktor", "ktor-server-sse").versionRef(versions.ktor)
             library("ktor.client.core", "io.ktor", "ktor-client-core").versionRef(versions.ktor)
             library("ktor.client.engine", "io.ktor", "ktor-client-cio").versionRef(versions.ktor)
             library("ktor.client.logging", "io.ktor", "ktor-client-logging").versionRef(versions.ktor)
@@ -99,6 +106,11 @@ dependencyResolutionManagement {
             library("android.appcompat", "androidx.appcompat", "appcompat").versionRef(versions.android.appcompat)
             library("android.activityKtx", "androidx.activity", "activity-ktx").versionRef(versions.android.activity)
             library("android.activityCompose", "androidx.activity", "activity-compose").versionRef(versions.android.activity)
+
+
+            library("spring.starterWeb", "org.springframework.boot", "spring-boot-starter-web").versionRef(versions.spring.starterWeb)
+            library("spring.starterTest", "org.springframework.boot", "spring-boot-starter-test").versionRef(versions.spring.starterTest)
+            library("orgKotlinReflect", "org.jetbrains.kotlin", "kotlin-reflect").versionRef(versions.kotlinReflect)
         }
     }
 }

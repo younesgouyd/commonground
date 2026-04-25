@@ -4,6 +4,9 @@ version = "0.1.0"
 plugins {
     alias(libs.plugins.kotlin.jvm)
     alias(libs.plugins.kotlin.serialization)
+    alias(libs.plugins.springframework)
+    alias(libs.plugins.dependencyManagement)
+    alias(libs.plugins.springPlugin)
 }
 
 kotlin {
@@ -15,10 +18,7 @@ dependencies {
     implementation(libs.serialization.core)
     implementation(libs.serialization.json)
     implementation(libs.logback.jvm)
-    implementation(libs.ktor.serialization)
-    implementation(libs.ktor.server.core)
-    implementation(libs.ktor.server.engine.cio)
-    implementation(libs.ktor.server.logging)
-    implementation(libs.ktor.server.contentNegotiation)
-    implementation(libs.ktor.server.sse)
+    implementation(libs.spring.starterWeb)
+    implementation(libs.spring.starterTest)
+    implementation(libs.orgKotlinReflect)
 }

@@ -9,4 +9,7 @@ plugins {
     alias(libs.plugins.composeMultiplatform) apply false
     alias(libs.plugins.ksp) apply false
     alias(libs.plugins.room) apply false
+    alias(libs.plugins.springframework) apply false
+    alias(libs.plugins.dependencyManagement) apply false
+    alias(libs.plugins.springPlugin) apply false
 }
