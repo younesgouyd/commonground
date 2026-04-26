@@ -51,6 +51,8 @@ dependencyResolutionManagement {
                     val material3 = version("compose.material3", "1.9.0")
                     val materialIconsExtended = version("compose.materialIconsExtended", "1.7.3")
                     val uiDesktop = version("compose.uiDesktop", "1.10.1")
+                    val navigation = version("compose.navigation", "2.9.2")
+                    val viewmodel = version("compose.viewmodel", "2.10.0")
                 }
                 val android = object {
                     val agp = version("agp", "8.12.0")
@@ -79,6 +81,8 @@ dependencyResolutionManagement {
             library("compose.windowSizeClass", "org.jetbrains.compose.material3", "material3-window-size-class").versionRef(versions.compose.material3)
             library("compose.materialIconsExtended", "org.jetbrains.compose.material", "material-icons-extended").versionRef(versions.compose.materialIconsExtended)
             library("compose.uiDesktop", "org.jetbrains.compose.ui", "ui-desktop").versionRef(versions.compose.uiDesktop)
+            library("compose.navigation", "org.jetbrains.androidx.navigation", "navigation-compose").versionRef(versions.compose.navigation)
+            library("compose.viewmodel", "org.jetbrains.androidx.lifecycle", "lifecycle-viewmodel-compose").versionRef(versions.compose.viewmodel)
 
             library("serialization.core", "org.jetbrains.kotlinx", "kotlinx-serialization-core").versionRef(versions.serialization)
             library("serialization.json", "org.jetbrains.kotlinx", "kotlinx-serialization-json").versionRef(versions.serialization)

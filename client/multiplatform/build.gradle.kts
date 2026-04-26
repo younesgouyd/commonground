@@ -25,6 +25,8 @@ kotlin {
             implementation(libs.compose.material3)
             implementation(libs.compose.windowSizeClass)
             implementation(libs.compose.materialIconsExtended)
+            implementation(libs.compose.navigation)
+            implementation(libs.compose.viewmodel)
             implementation(libs.room.runtime)
             implementation(libs.logging)
             implementation(libs.ktor.serialization)
