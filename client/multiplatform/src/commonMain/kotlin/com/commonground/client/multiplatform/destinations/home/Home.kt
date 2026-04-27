@@ -15,36 +15,22 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import com.commonground.client.multiplatform.Event
 
 interface HomeNavActions {
     fun toEventDetails(id: Long)
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun Home(
+    viewModel: HomeViewModel,
     navActions: HomeNavActions
 ) {
-    val viewModel = remember { HomeViewModel() } // TODO
-
-    Surface(
-        modifier = Modifier.fillMaxSize(),
-        color = MaterialTheme.colorScheme.background
-    ) {
-        Column(
-            modifier = Modifier.fillMaxSize(),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            Search(
-                modifier = Modifier.fillMaxWidth(),
-                onSearch = { viewModel.search(it) }
-            )
-            Events(
-                events = viewModel.events,
-                onEventClick = navActions::toEventDetails
-            )
-        }
-    }
+    Events(
+        events = viewModel.events,
+        onEventClick = navActions::toEventDetails
+    )
 }
 
 // TODO: check androidx.compose.material3.SearchBar

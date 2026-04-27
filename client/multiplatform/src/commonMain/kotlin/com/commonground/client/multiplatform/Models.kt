@@ -1,4 +1,6 @@
-package com.commonground.client.multiplatform.destinations.home
+package com.commonground.client.multiplatform
+
+import kotlin.time.Duration
 
 data class Event(
     val id: Long,
@@ -7,6 +9,6 @@ data class Event(
     val location: String,
     val date: String,
     val isPrivate: Boolean,
-    val duration: String,
+    val duration: Duration,
     val isPaid: Boolean
 )
