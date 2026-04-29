@@ -24,6 +24,11 @@ import com.commonground.client.multiplatform.destinations.eventdetails.EventDeta
 import com.commonground.client.multiplatform.destinations.home.Home
 import com.commonground.client.multiplatform.destinations.home.HomeNavActions
 import com.commonground.client.multiplatform.destinations.home.HomeViewModel
+import com.commonground.client.multiplatform.destinations.user.User
+import com.commonground.client.multiplatform.destinations.user.UserNavActions
+import com.commonground.client.multiplatform.destinations.user.UserViewModel
+import com.commonground.core.EventId
+import com.commonground.core.UserId
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
@@ -42,37 +47,50 @@ fun MainUi() {
                     navigationIcon = { NavIcon(navController, scope, drawerState) },
                     title = { Text("CommonGround") }
                 )
+            },
+            content = { padding ->
+                ModalNavigationDrawer(
+                    modifier = Modifier.padding(padding).fillMaxSize(),
+                    drawerState = drawerState,
+                    drawerContent = { DrawerSheet { navController.navigate(it.toRoute()) } },
+                    content = { NavGraph(navController) }
+                )
             }
-        ) { padding ->
-            ModalNavigationDrawer(
-                modifier = Modifier.padding(padding).fillMaxSize(),
-                drawerState = drawerState,
-                drawerContent = { DrawerSheet { navController.navigate(it.toRoute()) } }
-            ) {
-                NavHost(navController = navController, startDestination = Route.Home) {
-                    composable<Route.Profile> { Text("Profile Screen") }
-                    composable<Route.Home> {
-                        Home(
-                            viewModel = viewModel { HomeViewModel() },
-                            navActions = object : HomeNavActions {
-                                override fun toEventDetails(id: Long) { navController.navigate(Route.Event(id)) }
-                            }
-                        )
-                    }
-                    composable<Route.Friends> { Text("Friends Screen") }
-                    composable<Route.Settings> { Text("Settings Screen") }
-                    composable<Route.Event> {entry ->
-                        val eventRoute = entry.toRoute<Route.Event>()
-                        EventDetails(
-                            viewModel = viewModel { EventDetailsViewModel(eventRoute.id) },
-                            navActions = object : EventDetailsNavActions {
-                                override fun toUserProfile(id: Long) { navController.navigate(Route.User(id)) }
-                            }
-                        )
-                    }
-                    composable<Route.User> { Text("User Screen") }
+        )
+    }
+}
+
+@Composable
+private fun NavGraph(navController: NavHostController) {
+    NavHost(navController = navController, startDestination = Route.Home) {
+        composable<Route.Home> {
+            Home(
+                viewModel = viewModel { HomeViewModel() },
+                navActions = object : HomeNavActions {
+                    override fun toEventDetails(id: EventId) { navController.navigate(Route.Event(id.value)) }
                 }
-            }
+            )
+        }
+        composable<Route.Me> { Text("Me Screen") }
+        composable<Route.Settings> { Text("Settings Screen") }
+        composable<Route.Event> { entry ->
+            val eventRoute = entry.toRoute<Route.Event>()
+            EventDetails(
+                viewModel = viewModel { EventDetailsViewModel(EventId(eventRoute.id)) },
+                navActions = object : EventDetailsNavActions {
+                    override fun toUser(id: UserId) { navController.navigate(Route.User(id.value)) }
+                }
+            )
+        }
+        composable<Route.User> { entry ->
+            val route = entry.toRoute<Route.User>()
+            User(
+                viewModel = viewModel { UserViewModel(UserId(route.id)) },
+                navActions = object : UserNavActions {
+                    override fun toUser(id: UserId) { navController.navigate(Route.User(id.value)) }
+                    override fun toEvent(id: EventId) { navController.navigate(Route.Event(id.value)) }
+                }
+            )
         }
     }
 }
@@ -123,7 +141,7 @@ private fun DrawerSheet(
 }
 
 private enum class NavigationDrawerItem {
-    Profile,
+    Me,
     Home,
     Friends,
     Settings
@@ -131,7 +149,7 @@ private enum class NavigationDrawerItem {
 
 private fun NavigationDrawerItem.toRoute(): Route {
     return when (this) {
-        NavigationDrawerItem.Profile -> Route.Profile
+        NavigationDrawerItem.Me -> Route.Me
         NavigationDrawerItem.Home -> Route.Home
         NavigationDrawerItem.Friends -> Route.Friends
         NavigationDrawerItem.Settings -> Route.Settings

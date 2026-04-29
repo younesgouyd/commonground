@@ -1,4 +1,4 @@
-package com.commonground.client.multiplatform
+package com.commonground.client.multiplatform.widgets
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Box

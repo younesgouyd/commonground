@@ -1,3 +1,5 @@
+import org.gradle.kotlin.dsl.project
+
 plugins {
     alias(libs.plugins.kotlin.multiplatform)
     alias(libs.plugins.androidMultiplatform)
@@ -19,6 +21,7 @@ kotlin {
     jvm()
     sourceSets {
         commonMain.dependencies {
+            implementation(project(":core"))
             implementation(libs.serialization.core)
             implementation(libs.serialization.json)
             implementation(libs.coroutines.core)

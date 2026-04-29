@@ -2,7 +2,10 @@ package com.commonground.client.multiplatform.destinations.eventdetails
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.commonground.client.multiplatform.Event
+import com.commonground.core.Event
+import com.commonground.core.EventId
+import com.commonground.core.User
+import com.commonground.core.UserId
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
 import kotlin.time.Duration.Companion.hours
@@ -11,14 +14,15 @@ sealed class EventDetailsState {
     data object Loading : EventDetailsState()
 
     data class Loaded(
-        val event: Event
+        val event: Event,
+        val creators: List<User>
     ) : EventDetailsState()
 
     data object NotFound : EventDetailsState()
 }
 
 class EventDetailsViewModel(
-    val eventId: Long
+    val id: EventId
 ) : ViewModel() {
     val state: MutableStateFlow<EventDetailsState> = MutableStateFlow(EventDetailsState.Loading)
 
@@ -26,7 +30,7 @@ class EventDetailsViewModel(
         viewModelScope.launch {
             state.value = EventDetailsState.Loaded(
                 event = Event(
-                    1,
+                    EventId("1"),
                     "Chess Tournament",
                     "A competitive open-bracket chess tournament.",
                     "Central Park",
@@ -34,6 +38,15 @@ class EventDetailsViewModel(
                     false,
                     5.hours,
                     false
+                ),
+                creators = listOf(
+                    User(
+                        id = UserId("1"),
+                        username = "user1",
+                        displayName = "John Doe",
+                        emailAddress = "john.doe@example.com",
+                        profilePic = null
+                    )
                 )
             )
         }

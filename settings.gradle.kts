@@ -1,9 +1,10 @@
 rootProject.name = "commonground"
 
+include(":core")
+include(":server")
 include(":client:multiplatform")
 include(":client:android")
 include(":client:desktop")
-include(":server")
 
 pluginManagement {
     repositories {

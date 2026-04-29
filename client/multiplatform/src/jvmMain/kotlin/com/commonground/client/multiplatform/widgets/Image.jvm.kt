@@ -1,4 +1,4 @@
-package com.commonground.client.multiplatform
+package com.commonground.client.multiplatform.widgets
 
 import java.io.File
 import java.net.URL

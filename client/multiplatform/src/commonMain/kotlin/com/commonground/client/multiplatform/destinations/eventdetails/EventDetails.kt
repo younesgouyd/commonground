@@ -1,20 +1,28 @@
 package com.commonground.client.multiplatform.destinations.eventdetails
 
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
 import com.commonground.client.multiplatform.AdaptiveUi
-import com.commonground.client.multiplatform.ItemDetailsHeaderWide
+import com.commonground.client.multiplatform.widgets.ItemDetailsHeaderWide
+import com.commonground.client.multiplatform.widgets.Person
+import com.commonground.core.UserId
 
 interface EventDetailsNavActions {
-    fun toUserProfile(id: Long)
+    fun toUser(id: UserId)
 }
 
 @Composable
@@ -57,9 +65,22 @@ private fun Wide(
         LazyColumn {
             item {
                 ItemDetailsHeaderWide(
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier.fillMaxWidth().height(500.dp),
                     title = event.title,
-                    image = null
+                    image = null,
+                    itemAttributes = {
+                        LazyRow(
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            items(state.creators) { user ->
+                                Person(
+                                    name = user.displayName ?: user.username,
+                                    onClick = { navActions.toUser(user.id) }
+                                )
+                            }
+                        }
+                    }
                 )
             }
         }

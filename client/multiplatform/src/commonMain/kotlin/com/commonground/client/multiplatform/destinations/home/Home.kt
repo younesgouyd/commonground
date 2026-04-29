@@ -15,10 +15,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import com.commonground.client.multiplatform.Event
+import com.commonground.core.Event
+import com.commonground.core.EventId
 
 interface HomeNavActions {
-    fun toEventDetails(id: Long)
+    fun toEventDetails(id: EventId)
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -53,7 +54,7 @@ private fun Search(
 @Composable
 private fun Events(
     events: List<Event>,
-    onEventClick: (id: Long) -> Unit
+    onEventClick: (id: EventId) -> Unit
 ) {
     Surface(color = MaterialTheme.colorScheme.background) {
         LazyVerticalGrid(
