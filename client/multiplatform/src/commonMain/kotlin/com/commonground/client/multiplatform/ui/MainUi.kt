@@ -1,4 +1,4 @@
-package com.commonground.client.multiplatform
+package com.commonground.client.multiplatform.ui
 
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
@@ -18,15 +18,16 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
-import com.commonground.client.multiplatform.destinations.eventdetails.EventDetails
-import com.commonground.client.multiplatform.destinations.eventdetails.EventDetailsNavActions
-import com.commonground.client.multiplatform.destinations.eventdetails.EventDetailsViewModel
-import com.commonground.client.multiplatform.destinations.home.Home
-import com.commonground.client.multiplatform.destinations.home.HomeNavActions
-import com.commonground.client.multiplatform.destinations.home.HomeViewModel
-import com.commonground.client.multiplatform.destinations.user.User
-import com.commonground.client.multiplatform.destinations.user.UserNavActions
-import com.commonground.client.multiplatform.destinations.user.UserViewModel
+import com.commonground.client.multiplatform.data.RepoStore
+import com.commonground.client.multiplatform.ui.destinations.eventdetails.EventDetails
+import com.commonground.client.multiplatform.ui.destinations.eventdetails.EventDetailsNavActions
+import com.commonground.client.multiplatform.ui.destinations.eventdetails.EventDetailsViewModel
+import com.commonground.client.multiplatform.ui.destinations.home.Home
+import com.commonground.client.multiplatform.ui.destinations.home.HomeNavActions
+import com.commonground.client.multiplatform.ui.destinations.home.HomeViewModel
+import com.commonground.client.multiplatform.ui.destinations.user.User
+import com.commonground.client.multiplatform.ui.destinations.user.UserNavActions
+import com.commonground.client.multiplatform.ui.destinations.user.UserViewModel
 import com.commonground.core.EventId
 import com.commonground.core.UserId
 import kotlinx.coroutines.CoroutineScope
@@ -34,7 +35,7 @@ import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun MainUi() {
+fun MainUi(repoStore: RepoStore) {
     val navController = rememberNavController()
     val drawerState = rememberDrawerState(DrawerValue.Closed)
     val scope = rememberCoroutineScope()
@@ -53,7 +54,7 @@ fun MainUi() {
                     modifier = Modifier.padding(padding).fillMaxSize(),
                     drawerState = drawerState,
                     drawerContent = { DrawerSheet { navController.navigate(it.toRoute()) } },
-                    content = { NavGraph(navController) }
+                    content = { NavGraph(navController, repoStore) }
                 )
             }
         )
@@ -61,13 +62,14 @@ fun MainUi() {
 }
 
 @Composable
-private fun NavGraph(navController: NavHostController) {
+private fun NavGraph(navController: NavHostController, repoStore: RepoStore) {
     NavHost(navController = navController, startDestination = Route.Home) {
         composable<Route.Home> {
             Home(
-                viewModel = viewModel { HomeViewModel() },
+                viewModel = viewModel { HomeViewModel(repoStore.eventRepo) },
                 navActions = object : HomeNavActions {
                     override fun toEventDetails(id: EventId) { navController.navigate(Route.Event(id.value)) }
+                    override fun toUser(id: UserId) { navController.navigate(Route.User(id.value)) }
                 }
             )
         }

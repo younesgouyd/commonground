@@ -1,4 +1,4 @@
-package com.commonground.client.multiplatform.destinations.eventdetails
+package com.commonground.client.multiplatform.ui.destinations.eventdetails
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.fillMaxSize
@@ -16,9 +16,9 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.commonground.client.multiplatform.AdaptiveUi
-import com.commonground.client.multiplatform.widgets.ItemDetailsHeaderWide
-import com.commonground.client.multiplatform.widgets.Person
+import com.commonground.client.multiplatform.ui.AdaptiveUi
+import com.commonground.client.multiplatform.ui.widgets.ItemDetailsHeaderWide
+import com.commonground.client.multiplatform.ui.widgets.Person
 import com.commonground.core.UserId
 
 interface EventDetailsNavActions {

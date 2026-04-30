@@ -1,4 +1,4 @@
-package com.commonground.client.multiplatform.destinations.user
+package com.commonground.client.multiplatform.ui.destinations.user
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
@@ -36,8 +36,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import com.commonground.client.multiplatform.AdaptiveUi
-import com.commonground.client.multiplatform.widgets.*
+import com.commonground.client.multiplatform.ui.AdaptiveUi
+import com.commonground.client.multiplatform.ui.widgets.DropdownOption
+import com.commonground.client.multiplatform.ui.widgets.HeaderAction
+import com.commonground.client.multiplatform.ui.widgets.Image
+import com.commonground.client.multiplatform.ui.widgets.ItemDetailsHeaderWide
+import com.commonground.client.multiplatform.ui.widgets.MainHeaderAction
 import com.commonground.core.Event
 import com.commonground.core.EventId
 import com.commonground.core.UserId

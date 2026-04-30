@@ -1,4 +1,4 @@
-package com.commonground.client.multiplatform.widgets
+package com.commonground.client.multiplatform.ui.widgets
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
@@ -11,7 +11,6 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.unit.dp
-import com.commonground.core.User
 
 @Composable
 fun Person(

@@ -6,9 +6,12 @@ import androidx.compose.ui.window.WindowPlacement
 import androidx.compose.ui.window.WindowPosition
 import androidx.compose.ui.window.application
 import androidx.compose.ui.window.rememberWindowState
-import com.commonground.client.multiplatform.MainUi
+import com.commonground.client.multiplatform.data.RepoStore
+import com.commonground.client.multiplatform.ui.MainUi
 
 fun main() {
+    val repoStore = RepoStore()
+
     application {
         Window(
             state = rememberWindowState(
@@ -17,7 +20,7 @@ fun main() {
             ),
             onCloseRequest = { exitApplication() }
         ) {
-            MainUi()
+            MainUi(repoStore)
         }
     }
 }

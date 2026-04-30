@@ -1,4 +1,4 @@
-package com.commonground.client.multiplatform.widgets
+package com.commonground.client.multiplatform.ui.widgets
 
 import androidx.compose.material3.*
 import androidx.compose.runtime.*

@@ -1,4 +1,4 @@
-package com.commonground.client.multiplatform
+package com.commonground.client.multiplatform.ui
 
 import androidx.compose.material3.windowsizeclass.WindowWidthSizeClass
 import androidx.compose.runtime.Composable

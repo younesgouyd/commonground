@@ -1,4 +1,4 @@
-package com.commonground.client.multiplatform.widgets
+package com.commonground.client.multiplatform.ui.widgets
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
@@ -118,7 +118,10 @@ private fun Image(
     when (image) {
         is Image.File -> Image(modifier = modifier, file = image.value)
         is Image.ImageVector -> Image(modifier = modifier, imageVector = image.value, contentDescription = null)
-        is Image.ByteArray -> Image(modifier = modifier, data = image.value)
+        is Image.ByteArray -> Image(
+            modifier = modifier,
+            data = image.value
+        )
         is Image.Url -> Image(modifier = modifier, url = image.value)
         null -> Unit
     }

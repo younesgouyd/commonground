@@ -1,7 +1,5 @@
-package com.commonground.client.multiplatform
+package com.commonground.client.multiplatform.ui
 
-import com.commonground.core.EventId
-import com.commonground.core.UserId
 import kotlinx.serialization.Serializable
 
 sealed class Route {

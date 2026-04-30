@@ -1,4 +1,4 @@
-package com.commonground.client.multiplatform.destinations.user
+package com.commonground.client.multiplatform.ui.destinations.user
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -52,8 +52,8 @@ sealed class UserState {
 class UserViewModel(
     val id: UserId
 ) : ViewModel() {
-    val state get() = _state.asStateFlow()
     private val _state: MutableStateFlow<UserState> = MutableStateFlow(UserState.Loading)
+    val state = _state.asStateFlow()
 
     init {
         viewModelScope.launch {
@@ -70,10 +70,10 @@ class UserViewModel(
                 ),
                 events = UserState.Loaded.Events(
                     created = listOf(
-                        Event(EventId("1"), "Chess Tournament", "A competitive open-bracket chess tournament.", "Central Park", "2026-05-15", false, 5.hours, false)
+                        Event(EventId("1"), "Chess Tournament", "A competitive open-bracket chess tournament.", "Central Park", "2026-05-15", false, 5 * 60, false)
                     ),
                     going = listOf(
-                        Event(EventId("2"), "Tech Meetup", "Developers discussing Kotlin Multiplatform.", "Tech Hub Office", "2026-05-20", true, 3.hours, false),
+                        Event(EventId("2"), "Tech Meetup", "Developers discussing Kotlin Multiplatform.", "Tech Hub Office", "2026-05-20", true, 3 * 60, false),
                     ),
                     went = emptyList()
                 ),
