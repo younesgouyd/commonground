@@ -4,6 +4,7 @@ version = "0.1.0"
 plugins {
     alias(libs.plugins.androidApplication)
     alias(libs.plugins.kotlin.android)
+    alias(libs.plugins.composeCompiler)
 }
 
 kotlin {
@@ -12,6 +13,7 @@ kotlin {
 
 dependencies {
     implementation(project(":client:multiplatform"))
+    implementation(libs.android.activityCompose)
 }
 
 android {

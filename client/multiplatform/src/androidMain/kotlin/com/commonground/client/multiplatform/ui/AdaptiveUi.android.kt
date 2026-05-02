@@ -4,10 +4,13 @@ import androidx.compose.material3.windowsizeclass.ExperimentalMaterial3WindowSiz
 import androidx.compose.material3.windowsizeclass.WindowWidthSizeClass
 import androidx.compose.material3.windowsizeclass.calculateWindowSizeClass
 import androidx.compose.runtime.Composable
-import com.commonground.client.multiplatform.MainActivity
 
 @OptIn(ExperimentalMaterial3WindowSizeClassApi::class)
 @Composable
 actual fun getWindowSizeClass(): WindowWidthSizeClass {
-    return calculateWindowSizeClass(MainActivity.instance /* TODO */).widthSizeClass
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val activity = context as? android.app.Activity
+        ?: return WindowWidthSizeClass.Compact
+
+    return calculateWindowSizeClass(activity).widthSizeClass
 }
