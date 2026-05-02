@@ -25,6 +25,15 @@ import com.commonground.client.multiplatform.ui.destinations.eventdetails.EventD
 import com.commonground.client.multiplatform.ui.destinations.home.Home
 import com.commonground.client.multiplatform.ui.destinations.home.HomeNavActions
 import com.commonground.client.multiplatform.ui.destinations.home.HomeViewModel
+import com.commonground.client.multiplatform.ui.destinations.login.Login
+import com.commonground.client.multiplatform.ui.destinations.login.LoginNavActions
+import com.commonground.client.multiplatform.ui.destinations.login.LoginViewModel
+import com.commonground.client.multiplatform.ui.destinations.onboarding.Onboarding
+import com.commonground.client.multiplatform.ui.destinations.onboarding.OnboardingNavActions
+import com.commonground.client.multiplatform.ui.destinations.onboarding.OnboardingViewModel
+import com.commonground.client.multiplatform.ui.destinations.signup.SignUp
+import com.commonground.client.multiplatform.ui.destinations.signup.SignUpNavActions
+import com.commonground.client.multiplatform.ui.destinations.signup.SignUpViewModel
 import com.commonground.client.multiplatform.ui.destinations.user.User
 import com.commonground.client.multiplatform.ui.destinations.user.UserNavActions
 import com.commonground.client.multiplatform.ui.destinations.user.UserViewModel
@@ -35,35 +44,98 @@ import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun MainUi(repoStore: RepoStore) {
+fun MainUi(repoStore: RepoStore, startDestination: Route = Route.Login) {
     val navController = rememberNavController()
     val drawerState = rememberDrawerState(DrawerValue.Closed)
     val scope = rememberCoroutineScope()
 
+    val backStackEntry by navController.currentBackStackEntryAsState()
+    val currentDestination = backStackEntry?.destination
+    val isAuthFlow = currentDestination?.let {
+        it.hasRoute<Route.Login>() ||
+                it.hasRoute<Route.SignUp>() ||
+                it.hasRoute<Route.Onboarding>()
+    } ?: false
+
     MaterialTheme(colorScheme = if (isSystemInDarkTheme()) darkColorScheme() else lightColorScheme()) {
-        Scaffold(
-            topBar = {
-                CenterAlignedTopAppBar(
-                    modifier = Modifier.fillMaxWidth(),
-                    navigationIcon = { NavIcon(navController, scope, drawerState) },
-                    title = { Text("CommonGround") }
-                )
-            },
-            content = { padding ->
-                ModalNavigationDrawer(
-                    modifier = Modifier.padding(padding).fillMaxSize(),
-                    drawerState = drawerState,
-                    drawerContent = { DrawerSheet { navController.navigate(it.toRoute()) } },
-                    content = { NavGraph(navController, repoStore) }
-                )
-            }
-        )
+        if (isAuthFlow) {
+            NavGraph(navController, repoStore, startDestination)
+        } else {
+            Scaffold(
+                topBar = {
+                    CenterAlignedTopAppBar(
+                        modifier = Modifier.fillMaxWidth(),
+                        navigationIcon = { NavIcon(navController, scope, drawerState) },
+                        title = { Text("CommonGround") }
+                    )
+                },
+                content = { padding ->
+                    ModalNavigationDrawer(
+                        modifier = Modifier.padding(padding).fillMaxSize(),
+                        drawerState = drawerState,
+                        drawerContent = { DrawerSheet { navController.navigate(it.toRoute()) } },
+                        content = { NavGraph(navController, repoStore, startDestination) }
+                    )
+                }
+            )
+        }
     }
 }
 
 @Composable
-private fun NavGraph(navController: NavHostController, repoStore: RepoStore) {
-    NavHost(navController = navController, startDestination = Route.Home) {
+private fun NavGraph( navController: NavHostController, repoStore: RepoStore, startDestination: Route
+) {
+    NavHost(navController = navController, startDestination = startDestination) {
+
+        composable<Route.Login> {
+            Login(
+                viewModel = viewModel {
+                    LoginViewModel(
+                        onLoginSuccess = {
+                            navController.navigate(Route.Home) {
+                                popUpTo(Route.Login) { inclusive = true }
+                            }
+                        }
+                    )
+                },
+                navActions = object : LoginNavActions {
+                    override fun toSignUp() { navController.navigate(Route.SignUp) }
+                }
+            )
+        }
+
+        composable<Route.SignUp> {
+            SignUp(
+                viewModel = viewModel {
+                    SignUpViewModel(
+                        onSignUpSuccess = {
+                            navController.navigate(Route.Onboarding) {
+                                popUpTo(Route.Login) { inclusive = true }
+                            }
+                        }
+                    )
+                },
+                navActions = object : SignUpNavActions {
+                    override fun toLogin() { navController.popBackStack() }
+                }
+            )
+        }
+
+        composable<Route.Onboarding> {
+            Onboarding(
+                viewModel = viewModel {
+                    OnboardingViewModel(
+                        onFinished = {
+                            navController.navigate(Route.Home) {
+                                popUpTo(Route.Onboarding) { inclusive = true }
+                            }
+                        }
+                    )
+                },
+                navActions = object : OnboardingNavActions {}
+            )
+        }
+
         composable<Route.Home> {
             Home(
                 viewModel = viewModel { HomeViewModel(repoStore.eventRepo) },

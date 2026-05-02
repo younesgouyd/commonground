@@ -8,23 +8,10 @@ class EventRepo(
 ) {
     fun getHomePageEvents(): List<Event> {
         return listOf(
-            Event(EventId("1"), "Chess Tournament", "A competitive open-bracket chess tournament.", "Central Park", "2026-05-15", false, 5 * 60, false),
-            Event(
-                id = EventId("2"),
-                title = "Tech Meetup",
-                description = "Developers discussing Kotlin Multiplatform.",
-                location = "Tech Hub Office",
-                date = "2026-05-20",
-                isPrivate = true,
-                durationMinutes = 3 * 60,
-                isPaid = false,
+            Event(EventId("1")  , "Chess Tournament", "A competitive open-bracket chess tournament.", "Central Park", "2026-05-15", false, 5 * 60, false),
+            Event(EventId("2")  ,"Tech Meetup","Developers discussing Kotlin Multiplatform.", "Tech Hub Office","2026-05-20", true, 3 * 60,  false,
                 creators = listOf(
-                    User(
-                        id = UserId("1"),
-                        username = "morpheus",
-                        displayName = "Morpheus",
-                        profilePic = null
-                    ),
+                    User(UserId("1"), "morpheus", "Morpheus", null),
                     User(UserId("2"), "trinity", "Trinity", null)
                 )
             ),

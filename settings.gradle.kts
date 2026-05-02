@@ -43,7 +43,7 @@ dependencyResolutionManagement {
                     val dependencyManagement = version("spring.dependencyManagement", "1.1.7")
                     val starterWeb = version("spring.starterWeb", "4.0.5")
                     val starterTest = version("spring.starter", "4.0.5")
-                    val pluginSpring = version("spring.pluginSpring", "2.3.20")
+                    val pluginSpring = version("spring.pluginSpring", "2.3.10")
                 }
 
                 val kotlinReflect = version("kotlinReflect", "1.9.0")
@@ -61,6 +61,7 @@ dependencyResolutionManagement {
                     val appcompat = version("appcompat", "1.7.1")
                     val activity = version("android.activity", "1.12.3")
                 }
+                val bcrypt = version("bcrypt", "0.10.2")
             }
 
             plugin("kotlin.multiplatform", "org.jetbrains.kotlin.multiplatform").versionRef(versions.kotlin)
@@ -116,6 +117,10 @@ dependencyResolutionManagement {
             library("spring.starterWeb", "org.springframework.boot", "spring-boot-starter-web").versionRef(versions.spring.starterWeb)
             library("spring.starterTest", "org.springframework.boot", "spring-boot-starter-test").versionRef(versions.spring.starterTest)
             library("orgKotlinReflect", "org.jetbrains.kotlin", "kotlin-reflect").versionRef(versions.kotlinReflect)
+
+            library("spring.starterValidation", "org.springframework.boot", "spring-boot-starter-validation").versionRef(versions.spring.starterWeb)
+            library("bcrypt", "at.favre.lib", "bcrypt").versionRef(versions.bcrypt)
+
         }
     }
 }

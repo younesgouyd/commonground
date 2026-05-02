@@ -1,1 +1,18 @@
 - search about location data and maps
+
+
+Tarik:
+
+#TODO 4/2/2026:
+    [] - onboarding
+        [x] - UI
+        [x] - viewModel
+        [] - repository
+    [] - signUP
+        [x] - UI
+        [x] - viewModel
+        [] - repository
+    [] - login
+        [x] - UI
+        [x] - viewModel
+        [] - repository

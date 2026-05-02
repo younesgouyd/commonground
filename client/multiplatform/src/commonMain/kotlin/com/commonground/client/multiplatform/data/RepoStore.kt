@@ -2,6 +2,8 @@ package com.commonground.client.multiplatform.data
 
 import com.commonground.client.multiplatform.data.repositories.EventRepo
 import com.commonground.client.multiplatform.data.repositories.UserRepo
+import com.commonground.client.multiplatform.data.repositories.AuthRepo
+import com.commonground.client.multiplatform.data.repositories.CategoryRepo
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.cio.CIO
 import io.ktor.client.plugins.HttpTimeout
@@ -34,4 +36,6 @@ class RepoStore {
 
     val eventRepo = EventRepo(client)
     val userRepo = UserRepo(client)
+    lateinit var authRepo : AuthRepo
+    lateinit var categoryRepo : CategoryRepo
 }

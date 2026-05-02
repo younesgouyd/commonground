@@ -5,8 +5,8 @@ import org.springframework.boot.runApplication
 
 
 @SpringBootApplication
-class ServerApplication
+class commonGroundApplication
 
-fun main() {
-    runApplication<ServerApplication>()
+fun main(args: Array<String>) {
+    runApplication<commonGroundApplication>(*args)
 }

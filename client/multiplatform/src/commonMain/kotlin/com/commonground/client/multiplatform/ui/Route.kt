@@ -3,6 +3,9 @@ package com.commonground.client.multiplatform.ui
 import kotlinx.serialization.Serializable
 
 sealed class Route {
+    @Serializable data object Login : Route()
+    @Serializable data object SignUp : Route()
+    @Serializable data object Onboarding : Route()
     @Serializable data object Home : Route()
     @Serializable data object Me : Route()
     @Serializable data object Friends : Route()

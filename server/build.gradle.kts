@@ -19,7 +19,23 @@ dependencies {
     implementation(libs.serialization.core)
     implementation(libs.serialization.json)
     implementation(libs.logback.jvm)
+
     implementation(libs.spring.starterWeb)
-    implementation(libs.spring.starterTest)
+    implementation(libs.spring.starterValidation)
     implementation(libs.orgKotlinReflect)
+
+    implementation(libs.bcrypt)
+
+    implementation(libs.logging)
+    runtimeOnly(libs.logback.jvm)
+
+    testImplementation(libs.spring.starterTest)
 }
+kotlin {
+    compilerOptions {
+        freeCompilerArgs.addAll("-Xjsr305=strict")
+    }
+}
+
+tasks.withType<Test> { useJUnitPlatform() }
+
