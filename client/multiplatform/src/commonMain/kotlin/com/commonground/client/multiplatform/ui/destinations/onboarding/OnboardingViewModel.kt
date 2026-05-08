@@ -2,6 +2,7 @@ package com.commonground.client.multiplatform.ui.destinations.onboarding
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.commonground.client.multiplatform.ui.destinations.onboarding.OnboardingViewModel.Companion.HARDCODED_CATEGORIES
 import com.commonground.core.CategoryId
 import com.commonground.core.EventCategory
 import io.github.oshai.kotlinlogging.KotlinLogging

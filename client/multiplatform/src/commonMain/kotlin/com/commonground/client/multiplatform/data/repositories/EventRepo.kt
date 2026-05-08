@@ -1,7 +1,7 @@
 package com.commonground.client.multiplatform.data.repositories
 
 import com.commonground.core.*
-import io.ktor.client.HttpClient
+import io.ktor.client.*
 
 class EventRepo(
     private val client: HttpClient

@@ -1,6 +1,3 @@
-group = "com.commonground"
-version = "0.1.0"
-
 plugins {
     alias(libs.plugins.androidApplication)
     alias(libs.plugins.kotlin.android)
@@ -12,15 +9,15 @@ kotlin {
 }
 
 dependencies {
-    implementation(project(":client:multiplatform"))
+    implementation(project(":maptesting:multiplatform"))
     implementation(libs.android.activityCompose)
 }
 
 android {
-    namespace = "com.commonground"
+    namespace = "com.commonground.maptesting"
     compileSdk = libs.versions.androidCompileSdk.get().toInt()
     defaultConfig {
-        applicationId = "com.commonground"
+        applicationId = "com.commonground.maptesting"
         minSdk = libs.versions.androidMinSdk.get().toInt()
         targetSdk = libs.versions.androidTargetSdk.get().toInt()
         versionCode = 1

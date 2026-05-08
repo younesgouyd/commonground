@@ -1,13 +1,9 @@
-package com.commonground.client.desktop
+package com.commonground.maptesting
 
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.window.*
-import com.commonground.client.multiplatform.data.RepoStore
-import com.commonground.client.multiplatform.ui.MainUi
 
 fun main() {
-    val repoStore = RepoStore()
-
     application {
         Window(
             state = rememberWindowState(
@@ -16,7 +12,7 @@ fun main() {
             ),
             onCloseRequest = { exitApplication() }
         ) {
-            MainUi(repoStore)
+            MainUi()
         }
     }
 }

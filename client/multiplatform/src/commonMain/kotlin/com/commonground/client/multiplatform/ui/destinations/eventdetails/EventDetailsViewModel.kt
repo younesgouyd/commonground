@@ -9,7 +9,6 @@ import com.commonground.core.UserId
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
-import kotlin.time.Duration.Companion.hours
 
 sealed class EventDetailsState {
     data object Loading : EventDetailsState()

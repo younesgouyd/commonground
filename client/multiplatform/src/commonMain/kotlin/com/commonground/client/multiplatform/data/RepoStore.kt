@@ -1,20 +1,17 @@
 package com.commonground.client.multiplatform.data
 
-import com.commonground.client.multiplatform.data.repositories.EventRepo
-import com.commonground.client.multiplatform.data.repositories.UserRepo
 import com.commonground.client.multiplatform.data.repositories.AuthRepo
 import com.commonground.client.multiplatform.data.repositories.CategoryRepo
-import io.ktor.client.HttpClient
-import io.ktor.client.engine.cio.CIO
-import io.ktor.client.plugins.HttpTimeout
-import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
-import io.ktor.client.plugins.defaultRequest
-import io.ktor.client.plugins.logging.LogLevel
-import io.ktor.client.plugins.logging.Logging
-import io.ktor.client.plugins.sse.SSE
-import io.ktor.http.URLProtocol
-import io.ktor.http.path
-import io.ktor.serialization.kotlinx.json.json
+import com.commonground.client.multiplatform.data.repositories.EventRepo
+import com.commonground.client.multiplatform.data.repositories.UserRepo
+import io.ktor.client.*
+import io.ktor.client.engine.cio.*
+import io.ktor.client.plugins.*
+import io.ktor.client.plugins.contentnegotiation.*
+import io.ktor.client.plugins.logging.*
+import io.ktor.client.plugins.sse.*
+import io.ktor.http.*
+import io.ktor.serialization.kotlinx.json.*
 import kotlinx.serialization.json.Json
 
 class RepoStore {
