@@ -186,7 +186,7 @@ private fun CategoriesStep(
             horizontalArrangement = Arrangement.spacedBy(12.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            items(state.categories, key = { it.id.value }) { category ->
+            items(state.categories, key = { it.id }) { category ->
                 CategoryCard(
                     category = category,
                     selected = category.id in state.selected,

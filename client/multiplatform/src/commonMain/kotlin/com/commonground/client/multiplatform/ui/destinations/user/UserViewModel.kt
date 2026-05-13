@@ -2,7 +2,9 @@ package com.commonground.client.multiplatform.ui.destinations.user
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.commonground.core.*
+import com.commonground.core.Event
+import com.commonground.core.ImageUrl
+import com.commonground.core.User
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
@@ -19,7 +21,7 @@ sealed class UserState {
         val onChangeFollowState: (FollowState) -> Unit,
     ) : UserState() {
         data class Friend(
-            val id: UserId,
+            val id: String,
             val username: String,
             val displayName: String?,
             val profilePic: ImageUrl?
@@ -45,7 +47,7 @@ sealed class UserState {
 }
 
 class UserViewModel(
-    val id: UserId
+    val id: String
 ) : ViewModel() {
     private val _state: MutableStateFlow<UserState> = MutableStateFlow(UserState.Loading)
     val state = _state.asStateFlow()
@@ -60,16 +62,12 @@ class UserViewModel(
                     profilePic = null
                 ),
                 friends = listOf(
-                    UserState.Loaded.Friend(UserId("2"), "trinity", "Trinity", null),
-                    UserState.Loaded.Friend(UserId("3"), "neo", "Thomas A. Anderson", null)
+                    UserState.Loaded.Friend("2", "trinity", "Trinity", null),
+                    UserState.Loaded.Friend("3", "neo", "Thomas A. Anderson", null)
                 ),
                 events = UserState.Loaded.Events(
-                    created = listOf(
-                        Event(EventId("1"), "Chess Tournament", "A competitive open-bracket chess tournament.", "Central Park", "2026-05-15", false, 5 * 60, false)
-                    ),
-                    going = listOf(
-                        Event(EventId("2"), "Tech Meetup", "Developers discussing Kotlin Multiplatform.", "Tech Hub Office", "2026-05-20", true, 3 * 60, false),
-                    ),
+                    created = emptyList(),
+                    going = emptyList(),
                     went = emptyList()
                 ),
                 friendState = UserState.Loaded.FriendState.NonFriend(onSendRequestClick = {

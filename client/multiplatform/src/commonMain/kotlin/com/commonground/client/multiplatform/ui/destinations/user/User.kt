@@ -18,12 +18,10 @@ import androidx.compose.ui.unit.dp
 import com.commonground.client.multiplatform.ui.AdaptiveUi
 import com.commonground.client.multiplatform.ui.widgets.*
 import com.commonground.core.Event
-import com.commonground.core.EventId
-import com.commonground.core.UserId
 
 interface UserNavActions {
-    fun toUser(id: UserId)
-    fun toEvent(id: EventId)
+    fun toUser(id: String)
+    fun toEvent(id: String)
 }
 
 @Composable
@@ -127,7 +125,7 @@ private fun Wide(
                 Tabs.Events -> items(state.events.created) { event ->
                     Event(
                         event = event,
-                        onClick = { navActions.toEvent(event.id) }
+                        onClick = { navActions.toEvent(event.id!!) }
                     )
                 }
                 Tabs.Friends -> Unit

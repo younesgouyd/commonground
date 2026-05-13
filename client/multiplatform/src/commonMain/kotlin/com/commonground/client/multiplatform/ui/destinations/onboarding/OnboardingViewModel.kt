@@ -3,7 +3,6 @@ package com.commonground.client.multiplatform.ui.destinations.onboarding
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.commonground.client.multiplatform.ui.destinations.onboarding.OnboardingViewModel.Companion.HARDCODED_CATEGORIES
-import com.commonground.core.CategoryId
 import com.commonground.core.EventCategory
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.delay
@@ -18,7 +17,7 @@ sealed class OnboardingState {
     data class Loaded(
         val step: Step,
         val categories: List<EventCategory>,
-        val selected: Set<CategoryId>,
+        val selected: Set<String>,
         val isSubmitting: Boolean = false,
         val error: String? = null
     ) : OnboardingState() {
@@ -66,7 +65,7 @@ class OnboardingViewModel(
         }
     }
 
-    fun toggleCategory(id: CategoryId) {
+    fun toggleCategory(id: String) {
         _state.update { current ->
             if (current !is OnboardingState.Loaded) return@update current
             val newSelected = if (id in current.selected) current.selected - id
@@ -102,25 +101,25 @@ class OnboardingViewModel(
         _state.value = current.copy(isSubmitting = true, error = null)
         viewModelScope.launch {
             delay(500)
-            logger.info { "Hardcoded onboarding finish; selected=${current.selected.map { it.value }}" }
+            logger.info { "Hardcoded onboarding finish; selected=${current.selected}" }
             onFinished()
         }
     }
 
     private companion object {
         val HARDCODED_CATEGORIES = listOf(
-            EventCategory(CategoryId("music"),     "Music",          "Concerts, gigs, jam sessions",                "music"),
-            EventCategory(CategoryId("sports"),    "Sports",         "Pickup games, tournaments, fitness meetups",  "sports"),
-            EventCategory(CategoryId("tech"),      "Tech",           "Hackathons, talks, demo nights",              "tech"),
-            EventCategory(CategoryId("food"),      "Food & Drink",   "Tastings, supper clubs, restaurant pop-ups",  "food"),
-            EventCategory(CategoryId("art"),       "Art",            "Galleries, exhibitions, art walks",           "art"),
-            EventCategory(CategoryId("education"), "Education",      "Workshops, lectures, study groups",           "education"),
-            EventCategory(CategoryId("books"),     "Books",          "Book clubs, author talks, poetry nights",     "books"),
-            EventCategory(CategoryId("theater"),   "Theater",        "Plays, improv, performances",                 "theater"),
-            EventCategory(CategoryId("fitness"),   "Fitness",        "Running clubs, yoga, group workouts",         "fitness"),
-            EventCategory(CategoryId("cafe"),      "Coffee Meetups", "Casual cafe gatherings",                      "cafe"),
-            EventCategory(CategoryId("design"),    "Design",         "Design critiques, portfolio reviews",         "design"),
-            EventCategory(CategoryId("community"), "Community",      "Neighborhood events, volunteering",           null)
+            EventCategory("music",     "Music",          "Concerts, gigs, jam sessions",                "music"),
+            EventCategory("sports",    "Sports",         "Pickup games, tournaments, fitness meetups",  "sports"),
+            EventCategory("tech",      "Tech",           "Hackathons, talks, demo nights",              "tech"),
+            EventCategory("food",      "Food & Drink",   "Tastings, supper clubs, restaurant pop-ups",  "food"),
+            EventCategory("art",       "Art",            "Galleries, exhibitions, art walks",           "art"),
+            EventCategory("education", "Education",      "Workshops, lectures, study groups",           "education"),
+            EventCategory("theater",   "Theater",        "Plays, improv, performances",                 "theater"),
+            EventCategory("fitness",   "Fitness",        "Running clubs, yoga, group workouts",         "fitness"),
+            EventCategory("cafe",      "Coffee Meetups", "Casual cafe gatherings",                      "cafe"),
+            EventCategory("design",    "Design",         "Design critiques, portfolio reviews",         "design"),
+            EventCategory("books",     "Books",          "Book clubs, author talks, poetry nights",     "books"),
+            EventCategory("community", "Community",      "Neighborhood events, volunteering",           null)
         )
     }
 }

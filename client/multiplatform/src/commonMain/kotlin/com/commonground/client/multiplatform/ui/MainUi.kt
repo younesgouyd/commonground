@@ -37,8 +37,6 @@ import com.commonground.client.multiplatform.ui.destinations.signup.SignUpViewMo
 import com.commonground.client.multiplatform.ui.destinations.user.User
 import com.commonground.client.multiplatform.ui.destinations.user.UserNavActions
 import com.commonground.client.multiplatform.ui.destinations.user.UserViewModel
-import com.commonground.core.EventId
-import com.commonground.core.UserId
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
@@ -140,8 +138,8 @@ private fun NavGraph( navController: NavHostController, repoStore: RepoStore, st
             Home(
                 viewModel = viewModel { HomeViewModel(repoStore.eventRepo) },
                 navActions = object : HomeNavActions {
-                    override fun toEventDetails(id: EventId) { navController.navigate(Route.Event(id.value)) }
-                    override fun toUser(id: UserId) { navController.navigate(Route.User(id.value)) }
+                    override fun toEventDetails(id: String) { navController.navigate(Route.Event(id)) }
+                    override fun toUser(id: String) { navController.navigate(Route.User(id)) }
                 }
             )
         }
@@ -150,19 +148,19 @@ private fun NavGraph( navController: NavHostController, repoStore: RepoStore, st
         composable<Route.Event> { entry ->
             val eventRoute = entry.toRoute<Route.Event>()
             EventDetails(
-                viewModel = viewModel { EventDetailsViewModel(EventId(eventRoute.id)) },
+                viewModel = viewModel { EventDetailsViewModel(eventRoute.id) },
                 navActions = object : EventDetailsNavActions {
-                    override fun toUser(id: UserId) { navController.navigate(Route.User(id.value)) }
+                    override fun toUser(id: String) { navController.navigate(Route.User(id)) }
                 }
             )
         }
         composable<Route.User> { entry ->
             val route = entry.toRoute<Route.User>()
             User(
-                viewModel = viewModel { UserViewModel(UserId(route.id)) },
+                viewModel = viewModel { UserViewModel(route.id) },
                 navActions = object : UserNavActions {
-                    override fun toUser(id: UserId) { navController.navigate(Route.User(id.value)) }
-                    override fun toEvent(id: EventId) { navController.navigate(Route.Event(id.value)) }
+                    override fun toUser(id: String) { navController.navigate(Route.User(id)) }
+                    override fun toEvent(id: String) { navController.navigate(Route.Event(id)) }
                 }
             )
         }

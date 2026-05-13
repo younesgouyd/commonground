@@ -2,11 +2,9 @@ package com.commonground.client.multiplatform.ui.destinations.home
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
-import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.filled.Search
@@ -21,12 +19,10 @@ import com.commonground.client.multiplatform.ui.AdaptiveUi
 import com.commonground.client.multiplatform.ui.widgets.Duration
 import com.commonground.client.multiplatform.ui.widgets.Person
 import com.commonground.core.Event
-import com.commonground.core.EventId
-import com.commonground.core.UserId
 
 interface HomeNavActions {
-    fun toEventDetails(id: EventId)
-    fun toUser(id: UserId)
+    fun toEventDetails(id: String)
+    fun toUser(id: String)
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -71,7 +67,7 @@ private fun Wide(
             items(state.events) { event ->
                 Event(
                     event = event,
-                    onClick = { navActions.toEventDetails(event.id) },
+                    onClick = { navActions.toEventDetails(event.id!!) },
                     onUserClick = { navActions.toUser(it) }
                 )
             }
@@ -100,7 +96,7 @@ private fun Search(
 private fun Event(
     event: Event,
     onClick: () -> Unit,
-    onUserClick: (UserId) -> Unit
+    onUserClick: (String) -> Unit
 ) {
     Card(onClick) {
         Column(
@@ -136,17 +132,10 @@ private fun Event(
                     text = "By:",
                     style = MaterialTheme.typography.labelMedium
                 )
-                LazyRow(
-                    horizontalArrangement = Arrangement.spacedBy(4.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    items(event.creators) { creator ->
-                        Person(
-                            name = creator.displayName ?: creator.username,
-                            onClick = { onUserClick(creator.id) }
-                        )
-                    }
-                }
+                Person(
+                    name = event.creator.displayName ?: event.creator.username,
+                    onClick = { onUserClick(event.creator.id!!) }
+                )
             }
         }
     }

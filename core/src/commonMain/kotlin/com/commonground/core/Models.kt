@@ -9,16 +9,8 @@ import kotlin.time.Duration.Companion.minutes
 typealias ImageUrl = String
 
 @Serializable
-@JvmInline
-value class EventId(val value: String)
-
-@Serializable
-@JvmInline
-value class UserId(val value: String)
-
-@Serializable
 data class Event(
-    val id: EventId,
+    val id: String? = null,
     val title: String,
     val description: String,
     val location: String,
@@ -27,7 +19,7 @@ data class Event(
     val durationMinutes: Long,
     val isPaid: Boolean,
     val image: ImageUrl? = null,
-    val creators: List<User> = emptyList() // TODO
+    val creator: User
 ) {
     @Transient
     val duration = durationMinutes.minutes
@@ -35,7 +27,7 @@ data class Event(
 
 @Serializable
 data class User(
-    val id: UserId,
+    val id: String? = null,
     val username: String,
     val displayName: String?,
     val bio: String? = null,
@@ -44,8 +36,22 @@ data class User(
 )
 
 @Serializable
+data class EventCategory(
+    val id: String,
+    val name: String,
+    val description: String? = null,
+    val iconKey: String? = null
+)
+
+// TODO: implement pagination
+@Serializable
 data class UserEvents(
     val created: List<Event>,
     val going: List<Event>,
     val went: List<Event>
+)
+
+@Serializable
+data class EventAttendees(
+    val attendees: List<User> // TODO: implement pagination
 )

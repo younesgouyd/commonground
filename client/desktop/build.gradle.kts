@@ -5,7 +5,7 @@ version = "0.1.0"
 
 plugins {
     alias(libs.plugins.kotlin.jvm)
-    alias(libs.plugins.composeCompiler)
+    alias(libs.plugins.kotlin.composeCompiler)
     alias(libs.plugins.composeMultiplatform)
 }
 

@@ -29,6 +29,7 @@ dependencyResolutionManagement {
             val versions = object {
                 val java = version("java", "17")
                 val kotlin = "2.3.10"
+                val jpa = "2.3.21"
                 val serialization = "1.10.0"
                 val coroutines = "1.10.2"
                 val room = "2.8.4"
@@ -43,8 +44,6 @@ dependencyResolutionManagement {
                 val spring = object {
                     val frameworkPlugin = "4.0.5"
                     val dependencyManagement = "1.1.7"
-                    val starterWeb = "4.0.5"
-                    val starterTest = "4.0.5"
                     val pluginSpring = "2.3.10"
                 }
 
@@ -70,20 +69,26 @@ dependencyResolutionManagement {
                 val bcrypt = "0.10.2"
             }
 
+            // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> PLUGINS >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
             plugin("kotlin.multiplatform", "org.jetbrains.kotlin.multiplatform").version(versions.kotlin)
             plugin("kotlin.jvm", "org.jetbrains.kotlin.jvm").version(versions.kotlin)
             plugin("kotlin.android", "org.jetbrains.kotlin.android").version(versions.kotlin)
             plugin("kotlin.serialization", "org.jetbrains.kotlin.plugin.serialization").version(versions.kotlin)
+            plugin("kotlin.jpa", "org.jetbrains.kotlin.plugin.jpa").version(versions.jpa)
+            plugin("kotlin.composeCompiler", "org.jetbrains.kotlin.plugin.compose").version(versions.kotlin)
+            plugin("kotlin.spring", "org.jetbrains.kotlin.plugin.spring").version(versions.spring.pluginSpring)
+
             plugin("composeMultiplatform", "org.jetbrains.compose").version(versions.compose.plugin)
-            plugin("composeCompiler", "org.jetbrains.kotlin.plugin.compose").version(versions.kotlin)
             plugin("ksp", "com.google.devtools.ksp").version(versions.ksp)
             plugin("room", "androidx.room").version(versions.room)
-            plugin("androidApplication", "com.android.application").version(versions.android.agp)
-            plugin("androidMultiplatform", "com.android.kotlin.multiplatform.library").version(versions.android.agp)
+            plugin("android.application", "com.android.application").version(versions.android.agp)
+            plugin("android.multiplatform", "com.android.kotlin.multiplatform.library").version(versions.android.agp)
 
-            plugin("springframework", "org.springframework.boot").version(versions.spring.frameworkPlugin)
-            plugin("dependencyManagement", "io.spring.dependency-management").version(versions.spring.dependencyManagement)
-            plugin("springPlugin", "org.jetbrains.kotlin.plugin.spring").version(versions.spring.pluginSpring)
+            plugin("spring.framework", "org.springframework.boot").version(versions.spring.frameworkPlugin)
+            plugin("spring.dependencyManagement", "io.spring.dependency-management").version(versions.spring.dependencyManagement)
+            // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< PLUGINS <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+            library("kotlin.reflect", "org.jetbrains.kotlin", "kotlin-reflect").version(versions.kotlinReflect)
 
             library("compose.material3", "org.jetbrains.compose.material3", "material3").version(versions.compose.material3)
             library("compose.windowSizeClass", "org.jetbrains.compose.material3", "material3-window-size-class").version(versions.compose.material3)
@@ -122,12 +127,10 @@ dependencyResolutionManagement {
             library("android.activityKtx", "androidx.activity", "activity-ktx").version(versions.android.activity)
             library("android.activityCompose", "androidx.activity", "activity-compose").version(versions.android.activity)
 
-
-            library("spring.starterWeb", "org.springframework.boot", "spring-boot-starter-web").version(versions.spring.starterWeb)
-            library("spring.starterTest", "org.springframework.boot", "spring-boot-starter-test").version(versions.spring.starterTest)
-            library("orgKotlinReflect", "org.jetbrains.kotlin", "kotlin-reflect").version(versions.kotlinReflect)
-
-            library("spring.starterValidation", "org.springframework.boot", "spring-boot-starter-validation").version(versions.spring.starterWeb)
+            library("spring.web", "org.springframework.boot", "spring-boot-starter-web").withoutVersion()
+            library("spring.validation", "org.springframework.boot", "spring-boot-starter-validation").withoutVersion()
+            library("spring.jpa", "org.springframework.boot", "spring-boot-starter-data-jpa").withoutVersion()
+            library("postgresqlDriver", "org.postgresql", "postgresql").withoutVersion()
             library("bcrypt", "at.favre.lib", "bcrypt").version(versions.bcrypt)
         }
     }

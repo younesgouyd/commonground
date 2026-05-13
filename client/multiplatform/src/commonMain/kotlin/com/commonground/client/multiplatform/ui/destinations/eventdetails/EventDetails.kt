@@ -19,10 +19,9 @@ import androidx.compose.ui.unit.dp
 import com.commonground.client.multiplatform.ui.AdaptiveUi
 import com.commonground.client.multiplatform.ui.widgets.ItemDetailsHeaderWide
 import com.commonground.client.multiplatform.ui.widgets.Person
-import com.commonground.core.UserId
 
 interface EventDetailsNavActions {
-    fun toUser(id: UserId)
+    fun toUser(id: String)
 }
 
 @Composable
@@ -76,7 +75,7 @@ private fun Wide(
                             items(state.creators) { user ->
                                 Person(
                                     name = user.displayName ?: user.username,
-                                    onClick = { navActions.toUser(user.id) }
+                                    onClick = { navActions.toUser(user.id!!) }
                                 )
                             }
                         }
