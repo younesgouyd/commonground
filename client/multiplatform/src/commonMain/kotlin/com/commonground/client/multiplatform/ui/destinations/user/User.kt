@@ -17,7 +17,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.commonground.client.multiplatform.ui.AdaptiveUi
 import com.commonground.client.multiplatform.ui.widgets.*
-import com.commonground.core.Event
+import com.commonground.core.models.Event
 
 interface UserNavActions {
     fun toUser(id: String)
@@ -159,7 +159,7 @@ private fun Event(
                 overflow = TextOverflow.Ellipsis
             )
             Text(
-                text = event.description,
+                text = event.description ?: "",
                 style = MaterialTheme.typography.bodyMedium,
                 maxLines = 4,
                 overflow = TextOverflow.Ellipsis

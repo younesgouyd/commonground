@@ -3,7 +3,7 @@ package com.commonground.client.multiplatform.ui.destinations.onboarding
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.commonground.client.multiplatform.ui.destinations.onboarding.OnboardingViewModel.Companion.HARDCODED_CATEGORIES
-import com.commonground.core.EventCategory
+import com.commonground.core.models.EventCategory
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow

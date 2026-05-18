@@ -18,7 +18,7 @@ import androidx.compose.ui.unit.dp
 import com.commonground.client.multiplatform.ui.AdaptiveUi
 import com.commonground.client.multiplatform.ui.widgets.Duration
 import com.commonground.client.multiplatform.ui.widgets.Person
-import com.commonground.core.Event
+import com.commonground.core.models.Event
 
 interface HomeNavActions {
     fun toEventDetails(id: String)
@@ -118,7 +118,7 @@ private fun Event(
                 overflow = TextOverflow.Ellipsis
             )
             Text(
-                text = event.description,
+                text = event.description ?: "",
                 style = MaterialTheme.typography.bodyMedium,
                 maxLines = 4,
                 overflow = TextOverflow.Ellipsis

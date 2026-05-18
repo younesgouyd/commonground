@@ -1,7 +1,7 @@
 package com.commonground.client.multiplatform.data.repositories
 
-import com.commonground.core.Event
-import com.commonground.core.UserEvents
+import com.commonground.core.models.Event
+import com.commonground.core.models.UserEvents
 import io.ktor.client.*
 
 class EventRepo(

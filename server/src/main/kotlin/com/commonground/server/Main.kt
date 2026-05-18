@@ -4,26 +4,24 @@ import com.commonground.server.data.Event
 import com.commonground.server.data.EventRepository
 import com.commonground.server.data.User
 import com.commonground.server.data.UserRepository
-import org.springframework.boot.CommandLineRunner
 import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.boot.runApplication
-import org.springframework.context.annotation.Bean
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 
 @SpringBootApplication
-class commonGroundApplication {
+class CommonGroundApplication {
 
-    // FOR TESTING. comment after first run
-    @Bean
-    fun runner(dataInitializer: DataInitializer) = CommandLineRunner {
-        dataInitializer.populateTestData()
-    }
+    // FOR TESTING
+//    @Bean
+//    fun runner(dataInitializer: DataInitializer) = CommandLineRunner {
+//        dataInitializer.populateTestData()
+//    }
 
 }
 
 fun main(args: Array<String>) {
-    runApplication<commonGroundApplication>(*args)
+    runApplication<CommonGroundApplication>(*args)
 }
 
 // THIS IS FOR TESTING ONLY
@@ -38,6 +36,7 @@ class DataInitializer(
         // 1. Create a Creator
         val creator = User(
             username = "neo",
+            password = "1234",
             displayName = "Neo",
             bio = "Developing CommonGround",
             emailAddress = "neo@example.com",
@@ -47,6 +46,7 @@ class DataInitializer(
         // 2. Create an Attendee
         val attendee = User(
             username = "tester_alpha",
+            password = "1234",
             displayName = "Alpha Tester",
             bio = "I love events",
             emailAddress = "alpha@example.com",

@@ -2,7 +2,7 @@
     <property name="LOG_DIR" value="${user.home}/commonground_server/logs" />
     <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
         <encoder>
-            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} | %thread | %-5level| %logger | %msg%n</pattern>
+            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS, UTC} | %thread | %-5level| %logger | %msg%n</pattern>
         </encoder>
     </appender>
     <appender name="MAIN" class="ch.qos.logback.core.rolling.RollingFileAppender">
@@ -14,7 +14,7 @@
             <totalSizeCap>1GB</totalSizeCap>
         </rollingPolicy>
         <encoder>
-            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} | %thread | %-5level| %logger | %msg%n</pattern>
+            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS, UTC} | %thread | %-5level| %logger | %msg%n</pattern>
         </encoder>
     </appender>
     <appender name="SPRING" class="ch.qos.logback.core.rolling.RollingFileAppender">
@@ -26,7 +26,7 @@
             <totalSizeCap>1GB</totalSizeCap>
         </rollingPolicy>
         <encoder>
-            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} | %thread | %-5level| %logger | %msg%n</pattern>
+            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS, UTC} | %thread | %-5level| %logger | %msg%n</pattern>
         </encoder>
     </appender>
     <appender name="HIBERNATE" class="ch.qos.logback.core.rolling.RollingFileAppender">
@@ -38,7 +38,7 @@
             <totalSizeCap>1GB</totalSizeCap>
         </rollingPolicy>
         <encoder>
-            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} | %thread | %-5level| %logger | %msg%n</pattern>
+            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS, UTC} | %thread | %-5level| %logger | %msg%n</pattern>
         </encoder>
     </appender>
     <appender name="OTHER" class="ch.qos.logback.core.rolling.RollingFileAppender">
@@ -50,14 +50,14 @@
             <totalSizeCap>1GB</totalSizeCap>
         </rollingPolicy>
         <encoder>
-            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} | %thread | %-5level| %logger | %msg%n</pattern>
+            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS, UTC} | %thread | %-5level| %logger | %msg%n</pattern>
         </encoder>
     </appender>
     <logger name="com.commonground" level="TRACE" additivity="false">
         <appender-ref ref="STDOUT" />
         <appender-ref ref="MAIN" />
     </logger>
-    <logger name="org.springframework" level="TRACE" additivity="false">
+    <logger name="org.springframework" level="DEBUG" additivity="false">
         <appender-ref ref="STDOUT" />
         <appender-ref ref="SPRING" />
     </logger>

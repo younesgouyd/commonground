@@ -3,7 +3,7 @@ package com.commonground.client.multiplatform.ui.destinations.home
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.commonground.client.multiplatform.data.repositories.EventRepo
-import com.commonground.core.Event
+import com.commonground.core.models.Event
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow

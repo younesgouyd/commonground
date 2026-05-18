@@ -1,6 +1,6 @@
 package com.commonground.client.multiplatform.data.repositories
 
-import com.commonground.core.User
+import com.commonground.core.models.User
 import io.ktor.client.*
 
 class UserRepo(

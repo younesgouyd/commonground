@@ -46,7 +46,7 @@ dependencyResolutionManagement {
                     val dependencyManagement = "1.1.7"
                     val pluginSpring = "2.3.10"
                 }
-
+                val jjwt = "0.13.0"
                 val kotlinReflect = "1.9.0"
                 val compose = object {
                     val plugin = "1.10.1"
@@ -66,7 +66,6 @@ dependencyResolutionManagement {
                     val appcompat = "1.7.1"
                     val activity = "1.12.3"
                 }
-                val bcrypt = "0.10.2"
             }
 
             // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> PLUGINS >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
@@ -130,8 +129,11 @@ dependencyResolutionManagement {
             library("spring.web", "org.springframework.boot", "spring-boot-starter-web").withoutVersion()
             library("spring.validation", "org.springframework.boot", "spring-boot-starter-validation").withoutVersion()
             library("spring.jpa", "org.springframework.boot", "spring-boot-starter-data-jpa").withoutVersion()
+            library("spring.security", "org.springframework.boot", "spring-boot-starter-security").withoutVersion()
             library("postgresqlDriver", "org.postgresql", "postgresql").withoutVersion()
-            library("bcrypt", "at.favre.lib", "bcrypt").version(versions.bcrypt)
+            library("jjwt.api", "io.jsonwebtoken", "jjwt-api").version(versions.jjwt)
+            library("jjwt.impl", "io.jsonwebtoken", "jjwt-impl").version(versions.jjwt)
+            library("jjwt.jackson", "io.jsonwebtoken", "jjwt-jackson").version(versions.jjwt)
         }
     }
 }

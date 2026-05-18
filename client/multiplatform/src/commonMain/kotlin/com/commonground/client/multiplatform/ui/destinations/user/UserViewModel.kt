@@ -2,9 +2,9 @@ package com.commonground.client.multiplatform.ui.destinations.user
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.commonground.core.Event
-import com.commonground.core.ImageUrl
-import com.commonground.core.User
+import com.commonground.core.models.Event
+import com.commonground.core.models.ImageUrl
+import com.commonground.core.models.User
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch

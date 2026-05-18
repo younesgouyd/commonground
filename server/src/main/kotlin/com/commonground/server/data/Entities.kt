@@ -1,6 +1,6 @@
 package com.commonground.server.data
 
-import com.commonground.core.ImageUrl
+import com.commonground.core.models.ImageUrl
 import jakarta.persistence.*
 import java.util.*
 
@@ -10,7 +10,7 @@ class Event(
     @GeneratedValue(strategy = GenerationType.UUID)
     val id: UUID? = null,
     val title: String,
-    val description: String,
+    val description: String? = null,
     val location: String,
     val date: String,
     val isPrivate: Boolean,
@@ -35,16 +35,15 @@ class User(
     @GeneratedValue(strategy = GenerationType.UUID)
     val id: UUID? = null,
     val username: String,
-    val displayName: String?,
-    val bio: String?,
-    val emailAddress: String?,
-    val profilePic: ImageUrl?,
+    val password: String,
+    val displayName: String? = null,
+    val bio: String? = null,
+    val emailAddress: String? = null,
+    val profilePic: ImageUrl? = null,
 
-    // 1. One-to-Many: Ownership
     @OneToMany(mappedBy = "creator", cascade = [CascadeType.ALL])
     val createdEvents: MutableList<Event> = mutableListOf(),
 
-    // 2. Many-to-Many: Attendance
     @ManyToMany
     @JoinTable(
         name = "event_attendees",

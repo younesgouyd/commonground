@@ -17,7 +17,7 @@
             <totalSizeCap>1GB</totalSizeCap>
         </rollingPolicy>
         <encoder>
-            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} | %thread | %-5level| %logger | %msg%n</pattern>
+            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS, UTC} | %thread | %-5level| %logger | %msg%n</pattern>
         </encoder>
     </appender>
     <appender name="KTOR" class="ch.qos.logback.core.rolling.RollingFileAppender">
@@ -29,7 +29,7 @@
             <totalSizeCap>1GB</totalSizeCap>
         </rollingPolicy>
         <encoder>
-            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} | %thread | %-5level| %logger | %msg%n</pattern>
+            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS, UTC} | %thread | %-5level| %logger | %msg%n</pattern>
         </encoder>
     </appender>
     <appender name="OTHER" class="ch.qos.logback.core.rolling.RollingFileAppender">
@@ -41,7 +41,7 @@
             <totalSizeCap>1GB</totalSizeCap>
         </rollingPolicy>
         <encoder>
-            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} | %thread | %-5level| %logger | %msg%n</pattern>
+            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS, UTC} | %thread | %-5level| %logger | %msg%n</pattern>
         </encoder>
     </appender>
     <logger name="com.commonground" level="TRACE" additivity="false">

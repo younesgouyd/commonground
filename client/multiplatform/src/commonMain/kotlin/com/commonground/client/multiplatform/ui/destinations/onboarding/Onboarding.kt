@@ -24,7 +24,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.commonground.client.multiplatform.ui.AdaptiveUi
-import com.commonground.core.EventCategory
+import com.commonground.core.models.EventCategory
 
 interface OnboardingNavActions {
 }

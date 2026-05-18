@@ -14,7 +14,7 @@ kotlin {
     jvmToolchain(libs.versions.java.get().toInt())
 
     compilerOptions {
-        freeCompilerArgs.addAll("-Xjsr305=strict")
+        freeCompilerArgs.addAll("-Xjsr305=strict", "-Xannotation-default-target=param-property")
     }
 }
 
@@ -26,7 +26,10 @@ dependencies {
     implementation(libs.spring.web)
     implementation(libs.spring.validation)
     implementation(libs.spring.jpa)
+    implementation(libs.spring.security)
     runtimeOnly(libs.postgresqlDriver)
 
-    implementation(libs.bcrypt)
+    implementation(libs.jjwt.api)
+    runtimeOnly(libs.jjwt.impl)
+    runtimeOnly(libs.jjwt.jackson)
 }

@@ -1,6 +1,6 @@
 package com.commonground.client.multiplatform.data.repositories;
 
-import com.commonground.core.EventCategory
+import com.commonground.core.models.EventCategory
 
 interface CategoryRepo {
     suspend fun getAllCategories(): List<EventCategory>
