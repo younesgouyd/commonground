@@ -38,6 +38,7 @@ class EventDetailsViewModel(
                     5 * 60,
                     false,
                     creator = User(
+                        id = "111",
                         username = "neo",
                         displayName = "Neo",
                         bio = "Developing CommonGround",
@@ -47,7 +48,7 @@ class EventDetailsViewModel(
                 ),
                 creators = listOf(
                     User(
-                        id = "1",
+                        id = "222",
                         username = "user1",
                         displayName = "John Doe",
                         emailAddress = "john.doe@example.com",

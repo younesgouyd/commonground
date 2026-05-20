@@ -1,9 +1,9 @@
 package com.commonground.server
 
-import com.commonground.server.data.Event
 import com.commonground.server.data.EventRepository
-import com.commonground.server.data.User
 import com.commonground.server.data.UserRepository
+import com.commonground.server.data.entities.Event
+import com.commonground.server.data.entities.User
 import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.boot.runApplication
 import org.springframework.stereotype.Service

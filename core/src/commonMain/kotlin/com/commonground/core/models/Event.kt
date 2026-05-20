@@ -6,7 +6,7 @@ import kotlin.time.Duration.Companion.minutes
 
 @Serializable
 data class Event(
-    val id: String? = null,
+    val id: String,
     val title: String,
     val description: String?,
     val location: String,
