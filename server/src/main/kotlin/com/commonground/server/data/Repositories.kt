@@ -9,8 +9,8 @@ import java.util.*
 interface EventRepository : JpaRepository<Event, UUID>
 
 interface UserRepository : JpaRepository<User, UUID> {
-    fun findByUsername(username: String): User?
-    fun existsByUsername(username: String): Boolean
+    fun findByUsernameOrEmailAddress(username: String, emailAddress: String): User?
+    fun existsByUsernameOrEmailAddress(username: String, emailAddress: String): Boolean
 }
 
 interface RefreshTokenRepository : JpaRepository<RefreshToken, UUID> {

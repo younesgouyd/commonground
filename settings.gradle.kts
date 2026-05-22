@@ -120,6 +120,7 @@ dependencyResolutionManagement {
             library("ktor.client.engine", "io.ktor", "ktor-client-cio").version(versions.ktor)
             library("ktor.client.logging", "io.ktor", "ktor-client-logging").version(versions.ktor)
             library("ktor.client.contentNegotiation", "io.ktor", "ktor-client-content-negotiation").version(versions.ktor)
+            library("ktor.client.auth", "io.ktor", "ktor-client-auth").version(versions.ktor)
 
             library("android.coreKtx", "androidx.core", "core-ktx").version(versions.android.coreKtx)
             library("android.appcompat", "androidx.appcompat", "appcompat").version(versions.android.appcompat)

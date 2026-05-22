@@ -61,11 +61,11 @@
         <appender-ref ref="STDOUT" />
         <appender-ref ref="SPRING" />
     </logger>
-    <logger name="org.hibernate" level="TRACE" additivity="false">
+    <logger name="org.hibernate" level="DEBUG" additivity="false">
         <appender-ref ref="STDOUT" />
         <appender-ref ref="HIBERNATE" />
     </logger>
-    <root level="INFO" >
+    <root level="DEBUG" >
         <appender-ref ref="STDOUT" />
         <appender-ref ref="OTHER" />
     </root>

@@ -48,11 +48,11 @@
         <appender-ref ref="LOGCAT" />
         <appender-ref ref="MAIN" />
     </logger>
-    <logger name="io.ktor" level="TRACE" additivity="false">
+    <logger name="io.ktor" level="DEBUG" additivity="false">
         <appender-ref ref="LOGCAT" />
         <appender-ref ref="KTOR" />
     </logger>
-    <root level="INFO" >
+    <root level="DEBUG" >
         <appender-ref ref="LOGCAT" />
         <appender-ref ref="OTHER" />
     </root>

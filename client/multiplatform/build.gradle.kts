@@ -35,6 +35,7 @@ kotlin {
             implementation(libs.ktor.client.engine)
             implementation(libs.ktor.client.logging)
             implementation(libs.ktor.client.contentNegotiation)
+            implementation(libs.ktor.client.auth)
         }
         jvmMain.dependencies {
             implementation(libs.sqlite.jvm)

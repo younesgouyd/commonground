@@ -2,8 +2,8 @@ package com.commonground.client.multiplatform.ui.destinations.signup
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import io.github.oshai.kotlinlogging.KotlinLogging
-import kotlinx.coroutines.delay
+import com.commonground.client.multiplatform.data.repositories.AuthRepo
+import com.commonground.core.models.SignUpResult
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
@@ -23,17 +23,15 @@ data class SignUpState(
     val generalError: String? = null
 ) {
     val canSubmit: Boolean
-        get() = email.isNotBlank() &&
-                username.isNotBlank() &&
+        get() = username.isNotBlank() &&
                 password.isNotBlank() &&
                 confirmPassword.isNotBlank()
 }
 
 class SignUpViewModel(
+    private val authRepo: AuthRepo,
     private val onSignUpSuccess: () -> Unit
 ) : ViewModel() {
-    private val logger = KotlinLogging.logger {}
-
     private val _state = MutableStateFlow(SignUpState())
     val state = _state.asStateFlow()
 
@@ -56,7 +54,7 @@ class SignUpViewModel(
         val s = _state.value
         if (s.isSubmitting) return
 
-        val emailErr = if (!EMAIL_REGEX.matches(s.email.trim())) "Enter a valid email" else null
+        val emailErr = if (s.email.isNotBlank() && !EMAIL_REGEX.matches(s.email.trim())) "Enter a valid email" else null
         val userErr = when {
             s.username.length < 3 -> "Username must be at least 3 characters"
             !USERNAME_REGEX.matches(s.username) ->
@@ -85,18 +83,31 @@ class SignUpViewModel(
 
         _state.update { it.copy(isSubmitting = true, generalError = null) }
         viewModelScope.launch {
-            delay(800)
-
-            if (s.username.equals("taken", ignoreCase = true)) {
-                logger.info { "Simulated signup conflict for ${s.username}" }
-                _state.update {
-                    it.copy(isSubmitting = false, usernameError = "Username is already taken")
+            val errors = authRepo.signUp(email = s.email, username = s.username, password = s.password)
+            if (errors.isEmpty()) {
+                onSignUpSuccess()
+            } else {
+                var emailErr: String? = null
+                var userErr: String? = null
+                var pwErr: String? = null
+                for (error in errors) {
+                    when (error) {
+                        SignUpResult.Error.InvalidEmailAddress -> emailErr = "Invalid email address"
+                        SignUpResult.Error.InvalidUsername -> userErr = "Username must be at least 3 characters. Use only letters, numbers, dots, dashes, and underscores"
+                        SignUpResult.Error.InvalidPassword -> pwErr = "Password must be at least 8 characters, include at least one number, include at least one letter"
+                        SignUpResult.Error.UsernameOrEmailTaken -> userErr = "Username or email address already taken"
+                    }
                 }
-                return@launch
+                if (emailErr != null || userErr != null || pwErr != null) {
+                    _state.update {
+                        it.copy(
+                            emailError = emailErr,
+                            usernameError = userErr,
+                            passwordError = pwErr
+                        )
+                    }
+                }
             }
-
-            logger.info { "Hardcoded signup success for ${s.username}" }
-            onSignUpSuccess()
         }
     }
 }

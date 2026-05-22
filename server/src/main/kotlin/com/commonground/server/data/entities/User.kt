@@ -9,11 +9,17 @@ import java.util.*
 class User(
     @Id
     val id: UUID = UUID.randomUUID(),
+
+    @Column(unique = true, nullable = false)
     val username: String,
+
     val password: String,
+
+    @Column(unique = true)
+    val emailAddress: String? = null,
+
     val displayName: String? = null,
     val bio: String? = null,
-    val emailAddress: String? = null,
     val profilePic: ImageUrl? = null,
 
     @OneToMany(mappedBy = "creator", cascade = [CascadeType.ALL])

@@ -7,6 +7,8 @@ import com.commonground.client.multiplatform.data.repositories.UserRepo
 import io.ktor.client.*
 import io.ktor.client.engine.cio.*
 import io.ktor.client.plugins.*
+import io.ktor.client.plugins.auth.*
+import io.ktor.client.plugins.auth.providers.*
 import io.ktor.client.plugins.contentnegotiation.*
 import io.ktor.client.plugins.logging.*
 import io.ktor.client.plugins.sse.*
@@ -14,7 +16,16 @@ import io.ktor.http.*
 import io.ktor.serialization.kotlinx.json.*
 import kotlinx.serialization.json.Json
 
-class RepoStore {
+class RepoStore(
+    platformFileStorage: PlatformFileStorage
+) {
+    companion object {
+        private const val SERVER_HOST = "localhost" // TODO
+        private const val SERVER_PORT = 8080 // TODO
+    }
+
+    val authRepo = AuthRepo(platformFileStorage, SERVER_HOST, SERVER_PORT)
+
     private val client = HttpClient(CIO) {
         install(Logging) { level = LogLevel.ALL }
         install(ContentNegotiation) { json(Json) }
@@ -23,16 +34,32 @@ class RepoStore {
             this.requestTimeoutMillis = 30*60*1000 // TODO
         }
         defaultRequest {
+            contentType(ContentType.Application.Json)
             url {
-                protocol = URLProtocol.HTTPS
-                host = "api.commonground.com" // TODO
-                path("v1/")
+                protocol = URLProtocol.HTTP
+                host = SERVER_HOST
+                port = SERVER_PORT
+                path("api/v1/")
+            }
+        }
+        install(Auth) {
+            bearer {
+                loadTokens {
+                    authRepo.loadTokens()?.let {
+                        BearerTokens(it.accessToken, it.refreshToken)
+                    }
+                }
+                refreshTokens {
+                    authRepo.refreshToken()?.let {
+                        BearerTokens(it.accessToken, it.refreshToken)
+                    }
+                }
+                sendWithoutRequest { request -> request.url.host == SERVER_HOST }
             }
         }
     }
 
     val eventRepo = EventRepo(client)
     val userRepo = UserRepo(client)
-    lateinit var authRepo : AuthRepo
     lateinit var categoryRepo : CategoryRepo
 }

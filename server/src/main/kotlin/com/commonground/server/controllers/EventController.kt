@@ -15,7 +15,7 @@ class EventController(
 ) {
     @GetMapping // shortcut to @RequestMapping(method = [RequestMethod.GET])
     fun events(): List<Event> {
-        return repo.findAll().map { it.toModel() }.toList()
+        return repo.findAll().map { it.toModel() }
     }
 
     @GetMapping("/{id}")

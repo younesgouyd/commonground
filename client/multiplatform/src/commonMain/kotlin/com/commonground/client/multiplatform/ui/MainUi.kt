@@ -42,7 +42,19 @@ import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun MainUi(repoStore: RepoStore, startDestination: Route = Route.Login) {
+fun MainUi(repoStore: RepoStore) {
+    val viewModel = viewModel { MainUiViewModel(repoStore.authRepo) }
+
+    val startDestination by viewModel.startDestination
+    if (startDestination == null) {
+        Box(
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = Alignment.Center
+        ) {
+            CircularProgressIndicator()
+        }
+        return
+    }
     val navController = rememberNavController()
     val drawerState = rememberDrawerState(DrawerValue.Closed)
     val scope = rememberCoroutineScope()
@@ -51,13 +63,13 @@ fun MainUi(repoStore: RepoStore, startDestination: Route = Route.Login) {
     val currentDestination = backStackEntry?.destination
     val isAuthFlow = currentDestination?.let {
         it.hasRoute<Route.Login>() ||
-                it.hasRoute<Route.SignUp>() ||
-                it.hasRoute<Route.Onboarding>()
+        it.hasRoute<Route.SignUp>() ||
+        it.hasRoute<Route.Onboarding>()
     } ?: false
 
     MaterialTheme(colorScheme = if (isSystemInDarkTheme()) darkColorScheme() else lightColorScheme()) {
         if (isAuthFlow) {
-            NavGraph(navController, repoStore, startDestination)
+            NavGraph(navController, repoStore, startDestination!!)
         } else {
             Scaffold(
                 topBar = {
@@ -72,7 +84,7 @@ fun MainUi(repoStore: RepoStore, startDestination: Route = Route.Login) {
                         modifier = Modifier.padding(padding).fillMaxSize(),
                         drawerState = drawerState,
                         drawerContent = { DrawerSheet { navController.navigate(it.toRoute()) } },
-                        content = { NavGraph(navController, repoStore, startDestination) }
+                        content = { NavGraph(navController, repoStore, startDestination!!) }
                     )
                 }
             )
@@ -81,14 +93,14 @@ fun MainUi(repoStore: RepoStore, startDestination: Route = Route.Login) {
 }
 
 @Composable
-private fun NavGraph( navController: NavHostController, repoStore: RepoStore, startDestination: Route
-) {
+private fun NavGraph( navController: NavHostController, repoStore: RepoStore, startDestination: Route) {
     NavHost(navController = navController, startDestination = startDestination) {
 
         composable<Route.Login> {
             Login(
                 viewModel = viewModel {
                     LoginViewModel(
+                        authRepo = repoStore.authRepo,
                         onLoginSuccess = {
                             navController.navigate(Route.Home) {
                                 popUpTo(Route.Login) { inclusive = true }
@@ -106,9 +118,10 @@ private fun NavGraph( navController: NavHostController, repoStore: RepoStore, st
             SignUp(
                 viewModel = viewModel {
                     SignUpViewModel(
+                        authRepo = repoStore.authRepo,
                         onSignUpSuccess = {
                             navController.navigate(Route.Onboarding) {
-                                popUpTo(Route.Login) { inclusive = true }
+                                popUpTo(Route.SignUp) { inclusive = true }
                             }
                         }
                     )

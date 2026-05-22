@@ -13,9 +13,7 @@ import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
@@ -147,6 +145,8 @@ private fun LoginForm(
     vm: LoginViewModel,
     navActions: LoginNavActions
 ) {
+    var isPasswordVisible by remember { mutableStateOf(false) }
+
     Column(
         modifier = modifier,
         verticalArrangement = Arrangement.spacedBy(16.dp)
@@ -159,9 +159,9 @@ private fun LoginForm(
 
         OutlinedTextField(
             modifier = Modifier.fillMaxWidth(),
-            value = state.email,
-            onValueChange = vm::onEmailChange,
-            label = { Text("Email") },
+            value = state.login,
+            onValueChange = vm::onUsernameEmailChange,
+            label = { Text("Username/Email Address") },
             leadingIcon = { Icon(Icons.Default.Email, null) },
             singleLine = true,
             isError = state.emailError != null,
@@ -180,11 +180,11 @@ private fun LoginForm(
             label = { Text("Password") },
             leadingIcon = { Icon(Icons.Default.Lock, null) },
             trailingIcon = {
-                IconButton(onClick = vm::togglePasswordVisibility) {
+                IconButton(onClick = { isPasswordVisible = !isPasswordVisible }) {
                     Icon(
-                        imageVector = if (state.isPasswordVisible) Icons.Default.VisibilityOff
+                        imageVector = if (isPasswordVisible) Icons.Default.VisibilityOff
                         else Icons.Default.Visibility,
-                        contentDescription = if (state.isPasswordVisible) "Hide password"
+                        contentDescription = if (isPasswordVisible) "Hide password"
                         else "Show password"
                     )
                 }
@@ -192,7 +192,7 @@ private fun LoginForm(
             singleLine = true,
             isError = state.passwordError != null,
             supportingText = state.passwordError?.let { { Text(it) } },
-            visualTransformation = if (state.isPasswordVisible) VisualTransformation.None
+            visualTransformation = if (isPasswordVisible) VisualTransformation.None
             else PasswordVisualTransformation(),
             keyboardOptions = KeyboardOptions(
                 keyboardType = KeyboardType.Password,

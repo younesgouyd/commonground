@@ -1,5 +1,5 @@
 <configuration>
-    <property name="LOG_DIR" value="${user.home}/commonground_client/logs" />
+    <property name="LOG_DIR" value="${user.home}/commonground/logs" />
     <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
         <encoder>
             <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS, UTC} | %thread | %-5level| %logger | %msg%n</pattern>
@@ -45,11 +45,11 @@
         <appender-ref ref="STDOUT" />
         <appender-ref ref="MAIN" />
     </logger>
-    <logger name="io.ktor" level="TRACE" additivity="false">
+    <logger name="io.ktor" level="DEBUG" additivity="false">
         <appender-ref ref="STDOUT" />
         <appender-ref ref="KTOR" />
     </logger>
-    <root level="INFO" >
+    <root level="DEBUG" >
         <appender-ref ref="STDOUT" />
         <appender-ref ref="OTHER" />
     </root>

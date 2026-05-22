@@ -4,8 +4,11 @@ import com.commonground.server.data.EventRepository
 import com.commonground.server.data.UserRepository
 import com.commonground.server.data.entities.Event
 import com.commonground.server.data.entities.User
+import org.springframework.boot.CommandLineRunner
 import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.boot.runApplication
+import org.springframework.context.annotation.Bean
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 
@@ -13,11 +16,10 @@ import org.springframework.transaction.annotation.Transactional
 class CommonGroundApplication {
 
     // FOR TESTING
-//    @Bean
-//    fun runner(dataInitializer: DataInitializer) = CommandLineRunner {
-//        dataInitializer.populateTestData()
-//    }
-
+    @Bean
+    fun runner(dataInitializer: DataInitializer) = CommandLineRunner {
+        dataInitializer.populateTestData()
+    }
 }
 
 fun main(args: Array<String>) {
@@ -33,10 +35,11 @@ class DataInitializer(
 ) {
     @Transactional
     fun populateTestData() {
+        val passwordEncoder = BCryptPasswordEncoder()
         // 1. Create a Creator
         val creator = User(
             username = "neo",
-            password = "1234",
+            password = passwordEncoder.encode("12345678")!!,
             displayName = "Neo",
             bio = "Developing CommonGround",
             emailAddress = "neo@example.com",
@@ -46,7 +49,7 @@ class DataInitializer(
         // 2. Create an Attendee
         val attendee = User(
             username = "tester_alpha",
-            password = "1234",
+            password = passwordEncoder.encode("12345678")!!,
             displayName = "Alpha Tester",
             bio = "I love events",
             emailAddress = "alpha@example.com",

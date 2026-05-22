@@ -1,5 +1,6 @@
 package com.commonground.server.services
 
+import com.commonground.core.models.SignUpResult
 import com.commonground.core.models.TokenPair
 import com.commonground.server.data.RefreshTokenRepository
 import com.commonground.server.data.UserRepository
@@ -18,24 +19,45 @@ class AuthService(
     private val userRepository: UserRepository,
     private val refreshTokenRepository: RefreshTokenRepository
 ) {
+    private val EMAIL_REGEX = Regex("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$")
+    private val USERNAME_REGEX = Regex("^[A-Za-z0-9._-]+$")
+
     @Transactional
-    fun signUp(username: String, password: String): TokenPair? {
-        if (userRepository.existsByUsername(username)) {
-            return null
+    fun signUp(email: String, username: String, password: String): SignUpResult {
+        val structuralErrors = buildList {
+            if (email.isNotBlank() && !EMAIL_REGEX.matches(email.trim())) { add(SignUpResult.Error.InvalidEmailAddress) }
+            if (username.length < 3 || !USERNAME_REGEX.matches(username)) { add(SignUpResult.Error.InvalidUsername) }
+            if (password.length < 8 || !password.any { it.isDigit() } || !password.any { it.isLetter() }) { add(SignUpResult.Error.InvalidPassword) }
         }
+
+        if (structuralErrors.isNotEmpty()) {
+            return SignUpResult(structuralErrors, null)
+        }
+
+        val databaseErrors = buildList {
+            if (userRepository.existsByUsernameOrEmailAddress(username, email)) {
+                add(SignUpResult.Error.UsernameOrEmailTaken)
+            }
+        }
+
+        if (databaseErrors.isNotEmpty()) {
+            return SignUpResult(databaseErrors, null)
+        }
+
         val user = User(
+            emailAddress = email,
             username = username,
             password = passwordEncoder.encode(password)!!
         )
         userRepository.save(user)
         val token = jwtService.generateTokenPair(user.id.toString())
         saveRefreshToken(token.refreshToken, user.id)
-        return token
+        return SignUpResult(emptyList(), token)
     }
 
     @Transactional
-    fun login(username: String, password: String): TokenPair? {
-        val user = userRepository.findByUsername(username) ?: return null
+    fun login(login: String, password: String): TokenPair? {
+        val user = userRepository.findByUsernameOrEmailAddress(login, login) ?: return null
         if (!passwordEncoder.matches(password, user.password)) {
             return null
         }
