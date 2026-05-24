@@ -4,12 +4,15 @@ import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material.icons.automirrored.filled.Logout
+import androidx.compose.material.icons.filled.AccountCircle
+import androidx.compose.material.icons.filled.Groups
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavDestination.Companion.hasRoute
 import androidx.navigation.NavHostController
@@ -37,7 +40,6 @@ import com.commonground.client.multiplatform.ui.destinations.signup.SignUpViewMo
 import com.commonground.client.multiplatform.ui.destinations.user.User
 import com.commonground.client.multiplatform.ui.destinations.user.UserNavActions
 import com.commonground.client.multiplatform.ui.destinations.user.UserViewModel
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -56,8 +58,6 @@ fun MainUi(repoStore: RepoStore) {
         return
     }
     val navController = rememberNavController()
-    val drawerState = rememberDrawerState(DrawerValue.Closed)
-    val scope = rememberCoroutineScope()
 
     val backStackEntry by navController.currentBackStackEntryAsState()
     val currentDestination = backStackEntry?.destination
@@ -66,6 +66,7 @@ fun MainUi(repoStore: RepoStore) {
         it.hasRoute<Route.SignUp>() ||
         it.hasRoute<Route.Onboarding>()
     } ?: false
+    val inHome = currentDestination?.hasRoute<Route.Home>() == true
 
     MaterialTheme(colorScheme = if (isSystemInDarkTheme()) darkColorScheme() else lightColorScheme()) {
         if (isAuthFlow) {
@@ -73,19 +74,24 @@ fun MainUi(repoStore: RepoStore) {
         } else {
             Scaffold(
                 topBar = {
-                    CenterAlignedTopAppBar(
-                        modifier = Modifier.fillMaxWidth(),
-                        navigationIcon = { NavIcon(navController, scope, drawerState) },
-                        title = { Text("CommonGround") }
-                    )
+                    if (inHome) {
+                        HomeTopBar(repoStore, navController)
+                    } else {
+                        CenterAlignedTopAppBar(
+                            modifier = Modifier.fillMaxWidth(),
+                            navigationIcon = {
+                                IconButton(onClick = { navController.popBackStack() }) {
+                                    Icon(Icons.AutoMirrored.Filled.ArrowBack, null)
+                                }
+                            },
+                            title = { Text("CommonGround") }
+                        )
+                    }
                 },
                 content = { padding ->
-                    ModalNavigationDrawer(
-                        modifier = Modifier.padding(padding).fillMaxSize(),
-                        drawerState = drawerState,
-                        drawerContent = { DrawerSheet { navController.navigate(it.toRoute()) } },
-                        content = { NavGraph(navController, repoStore, startDestination!!) }
-                    )
+                    Box(modifier = Modifier.padding(padding).fillMaxSize()) {
+                        NavGraph(navController, repoStore, startDestination!!)
+                    }
                 }
             )
         }
@@ -180,63 +186,64 @@ private fun NavGraph( navController: NavHostController, repoStore: RepoStore, st
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun NavIcon(
-    navController: NavHostController,
-    scope: CoroutineScope,
-    drawerState: DrawerState
-) {
-    val navBackStackEntry by navController.currentBackStackEntryAsState()
-    val currentDestination = navBackStackEntry?.destination
-    val inHome = currentDestination?.hasRoute<Route.Home>() == true && navController.previousBackStackEntry == null
-    if (inHome) {
-        IconButton(
-            onClick = { scope.launch { if (drawerState.isClosed) drawerState.open() else drawerState.close() } },
-            content = { Icon(if (drawerState.isClosed) Icons.Default.Menu else Icons.Default.Close, null) }
-        )
-    } else {
-        IconButton(
-            onClick = { navController.popBackStack() },
-            content = { Icon(Icons.AutoMirrored.Filled.ArrowBack, null) }
-        )
-    }
-}
+private fun HomeTopBar(repoStore: RepoStore, navController: NavHostController) {
+    var menuExpanded by remember { mutableStateOf(false) }
+    val scope = rememberCoroutineScope()
 
-@Composable
-private fun DrawerSheet(
-    navigate: (NavigationDrawerItem) -> Unit
-) {
-    var selectedNavigationDrawerItem by remember { mutableStateOf(NavigationDrawerItem.Home) }
-
-    ModalDrawerSheet {
-        Column(
-            modifier = Modifier.fillMaxWidth().padding(),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Top
-        ) {
-            NavigationDrawerItem.entries.forEach {
-                NavigationDrawerItem(
-                    label = { Text(it.name) },
-                    selected = it == selectedNavigationDrawerItem,
-                    onClick = { selectedNavigationDrawerItem =  it; navigate(it) }
-                )
+    CenterAlignedTopAppBar(
+        modifier = Modifier.fillMaxWidth(),
+        navigationIcon = {
+            Icon(
+                Icons.Default.Groups,
+                contentDescription = "CommonGround",
+                modifier = Modifier.padding(start = 8.dp),
+                tint = MaterialTheme.colorScheme.primary
+            )
+        },
+        title = { Text("CommonGround") },
+        actions = {
+            Box {
+                IconButton(onClick = { menuExpanded = true }) {
+                    Icon(Icons.Default.AccountCircle, contentDescription = "Profile")
+                }
+                DropdownMenu(
+                    expanded = menuExpanded,
+                    onDismissRequest = { menuExpanded = false }
+                ) {
+                    DropdownMenuItem(
+                        text = { Text("Profile") },
+                        leadingIcon = { Icon(Icons.Default.AccountCircle, null) },
+                        onClick = {
+                            menuExpanded = false
+                            navController.navigate(Route.Me)
+                        }
+                    )
+                    DropdownMenuItem(
+                        text = { Text("Settings") },
+                        leadingIcon = { Icon(Icons.Default.Settings, null) },
+                        onClick = {
+                            menuExpanded = false
+                            navController.navigate(Route.Settings)
+                        }
+                    )
+                    HorizontalDivider()
+                    DropdownMenuItem(
+                        text = { Text("Logout") },
+                        leadingIcon = { Icon(Icons.AutoMirrored.Filled.Logout, null) },
+                        onClick = {
+                            menuExpanded = false
+                            scope.launch {
+                                repoStore.authRepo.logout()
+                                navController.navigate(Route.Login) {
+                                    popUpTo(0) { inclusive = true }
+                                }
+                            }
+                        }
+                    )
+                }
             }
         }
-    }
-}
-
-private enum class NavigationDrawerItem {
-    Me,
-    Home,
-    Friends,
-    Settings
-}
-
-private fun NavigationDrawerItem.toRoute(): Route {
-    return when (this) {
-        NavigationDrawerItem.Me -> Route.Me
-        NavigationDrawerItem.Home -> Route.Home
-        NavigationDrawerItem.Friends -> Route.Friends
-        NavigationDrawerItem.Settings -> Route.Settings
-    }
+    )
 }
