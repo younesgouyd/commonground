@@ -37,7 +37,7 @@ class AuthRepo(
 
     suspend fun signUp(email: String, username: String, password: String): List<SignUpResult.Error> {
         val result = client.post("auth/signup") {
-            setBody(SignUpRequest(email, username, password))
+            setBody(SignUpRequest(email.trim(), username.trim(), password))
         }.body<SignUpResult>()
         result.token?.let { saveTokens(it) }
         return result.errors
@@ -46,7 +46,7 @@ class AuthRepo(
     suspend fun login(login: String, password: String): Boolean {
         val token = client.post("auth/login") {
             setBody(LoginRequest(login, password))
-        }.body<TokenPair? /* TODO */>()
+        }.body<TokenPair?>()
         if (token != null) {
             saveTokens(token)
             return true
@@ -58,7 +58,7 @@ class AuthRepo(
         val refresh = loadTokens()?.refreshToken // TODO: check null
         val token = client.post("auth/refresh") {
             setBody(refresh)
-        }.body<TokenPair? /* TODO */>()
+        }.body<TokenPair?>()
         if (token != null) {
             clearTokens()
             saveTokens(token)
@@ -80,12 +80,12 @@ class AuthRepo(
         }
     }
 
+    suspend fun clearTokens() {
+        storage.clear()
+    }
+
     private suspend fun saveTokens(tokens: TokenPair) {
         val json = Json.encodeToString(tokens)
         storage.writeText(json)
-    }
-
-    private suspend fun clearTokens() {
-        storage.clear()
     }
 }

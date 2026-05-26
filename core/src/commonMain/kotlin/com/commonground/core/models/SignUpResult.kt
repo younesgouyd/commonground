@@ -11,6 +11,7 @@ class SignUpResult(
         InvalidEmailAddress,
         InvalidUsername,
         InvalidPassword,
-        UsernameOrEmailTaken
+        UsernameTaken,
+        EmailTaken
     }
 }

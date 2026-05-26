@@ -10,7 +10,8 @@ interface EventRepository : JpaRepository<Event, UUID>
 
 interface UserRepository : JpaRepository<User, UUID> {
     fun findByUsernameOrEmailAddress(username: String, emailAddress: String): User?
-    fun existsByUsernameOrEmailAddress(username: String, emailAddress: String): Boolean
+    fun existsByUsername(username: String): Boolean
+    fun existsByEmailAddress(emailAddress: String): Boolean
 }
 
 interface RefreshTokenRepository : JpaRepository<RefreshToken, UUID> {

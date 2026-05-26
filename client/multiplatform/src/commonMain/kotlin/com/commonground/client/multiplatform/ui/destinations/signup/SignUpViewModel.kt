@@ -95,7 +95,8 @@ class SignUpViewModel(
                         SignUpResult.Error.InvalidEmailAddress -> emailErr = "Invalid email address"
                         SignUpResult.Error.InvalidUsername -> userErr = "Username must be at least 3 characters. Use only letters, numbers, dots, dashes, and underscores"
                         SignUpResult.Error.InvalidPassword -> pwErr = "Password must be at least 8 characters, include at least one number, include at least one letter"
-                        SignUpResult.Error.UsernameOrEmailTaken -> userErr = "Username or email address already taken"
+                        SignUpResult.Error.UsernameTaken -> userErr = "The username already exists; please choose another one."
+                        SignUpResult.Error.EmailTaken -> emailErr = "You already have an account associated with this email address."
                     }
                 }
                 if (emailErr != null || userErr != null || pwErr != null) {

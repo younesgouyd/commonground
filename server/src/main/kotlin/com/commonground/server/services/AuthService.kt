@@ -19,11 +19,13 @@ class AuthService(
     private val userRepository: UserRepository,
     private val refreshTokenRepository: RefreshTokenRepository
 ) {
-    private val EMAIL_REGEX = Regex("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$")
-    private val USERNAME_REGEX = Regex("^[A-Za-z0-9._-]+$")
+    private val EMAIL_REGEX by lazy { Regex("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$") }
+    private val USERNAME_REGEX by lazy { Regex("^[A-Za-z0-9._-]+$") }
 
     @Transactional
     fun signUp(email: String, username: String, password: String): SignUpResult {
+        val email = email.trim()
+        val username = username.trim()
         val structuralErrors = buildList {
             if (email.isNotBlank() && !EMAIL_REGEX.matches(email.trim())) { add(SignUpResult.Error.InvalidEmailAddress) }
             if (username.length < 3 || !USERNAME_REGEX.matches(username)) { add(SignUpResult.Error.InvalidUsername) }
@@ -35,8 +37,11 @@ class AuthService(
         }
 
         val databaseErrors = buildList {
-            if (userRepository.existsByUsernameOrEmailAddress(username, email)) {
-                add(SignUpResult.Error.UsernameOrEmailTaken)
+            if (userRepository.existsByUsername(username)) {
+                add(SignUpResult.Error.UsernameTaken)
+            }
+            if (email.isNotBlank() && userRepository.existsByEmailAddress(email)) {
+                add(SignUpResult.Error.EmailTaken)
             }
         }
 
@@ -45,9 +50,9 @@ class AuthService(
         }
 
         val user = User(
-            emailAddress = email,
             username = username,
-            password = passwordEncoder.encode(password)!!
+            password = passwordEncoder.encode(password)!!,
+            emailAddress = email
         )
         userRepository.save(user)
         val token = jwtService.generateTokenPair(user.id.toString())

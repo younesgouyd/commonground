@@ -4,10 +4,8 @@ import com.commonground.server.data.EventRepository
 import com.commonground.server.data.UserRepository
 import com.commonground.server.data.entities.Event
 import com.commonground.server.data.entities.User
-import org.springframework.boot.CommandLineRunner
 import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.boot.runApplication
-import org.springframework.context.annotation.Bean
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -16,10 +14,10 @@ import org.springframework.transaction.annotation.Transactional
 class CommonGroundApplication {
 
     // FOR TESTING
-    @Bean
-    fun runner(dataInitializer: DataInitializer) = CommandLineRunner {
-        dataInitializer.populateTestData()
-    }
+//    @Bean
+//    fun runner(dataInitializer: DataInitializer) = CommandLineRunner {
+//        dataInitializer.populateTestData()
+//    }
 }
 
 fun main(args: Array<String>) {

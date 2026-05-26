@@ -1,5 +1,6 @@
-- search about location data and maps
-
+- implement logout in backend.
+- handle refresh token expiration in the client.
+- fix login.
 
 Tarik:
 
@@ -16,3 +17,6 @@ Tarik:
         [x] - UI
         [x] - viewModel
         [] - repository
+
+done:
+- search about location data and maps.

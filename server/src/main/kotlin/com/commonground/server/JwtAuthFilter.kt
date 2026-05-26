@@ -18,17 +18,35 @@ class JwtAuthFilter(
         response: HttpServletResponse,
         filterChain: FilterChain
     ) {
-        val authHeader = request.getHeader("Authorization")
-        if (authHeader != null && authHeader.startsWith("Bearer ")) {
-            val token = authHeader.removePrefix("Bearer ")
-            if (jwtService.validateAccessToken(token)) {
-                val userId = jwtService.getUserIdFromAccessToken(token)
-                if (userId != null && SecurityContextHolder.getContext().authentication == null) {
-                    val authToken = UsernamePasswordAuthenticationToken(userId, null, emptyList())
-                    SecurityContextHolder.getContext().authentication = authToken
-                }
-            }
+        if (SecurityContextHolder.getContext().authentication != null) {
+            SecurityContextHolder.clearContext()
+            response.status = HttpServletResponse.SC_INTERNAL_SERVER_ERROR
+            return
         }
+        val authHeader = request.getHeader("Authorization")
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            response.status = HttpServletResponse.SC_UNAUTHORIZED
+            response.writer.write("No token provided")
+            return
+        }
+        val token = authHeader.removePrefix("Bearer ")
+        if (!jwtService.validateAccessToken(token)) {
+            response.status = HttpServletResponse.SC_UNAUTHORIZED
+            response.writer.write("Token expired or invalid")
+            return
+        }
+        val userId = jwtService.getUserIdFromAccessToken(token)
+        if (userId == null) {
+            response.status = HttpServletResponse.SC_INTERNAL_SERVER_ERROR
+            return
+        }
+        val authToken = UsernamePasswordAuthenticationToken(userId, null, emptyList())
+        SecurityContextHolder.getContext().authentication = authToken
+
         filterChain.doFilter(request, response)
+    }
+
+    override fun shouldNotFilter(request: HttpServletRequest): Boolean {
+        return request.requestURI.startsWith("/api/v1/auth/")
     }
 }
