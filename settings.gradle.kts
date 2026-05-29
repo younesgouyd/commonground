@@ -128,7 +128,7 @@ dependencyResolutionManagement {
             library("android.activityCompose", "androidx.activity", "activity-compose").version(versions.android.activity)
 
             library("spring.web", "org.springframework.boot", "spring-boot-starter-web").withoutVersion()
-            library("spring.validation", "org.springframework.boot", "spring-boot-starter-validation").withoutVersion()
+            library("spring.serialization", "org.springframework.boot", "spring-boot-starter-kotlinx-serialization-json").withoutVersion()
             library("spring.jpa", "org.springframework.boot", "spring-boot-starter-data-jpa").withoutVersion()
             library("spring.security", "org.springframework.boot", "spring-boot-starter-security").withoutVersion()
             library("postgresqlDriver", "org.postgresql", "postgresql").withoutVersion()

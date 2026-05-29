@@ -24,7 +24,7 @@ dependencies {
     implementation(libs.kotlin.reflect)
 
     implementation(libs.spring.web)
-    implementation(libs.spring.validation)
+    implementation(libs.spring.serialization)
     implementation(libs.spring.jpa)
     implementation(libs.spring.security)
     runtimeOnly(libs.postgresqlDriver)

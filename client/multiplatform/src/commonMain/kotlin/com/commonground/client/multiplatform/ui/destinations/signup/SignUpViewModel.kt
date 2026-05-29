@@ -83,31 +83,39 @@ class SignUpViewModel(
 
         _state.update { it.copy(isSubmitting = true, generalError = null) }
         viewModelScope.launch {
-            val errors = authRepo.signUp(email = s.email, username = s.username, password = s.password)
-            if (errors.isEmpty()) {
-                onSignUpSuccess()
-            } else {
-                var emailErr: String? = null
-                var userErr: String? = null
-                var pwErr: String? = null
-                for (error in errors) {
-                    when (error) {
-                        SignUpResult.Error.InvalidEmailAddress -> emailErr = "Invalid email address"
-                        SignUpResult.Error.InvalidUsername -> userErr = "Username must be at least 3 characters. Use only letters, numbers, dots, dashes, and underscores"
-                        SignUpResult.Error.InvalidPassword -> pwErr = "Password must be at least 8 characters, include at least one number, include at least one letter"
-                        SignUpResult.Error.UsernameTaken -> userErr = "The username already exists; please choose another one."
-                        SignUpResult.Error.EmailTaken -> emailErr = "You already have an account associated with this email address."
+            try {
+                val result = authRepo.signUp(email = s.email, username = s.username, password = s.password)
+                when (result) {
+                    is SignUpResult.Success -> {
+                        onSignUpSuccess()
+                        _state.update {it.copy(isSubmitting = false, generalError = null) }
+                    }
+                    is SignUpResult.Failure -> {
+                        var emailErr: String? = null
+                        var userErr: String? = null
+                        var pwErr: String? = null
+                        for (error in result.errors) {
+                            when (error) {
+                                SignUpResult.Failure.Error.InvalidEmailAddress -> emailErr = "Invalid email address"
+                                SignUpResult.Failure.Error.InvalidUsername -> userErr = "Username must be at least 3 characters. Use only letters, numbers, dots, dashes, and underscores"
+                                SignUpResult.Failure.Error.InvalidPassword -> pwErr = "Password must be at least 8 characters, include at least one number, include at least one letter"
+                                SignUpResult.Failure.Error.UsernameTaken -> userErr = "The username already exists; please choose another one."
+                                SignUpResult.Failure.Error.EmailTaken -> emailErr = "You already have an account associated with this email address."
+                            }
+                        }
+                        if (emailErr != null || userErr != null || pwErr != null) {
+                            _state.update {
+                                it.copy(
+                                    emailError = emailErr,
+                                    usernameError = userErr,
+                                    passwordError = pwErr
+                                )
+                            }
+                        }
                     }
                 }
-                if (emailErr != null || userErr != null || pwErr != null) {
-                    _state.update {
-                        it.copy(
-                            emailError = emailErr,
-                            usernameError = userErr,
-                            passwordError = pwErr
-                        )
-                    }
-                }
+            } catch (_: Exception) {
+                _state.update {it.copy(isSubmitting = false, generalError = "Something went wrong.") }
             }
         }
     }

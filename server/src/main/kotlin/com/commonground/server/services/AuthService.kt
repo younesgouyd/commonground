@@ -1,5 +1,6 @@
 package com.commonground.server.services
 
+import com.commonground.core.models.LoginResult
 import com.commonground.core.models.SignUpResult
 import com.commonground.core.models.TokenPair
 import com.commonground.server.data.RefreshTokenRepository
@@ -27,26 +28,26 @@ class AuthService(
         val email = email.trim()
         val username = username.trim()
         val structuralErrors = buildList {
-            if (email.isNotBlank() && !EMAIL_REGEX.matches(email.trim())) { add(SignUpResult.Error.InvalidEmailAddress) }
-            if (username.length < 3 || !USERNAME_REGEX.matches(username)) { add(SignUpResult.Error.InvalidUsername) }
-            if (password.length < 8 || !password.any { it.isDigit() } || !password.any { it.isLetter() }) { add(SignUpResult.Error.InvalidPassword) }
+            if (email.isNotBlank() && !EMAIL_REGEX.matches(email.trim())) { add(SignUpResult.Failure.Error.InvalidEmailAddress) }
+            if (username.length < 3 || !USERNAME_REGEX.matches(username)) { add(SignUpResult.Failure.Error.InvalidUsername) }
+            if (password.length < 8 || !password.any { it.isDigit() } || !password.any { it.isLetter() }) { add(SignUpResult.Failure.Error.InvalidPassword) }
         }
 
         if (structuralErrors.isNotEmpty()) {
-            return SignUpResult(structuralErrors, null)
+            return SignUpResult.Failure(structuralErrors)
         }
 
         val databaseErrors = buildList {
             if (userRepository.existsByUsername(username)) {
-                add(SignUpResult.Error.UsernameTaken)
+                add(SignUpResult.Failure.Error.UsernameTaken)
             }
             if (email.isNotBlank() && userRepository.existsByEmailAddress(email)) {
-                add(SignUpResult.Error.EmailTaken)
+                add(SignUpResult.Failure.Error.EmailTaken)
             }
         }
 
         if (databaseErrors.isNotEmpty()) {
-            return SignUpResult(databaseErrors, null)
+            return SignUpResult.Failure(databaseErrors)
         }
 
         val user = User(
@@ -57,18 +58,18 @@ class AuthService(
         userRepository.save(user)
         val token = jwtService.generateTokenPair(user.id.toString())
         saveRefreshToken(token.refreshToken, user.id)
-        return SignUpResult(emptyList(), token)
+        return SignUpResult.Success(token)
     }
 
     @Transactional
-    fun login(login: String, password: String): TokenPair? {
-        val user = userRepository.findByUsernameOrEmailAddress(login, login) ?: return null
+    fun login(login: String, password: String): LoginResult {
+        val user = userRepository.findByUsernameOrEmailAddress(login, login) ?: return LoginResult.InvalidCredentials
         if (!passwordEncoder.matches(password, user.password)) {
-            return null
+            return LoginResult.InvalidCredentials
         }
-        val token = jwtService.generateTokenPair(user.id.toString())
-        saveRefreshToken(token.refreshToken, user.id)
-        return token
+        val tokens = jwtService.generateTokenPair(user.id.toString())
+        saveRefreshToken(tokens.refreshToken, user.id)
+        return LoginResult.Success(tokens)
     }
 
     @Transactional

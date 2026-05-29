@@ -1,12 +1,8 @@
 package com.commonground.server.controllers
 
-import com.commonground.core.models.LoginRequest
-import com.commonground.core.models.SignUpRequest
-import com.commonground.core.models.SignUpResult
-import com.commonground.core.models.TokenPair
+import com.commonground.core.models.*
 import com.commonground.server.services.AuthService
 import org.springframework.http.HttpStatusCode
-import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
@@ -24,12 +20,8 @@ class AuthController(
     }
 
     @PostMapping("/login")
-    fun login(@RequestBody request: LoginRequest): ResponseEntity<TokenPair> {
-        return authService.login(request.login, request.password)?.let {
-            return ResponseEntity.ok(it)
-        } ?: ResponseEntity
-            .internalServerError() // TODO: return the proper error
-            .build()
+    fun login(@RequestBody request: LoginRequest): LoginResult {
+        return authService.login(request.login, request.password)
     }
 
     @PostMapping("/refresh")

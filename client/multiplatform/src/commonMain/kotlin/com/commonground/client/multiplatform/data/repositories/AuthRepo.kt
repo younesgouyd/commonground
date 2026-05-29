@@ -1,10 +1,8 @@
 package com.commonground.client.multiplatform.data.repositories
 
 import com.commonground.client.multiplatform.data.PlatformFileStorage
-import com.commonground.core.models.LoginRequest
-import com.commonground.core.models.SignUpRequest
-import com.commonground.core.models.SignUpResult
-import com.commonground.core.models.TokenPair
+import com.commonground.core.models.*
+import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.client.*
 import io.ktor.client.call.*
 import io.ktor.client.engine.cio.*
@@ -21,6 +19,8 @@ class AuthRepo(
     serverHost: String,
     serverPort: Int
 ) {
+    val logger = KotlinLogging.logger {  }
+
     private val client = HttpClient(CIO) {
         install(Logging) { level = LogLevel.ALL }
         install(ContentNegotiation) { json(Json) }
@@ -35,23 +35,24 @@ class AuthRepo(
         }
     }
 
-    suspend fun signUp(email: String, username: String, password: String): List<SignUpResult.Error> {
+    suspend fun signUp(email: String, username: String, password: String): SignUpResult {
         val result = client.post("auth/signup") {
             setBody(SignUpRequest(email.trim(), username.trim(), password))
         }.body<SignUpResult>()
-        result.token?.let { saveTokens(it) }
-        return result.errors
+        if (result is SignUpResult.Success) {
+            saveTokens(result.tokens)
+        }
+        return result
     }
 
-    suspend fun login(login: String, password: String): Boolean {
-        val token = client.post("auth/login") {
+    suspend fun login(login: String, password: String): LoginResult {
+        val result = client.post("auth/login") {
             setBody(LoginRequest(login, password))
-        }.body<TokenPair?>()
-        if (token != null) {
-            saveTokens(token)
-            return true
+        }.body<LoginResult>()
+        if (result is LoginResult.Success) {
+            saveTokens(result.tokens)
         }
-        return false
+        return result
     }
 
     suspend fun refreshToken(): TokenPair? {
@@ -76,6 +77,7 @@ class AuthRepo(
         return try {
             Json.decodeFromString<TokenPair>(json)
         } catch (e: Exception) {
+            logger.error(e) { }
             null
         }
     }

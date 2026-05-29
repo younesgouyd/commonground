@@ -1,6 +1,7 @@
 - implement logout in backend.
-- handle refresh token expiration in the client.
-- fix login.
+- handle refresh token expiration.
+- delete expired refresh tokens.
+- implement authorization (permissions, access control...).
 
 Tarik:
 
@@ -19,4 +20,5 @@ Tarik:
         [] - repository
 
 done:
+- fix login.
 - search about location data and maps.

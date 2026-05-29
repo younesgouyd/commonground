@@ -3,6 +3,7 @@ package com.commonground.client.multiplatform.ui.destinations.login
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.commonground.client.multiplatform.data.repositories.AuthRepo
+import com.commonground.core.models.LoginResult
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
@@ -48,13 +49,19 @@ class LoginViewModel(
 
         _state.update { it.copy(isSubmitting = true, generalError = null) }
         viewModelScope.launch {
-            val success = authRepo.login(login = current.login, password = current.password)
-            if (success) {
-                onLoginSuccess()
-            } else {
-                _state.update {
-                    it.copy(isSubmitting = false, generalError = "Invalid email or password")
+            try {
+                val result = authRepo.login(login = current.login, password = current.password)
+                when (result) {
+                    is LoginResult.Success -> {
+                        onLoginSuccess()
+                        _state.update {it.copy(isSubmitting = false, generalError = null) }
+                    }
+                    is LoginResult.InvalidCredentials -> {
+                        _state.update { it.copy(isSubmitting = false, generalError = "Invalid login or password.") }
+                    }
                 }
+            } catch (_: Exception) {
+                _state.update {it.copy(isSubmitting = false, generalError = "Something went wrong.") }
             }
         }
     }

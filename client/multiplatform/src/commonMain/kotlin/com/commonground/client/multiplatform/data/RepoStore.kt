@@ -52,13 +52,10 @@ class RepoStore(
                 refreshTokens {
                     authRepo.refreshToken()?.let {
                         BearerTokens(it.accessToken, it.refreshToken)
+                    } ?: run {
+                        authRepo.clearTokens()
+                        null
                     }
-//                    authRepo.refreshToken()?.let {
-//                        BearerTokens(it.accessToken, it.refreshToken)
-//                    } ?: run {
-//                        authRepo.clearTokens()
-//                        null
-//                    }
                 }
                 sendWithoutRequest { request -> request.url.host == SERVER_HOST }
             }
