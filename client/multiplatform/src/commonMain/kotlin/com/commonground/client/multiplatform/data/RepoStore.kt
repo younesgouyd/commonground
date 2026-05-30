@@ -17,7 +17,8 @@ import io.ktor.serialization.kotlinx.json.*
 import kotlinx.serialization.json.Json
 
 class RepoStore(
-    platformFileStorage: PlatformFileStorage
+    platformFileStorage: PlatformFileStorage,
+    onRefreshTokenExpired: () -> Unit
 ) {
     companion object {
         private const val SERVER_HOST = "localhost" // TODO
@@ -53,7 +54,7 @@ class RepoStore(
                     authRepo.refreshToken()?.let {
                         BearerTokens(it.accessToken, it.refreshToken)
                     } ?: run {
-                        authRepo.clearTokens()
+                        onRefreshTokenExpired()
                         null
                     }
                 }

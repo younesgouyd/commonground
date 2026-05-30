@@ -56,20 +56,20 @@ class AuthRepo(
     }
 
     suspend fun refreshToken(): TokenPair? {
-        val refresh = loadTokens()?.refreshToken // TODO: check null
-        val token = client.post("auth/refresh") {
-            setBody(refresh)
-        }.body<TokenPair?>()
-        if (token != null) {
+        try {
+            val refresh = loadTokens()?.refreshToken // TODO: check null
+            val token = client.post("auth/refresh") {
+                setBody(refresh)
+            }.body<TokenPair?>()
+            if (token != null) {
+                clearTokens()
+                saveTokens(token)
+            }
+            return token
+        } catch (_: Exception) {
             clearTokens()
-            saveTokens(token)
+            return null
         }
-        return token
-    }
-
-    suspend fun logout() {
-        // TODO: call auth/logout
-        clearTokens()
     }
 
     suspend fun loadTokens(): TokenPair? {

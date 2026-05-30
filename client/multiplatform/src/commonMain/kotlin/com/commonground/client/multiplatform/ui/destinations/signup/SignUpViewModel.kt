@@ -106,6 +106,7 @@ class SignUpViewModel(
                         if (emailErr != null || userErr != null || pwErr != null) {
                             _state.update {
                                 it.copy(
+                                    isSubmitting = false,
                                     emailError = emailErr,
                                     usernameError = userErr,
                                     passwordError = pwErr

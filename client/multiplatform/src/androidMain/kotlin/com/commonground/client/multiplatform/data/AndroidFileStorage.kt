@@ -5,7 +5,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
 
-class AndroidFileStorage(private val context: Context) : PlatformFileStorage() {
+class AndroidFileStorage(context: Context) : PlatformFileStorage() {
     private val file = File(context.filesDir, "tokens.json")
 
     override suspend fun writeText(text: String) {

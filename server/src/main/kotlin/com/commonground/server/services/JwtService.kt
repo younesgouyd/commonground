@@ -1,6 +1,8 @@
 package com.commonground.server.services
 
 import com.commonground.core.models.TokenPair
+import io.jsonwebtoken.ExpiredJwtException
+import io.jsonwebtoken.JwtException
 import io.jsonwebtoken.Jwts
 import io.jsonwebtoken.io.Decoders
 import io.jsonwebtoken.security.Keys
@@ -63,21 +65,33 @@ class JwtService(
     }
 
     fun getUserIdFromAccessToken(token: String): String? {
-        return Jwts.parser()
-            .verifyWith(accessKey)
-            .build()
-            .parseSignedClaims(token)
-            .payload
-            .subject
+        return try {
+            Jwts.parser()
+                .verifyWith(accessKey)
+                .build()
+                .parseSignedClaims(token)
+                .payload
+                .subject
+        } catch (e: ExpiredJwtException) {
+            e.claims.subject
+        } catch (_: JwtException) {
+            null
+        }
     }
 
     fun getUserIdFromRefreshToken(token: String): String? {
-        return Jwts.parser()
-            .verifyWith(refreshKey)
-            .build()
-            .parseSignedClaims(token)
-            .payload
-            .subject
+        return try {
+            Jwts.parser()
+                .verifyWith(refreshKey)
+                .build()
+                .parseSignedClaims(token)
+                .payload
+                .subject
+        } catch (e: ExpiredJwtException) {
+            e.claims.subject
+        } catch (_: JwtException) {
+            null
+        }
     }
 
     private fun generateAccessToken(userId: String): String {
@@ -93,7 +107,7 @@ class JwtService(
         return Jwts.builder()
             .subject(userId)
             .issuedAt(Date())
-            .expiration(Date(System.currentTimeMillis() + TOKEN_EXP_MS))
+            .expiration(Date(System.currentTimeMillis() + REFRESH_TOKEN_EXP_MS))
             .signWith(refreshKey)
             .compact()
     }

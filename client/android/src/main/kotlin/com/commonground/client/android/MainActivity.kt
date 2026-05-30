@@ -5,7 +5,6 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import com.commonground.client.multiplatform.data.AndroidFileStorage
-import com.commonground.client.multiplatform.data.RepoStore
 import com.commonground.client.multiplatform.ui.MainUi
 
 class MainActivity  : ComponentActivity() {
@@ -13,9 +12,9 @@ class MainActivity  : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
-        val repoStore = RepoStore(AndroidFileStorage(applicationContext))
+        val fileStorage = AndroidFileStorage(applicationContext)
         setContent {
-            MainUi(repoStore)
+            MainUi(fileStorage)
         }
     }
 }

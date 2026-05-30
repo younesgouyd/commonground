@@ -24,6 +24,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
+import com.commonground.client.multiplatform.data.PlatformFileStorage
 import com.commonground.client.multiplatform.data.RepoStore
 import com.commonground.client.multiplatform.ui.destinations.eventdetails.EventDetails
 import com.commonground.client.multiplatform.ui.destinations.eventdetails.EventDetailsNavActions
@@ -43,12 +44,18 @@ import com.commonground.client.multiplatform.ui.destinations.signup.SignUpViewMo
 import com.commonground.client.multiplatform.ui.destinations.user.User
 import com.commonground.client.multiplatform.ui.destinations.user.UserNavActions
 import com.commonground.client.multiplatform.ui.destinations.user.UserViewModel
-import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun MainUi(repoStore: RepoStore) {
-    val viewModel = viewModel { MainUiViewModel(repoStore.authRepo) }
+fun MainUi(fileStorage: PlatformFileStorage) {
+    val navController = rememberNavController()
+    val viewModel = viewModel {
+        MainUiViewModel(
+            fileStorage = fileStorage,
+            onLogout = { navController.navigate(Route.Login) { popUpTo(0) { inclusive = true } } }
+        )
+    }
+    val repoStore = viewModel.repoStore
 
     val startDestination by viewModel.startDestination
     if (startDestination == null) {
@@ -60,7 +67,6 @@ fun MainUi(repoStore: RepoStore) {
         }
         return
     }
-    val navController = rememberNavController()
 
     val backStackEntry by navController.currentBackStackEntryAsState()
     val currentDestination = backStackEntry?.destination
@@ -78,7 +84,7 @@ fun MainUi(repoStore: RepoStore) {
             Scaffold(
                 topBar = {
                     if (inHome) {
-                        HomeTopBar(repoStore, navController)
+                        HomeTopBar(navController, viewModel::logout)
                     } else {
                         CenterAlignedTopAppBar(
                             modifier = Modifier.fillMaxWidth(),
@@ -191,9 +197,11 @@ private fun NavGraph( navController: NavHostController, repoStore: RepoStore, st
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun HomeTopBar(repoStore: RepoStore, navController: NavHostController) {
+private fun HomeTopBar(
+    navController: NavHostController,
+    onLogoutClick: () -> Unit
+) {
     var menuExpanded by remember { mutableStateOf(false) }
-    val scope = rememberCoroutineScope()
 
     CenterAlignedTopAppBar(
         modifier = Modifier.fillMaxWidth(),
@@ -237,12 +245,7 @@ private fun HomeTopBar(repoStore: RepoStore, navController: NavHostController) {
                         leadingIcon = { Icon(Icons.AutoMirrored.Filled.Logout, null) },
                         onClick = {
                             menuExpanded = false
-                            scope.launch {
-                                repoStore.authRepo.logout()
-                                navController.navigate(Route.Login) {
-                                    popUpTo(0) { inclusive = true }
-                                }
-                            }
+                            onLogoutClick()
                         }
                     )
                 }

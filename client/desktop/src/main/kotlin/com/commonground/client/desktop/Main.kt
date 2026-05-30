@@ -3,11 +3,10 @@ package com.commonground.client.desktop
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.window.*
 import com.commonground.client.multiplatform.data.JvmFileStorage
-import com.commonground.client.multiplatform.data.RepoStore
 import com.commonground.client.multiplatform.ui.MainUi
 
 fun main() {
-    val repoStore = RepoStore(JvmFileStorage())
+    val fileStorage = JvmFileStorage()
 
     application {
         Window(
@@ -17,7 +16,7 @@ fun main() {
             ),
             onCloseRequest = { exitApplication() }
         ) {
-            MainUi(repoStore)
+            MainUi(fileStorage)
         }
     }
 }

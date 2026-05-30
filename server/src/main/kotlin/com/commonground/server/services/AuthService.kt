@@ -25,23 +25,27 @@ class AuthService(
 
     @Transactional
     fun signUp(email: String, username: String, password: String): SignUpResult {
-        val email = email.trim()
-        val username = username.trim()
-        val structuralErrors = buildList {
-            if (email.isNotBlank() && !EMAIL_REGEX.matches(email.trim())) { add(SignUpResult.Failure.Error.InvalidEmailAddress) }
-            if (username.length < 3 || !USERNAME_REGEX.matches(username)) { add(SignUpResult.Failure.Error.InvalidUsername) }
-            if (password.length < 8 || !password.any { it.isDigit() } || !password.any { it.isLetter() }) { add(SignUpResult.Failure.Error.InvalidPassword) }
-        }
+        val email = email.trim().ifBlank { null }
+        val username = username.trim().ifBlank { null }
+        val password = password.ifBlank { null }
 
+        val structuralErrors = buildList {
+            if (email != null && !EMAIL_REGEX.matches(email)) { add(SignUpResult.Failure.Error.InvalidEmailAddress) }
+            if (username.isNullOrBlank() || username.length < 3 || !USERNAME_REGEX.matches(username)) { add(SignUpResult.Failure.Error.InvalidUsername) }
+            if (password.isNullOrBlank() || password.length < 8 || !password.any { it.isDigit() } || !password.any { it.isLetter() }) { add(SignUpResult.Failure.Error.InvalidPassword) }
+        }
         if (structuralErrors.isNotEmpty()) {
             return SignUpResult.Failure(structuralErrors)
         }
+
+        username!!
+        password!!
 
         val databaseErrors = buildList {
             if (userRepository.existsByUsername(username)) {
                 add(SignUpResult.Failure.Error.UsernameTaken)
             }
-            if (email.isNotBlank() && userRepository.existsByEmailAddress(email)) {
+            if (email != null && userRepository.existsByEmailAddress(email)) {
                 add(SignUpResult.Failure.Error.EmailTaken)
             }
         }
@@ -92,6 +96,13 @@ class AuthService(
             accessToken = token.accessToken,
             refreshToken = token.refreshToken
         )
+    }
+
+    @Transactional
+    fun logout(refreshToken: String) {
+        val userId = UUID.fromString(jwtService.getUserIdFromRefreshToken(refreshToken)!!)
+        val hashed = hashToken(refreshToken)
+        refreshTokenRepository.deleteByUserIdAndToken(userId, hashed)
     }
 
     private fun saveRefreshToken(token: String, userId: UUID) {
