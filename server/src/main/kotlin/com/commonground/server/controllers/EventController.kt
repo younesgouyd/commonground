@@ -1,8 +1,11 @@
 package com.commonground.server.controllers
 
 import com.commonground.core.models.Event
+import com.commonground.core.models.Events
 import com.commonground.server.data.EventRepository
-import com.commonground.server.toModel
+import com.commonground.server.util.GeometryUtils
+import com.commonground.server.util.toModel
+import org.springframework.data.domain.PageRequest
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
 import java.util.*
@@ -13,9 +16,22 @@ import kotlin.jvm.optionals.getOrNull
 class EventController(
     private val repo: EventRepository
 ) {
-    @GetMapping // shortcut to @RequestMapping(method = [RequestMethod.GET])
-    fun events(): List<Event> {
-        return repo.findAll().map { it.toModel() }
+    @GetMapping
+    fun getEventsNearLocation(
+        @RequestParam latitude: Double,
+        @RequestParam longitude: Double,
+        @RequestParam radiusKilometers: Int,
+        @RequestParam pageNumber: Int
+    ): Events {
+        val slice = repo.findEventsNearLocation(
+            location = GeometryUtils.createPoint(latitude, longitude),
+            radiusMeters = radiusKilometers * 1000,
+            pageable = PageRequest.of(pageNumber, 50)
+        ).map(com.commonground.server.data.entities.Event::toModel)
+        return Events(
+            items = slice.content,
+            next = if (slice.hasNext()) slice.nextPageable().pageNumber else null
+        )
     }
 
     @GetMapping("/{id}")

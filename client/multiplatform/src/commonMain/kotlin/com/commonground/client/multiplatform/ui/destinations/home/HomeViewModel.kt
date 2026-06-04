@@ -3,6 +3,7 @@ package com.commonground.client.multiplatform.ui.destinations.home
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.commonground.client.multiplatform.data.repositories.EventRepo
+import com.commonground.client.multiplatform.ui.LazyList
 import com.commonground.core.models.Event
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -13,7 +14,7 @@ sealed class HomeState {
     data object Loading : HomeState()
 
     data class Loaded(
-        val events: List<Event>
+        val events: LazyList<Event>
     ) : HomeState()
 
     data object Error : HomeState()
@@ -30,7 +31,16 @@ class HomeViewModel(
         viewModelScope.launch {
             _state.value = try {
                 HomeState.Loaded(
-                    events = eventRepo.getHomePageEvents()
+                    events = LazyList(
+                        coroutineScope = viewModelScope,
+                        load = {
+                            val events = eventRepo.getNearbyEvents(it)
+                            LazyList.Chunk(
+                                items = events.items,
+                                next = events.next
+                            )
+                        }
+                    )
                 )
             } catch (e: Exception) {
                 logger.error(e) {  }

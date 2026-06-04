@@ -25,9 +25,12 @@ dependencies {
 
     implementation(libs.spring.web)
     implementation(libs.spring.serialization)
-    implementation(libs.spring.jpa)
     implementation(libs.spring.security)
+
+    // db stuff
+    implementation(libs.spring.jpa)
     runtimeOnly(libs.postgresqlDriver)
+    implementation(libs.hibernateSpacial)
 
     implementation(libs.jjwt.api)
     runtimeOnly(libs.jjwt.impl)

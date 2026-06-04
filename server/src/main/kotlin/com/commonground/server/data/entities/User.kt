@@ -2,9 +2,14 @@ package com.commonground.server.data.entities
 
 import com.commonground.core.models.ImageUrl
 import jakarta.persistence.*
+import org.springframework.data.annotation.CreatedDate
+import org.springframework.data.annotation.LastModifiedDate
+import org.springframework.data.jpa.domain.support.AuditingEntityListener
+import java.time.Instant
 import java.util.*
 
 @Entity
+@EntityListeners(AuditingEntityListener::class)
 @Table(name = "`user`") // because user is a reserved keyword in PostgreSQL
 class User(
     @Id
@@ -13,7 +18,7 @@ class User(
     @Column(unique = true, nullable = false)
     val username: String,
 
-    val password: String,
+    @Column(nullable = false) val password: String,
 
     @Column(unique = true)
     val emailAddress: String? = null,
@@ -26,5 +31,13 @@ class User(
     val createdEvents: MutableList<Event> = mutableListOf(),
 
     @ManyToMany
-    val attendingEvents: MutableList<Event> = mutableListOf()
-)
+    val attendingEvents: MutableList<Event> = mutableListOf(),
+) {
+    @CreatedDate
+    @Column(updatable = false, nullable = false)
+    lateinit var createdAt: Instant
+
+    @LastModifiedDate
+    @Column(nullable = false)
+    lateinit var updatedAt: Instant
+}

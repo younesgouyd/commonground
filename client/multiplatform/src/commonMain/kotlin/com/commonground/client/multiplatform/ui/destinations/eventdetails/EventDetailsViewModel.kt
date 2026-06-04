@@ -33,6 +33,7 @@ class EventDetailsViewModel(
                     "Chess Tournament",
                     "A competitive open-bracket chess tournament.",
                     "Central Park",
+                    Event.Coordinates(33.538667,-7.685083),
                     "2026-05-15",
                     false,
                     5 * 60,

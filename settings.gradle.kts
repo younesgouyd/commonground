@@ -132,6 +132,7 @@ dependencyResolutionManagement {
             library("spring.jpa", "org.springframework.boot", "spring-boot-starter-data-jpa").withoutVersion()
             library("spring.security", "org.springframework.boot", "spring-boot-starter-security").withoutVersion()
             library("postgresqlDriver", "org.postgresql", "postgresql").withoutVersion()
+            library("hibernateSpacial", "org.hibernate.orm", "hibernate-spatial").withoutVersion()
             library("jjwt.api", "io.jsonwebtoken", "jjwt-api").version(versions.jjwt)
             library("jjwt.impl", "io.jsonwebtoken", "jjwt-impl").version(versions.jjwt)
             library("jjwt.jackson", "io.jsonwebtoken", "jjwt-jackson").version(versions.jjwt)

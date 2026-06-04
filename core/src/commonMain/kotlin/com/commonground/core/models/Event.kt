@@ -9,7 +9,8 @@ data class Event(
     val id: String,
     val title: String,
     val description: String?,
-    val location: String,
+    val locationName: String,
+    val coordinates: Coordinates?,
     val date: String,
     val isPrivate: Boolean,
     val durationMinutes: Long,
@@ -19,4 +20,7 @@ data class Event(
 ) {
     @Transient
     val duration = durationMinutes.minutes
+
+    @Serializable
+    data class Coordinates(val latitude: Double, val longitude: Double)
 }

@@ -2,9 +2,7 @@ package com.commonground.client.multiplatform.ui.destinations.home
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.grid.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.filled.Search
@@ -19,6 +17,8 @@ import com.commonground.client.multiplatform.ui.AdaptiveUi
 import com.commonground.client.multiplatform.ui.widgets.Duration
 import com.commonground.client.multiplatform.ui.widgets.Person
 import com.commonground.core.models.Event
+import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.flow.map
 
 interface HomeNavActions {
     fun toEventDetails(id: String)
@@ -56,22 +56,42 @@ private fun Wide(
     state: HomeState.Loaded,
     navActions: HomeNavActions
 ) {
+    val items by state.events.items.collectAsState()
+    val loadingItems by state.events.loading.collectAsState()
+    val scrollState = rememberLazyGridState()
+
     Surface(color = MaterialTheme.colorScheme.background) {
         LazyVerticalGrid(
             modifier = Modifier.fillMaxSize().padding(16.dp),
+            state = scrollState,
             contentPadding = PaddingValues(vertical = 12.dp),
             horizontalArrangement = Arrangement.spacedBy(18.dp),
             verticalArrangement = Arrangement.spacedBy(18.dp),
             columns = GridCells.Adaptive(200.dp)
         ) {
-            items(state.events) { event ->
+            items(items) { event ->
                 Event(
                     event = event,
                     onClick = { navActions.toEventDetails(event.id!!) },
                     onUserClick = { navActions.toUser(it) }
                 )
             }
+            if (loadingItems) {
+                item(span = { GridItemSpan(maxLineSpan) }) {
+                    Box(modifier = Modifier.fillMaxWidth().padding(10.dp), contentAlignment = Alignment.Center) {
+                        CircularProgressIndicator(modifier = Modifier.size(50.dp), strokeWidth = 2.dp)
+                    }
+                }
+            }
         }
+    }
+
+    LaunchedEffect(scrollState, items) {
+        snapshotFlow {
+            scrollState.layoutInfo.visibleItemsInfo.lastOrNull()?.index
+        }.map { it == null ||  it >= items.size - 5  }
+            .filter { it }
+            .collect { state.events.loadMore() }
     }
 }
 

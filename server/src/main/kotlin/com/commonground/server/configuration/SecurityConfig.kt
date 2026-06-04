@@ -1,5 +1,6 @@
-package com.commonground.server
+package com.commonground.server.configuration
 
+import com.commonground.server.JwtAuthFilter
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.security.config.annotation.web.builders.HttpSecurity
