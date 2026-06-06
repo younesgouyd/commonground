@@ -6,7 +6,7 @@ plugins {
 
 kotlin {
     jvmToolchain(libs.versions.java.get().toInt())
-    androidLibrary {
+    android {
         namespace = "com.commonground"
         compileSdk = 36
         minSdk = 29

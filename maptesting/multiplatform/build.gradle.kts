@@ -24,7 +24,7 @@ fun detectTarget(): String {
 
 kotlin {
     jvmToolchain(libs.versions.java.get().toInt())
-    androidLibrary {
+    android {
         namespace = "com.commonground"
         compileSdk = libs.versions.androidCompileSdk.get().toInt()
         minSdk = libs.versions.androidMinSdk.get().toInt()
@@ -62,8 +62,6 @@ kotlin {
         androidMain.dependencies {
             implementation(libs.coroutines.android)
             implementation(libs.android.coreKtx)
-            implementation(libs.android.appcompat)
-            implementation(libs.android.activityKtx)
             implementation(libs.android.activityCompose)
         }
     }

@@ -4,13 +4,11 @@ plugins {
     alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.kotlin.composeCompiler)
     alias(libs.plugins.composeMultiplatform)
-    alias(libs.plugins.ksp)
-    alias(libs.plugins.room)
 }
 
 kotlin {
     jvmToolchain(libs.versions.java.get().toInt())
-    androidLibrary {
+    android {
         namespace = "com.commonground"
         compileSdk = libs.versions.androidCompileSdk.get().toInt()
         minSdk = libs.versions.androidMinSdk.get().toInt()
@@ -26,9 +24,8 @@ kotlin {
             implementation(libs.compose.material3)
             implementation(libs.compose.windowSizeClass)
             implementation(libs.compose.materialIconsExtended)
-            implementation(libs.compose.navigation)
             implementation(libs.compose.viewmodel)
-            implementation(libs.room.runtime)
+            implementation(libs.compose.navigation)
             implementation(libs.logging)
             implementation(libs.ktor.serialization)
             implementation(libs.ktor.client.core)
@@ -38,7 +35,6 @@ kotlin {
             implementation(libs.ktor.client.auth)
         }
         jvmMain.dependencies {
-            implementation(libs.sqlite.jvm)
             implementation(libs.coroutines.desktop)
             implementation(compose.desktop.currentOs) {
                 exclude("org.jetbrains.compose.material") // todo
@@ -46,22 +42,10 @@ kotlin {
             implementation(libs.logback.jvm)
         }
         androidMain.dependencies {
-            implementation(libs.sqlite.android)
             implementation(libs.coroutines.android)
             implementation(libs.android.coreKtx)
-            implementation(libs.android.appcompat)
-            implementation(libs.android.activityKtx)
             implementation(libs.android.activityCompose)
             implementation(libs.logback.android)
         }
     }
-}
-
-dependencies {
-    add("kspAndroid", libs.room.compiler)
-    add("kspJvm", libs.room.compiler)
-}
-
-room {
-    schemaDirectory("$projectDir/schemas")
 }
