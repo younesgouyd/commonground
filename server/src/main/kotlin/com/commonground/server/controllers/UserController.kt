@@ -1,16 +1,21 @@
 package com.commonground.server.controllers
 
+import com.commonground.core.models.ProfileResponse
 import com.commonground.server.services.AuthService
-import org.springframework.web.bind.annotation.PostMapping
-import org.springframework.web.bind.annotation.RequestBody
-import org.springframework.web.bind.annotation.RequestMapping
-import org.springframework.web.bind.annotation.RestController
+import com.commonground.server.services.UserService
+import org.springframework.web.bind.annotation.*
 
 @RestController
 @RequestMapping("/api/v1/user")
 class UserController(
-    private val authService: AuthService
+    private val authService: AuthService,
+    private val userService: UserService
 ) {
+    @GetMapping("/profile")
+    fun profile(): ProfileResponse {
+        return userService.getMyProfile()
+    }
+
     @PostMapping("/logout")
     fun logout(@RequestBody refreshToken: String) {
         authService.logout(refreshToken)

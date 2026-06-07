@@ -44,88 +44,25 @@ class ProfileViewModel(
 
     init {
         viewModelScope.launch {
-            _state.value = try {
-                // TODO: GET (/api/v1/user/me)
-                val currentUser = User(
-                    id = "1",
-                    username = "Tarik",
-                    displayName = "itsmetarikov",
-                    bio = "LLLLLLLLLLoL",
-                    profilePic = null
-                )
-                val friends = mutableListOf<ProfileState.Loaded.Friend>()
-                for (i in 1..10) {
-                    friends.add(
-                        ProfileState.Loaded.Friend("$i", "Friend $i", "Friend $i"),
-                    )
-                }
+            _state.value = loadProfile()
+        }
+    }
 
-                val createdEvents = listOf(
-                    Event(
-                        id = "e1",
-                        title = "Casa Chess Tournament",
-                        description = "LOL",
-                        locationName = "LOL",
-                        coordinates = null,
-                        date = "LOL",
-                        isPrivate = false,
-                        durationMinutes = 240,
-                        isPaid = false,
-                        creator = currentUser
-                    ),
-                )
-
-                val goingEvents = listOf(
-                    Event(
-                        id = "e2",
-                        title = "Casa Chess Tournament",
-                        description = "LOL",
-                        locationName = "LOL",
-                        coordinates = null,
-                        date = "LOL",
-                        isPrivate = false,
-                        durationMinutes = 240,
-                        isPaid = false,
-                        creator = currentUser
-                    ),
-                )
-
-                val wentEvents = mutableListOf<Event>()
-
-                for (i in 1..20) {
-                    wentEvents.add(
-                        Event(
-                            id = "e$i",
-                            title = "Casa Chess Tournament $i",
-                            description = "LOL",
-                            locationName = "LOL",
-                            coordinates = null,
-                            date = "LOL",
-                            isPrivate = false,
-                            durationMinutes = 240,
-                            isPaid = false,
-                            creator = currentUser
-                        )
-                    )
-                }
-
-                ProfileState.Loaded(
-                    user = currentUser,
-                    events = UserEvents(
-                        created = createdEvents,
-                        going = goingEvents,
-                        went = wentEvents
-                    ),
-                    friends = friends,
-                    friendCount = friends.size,
-                    eventCount = createdEvents.size + goingEvents.size + wentEvents.size,
-                    onEditProfile = onEditProfile,
-                    onToSettings = onToSettings,
-                )
-            } catch (e: Exception) {
-                logger.error(e) {}
-                ProfileState.Error
-            }
+    private suspend fun loadProfile(): ProfileState {
+        return try {
+            val profile = userRepo.getMyProfile()
+            ProfileState.Loaded(
+                user = profile.user,
+                events = profile.events,
+                friends = emptyList(), // TODO: getFriends end point not Impl yt
+                friendCount = profile.friendCount,
+                eventCount = profile.eventCount,
+                onEditProfile = onEditProfile,
+                onToSettings = onToSettings,
+            )
+        } catch (e: Exception) {
+            logger.error(e) {  }
+            ProfileState.Error
         }
     }
 }

@@ -7,7 +7,7 @@ sealed class Route {
     @Serializable data object SignUp : Route()
     @Serializable data object Onboarding : Route()
     @Serializable data object Home : Route()
-    @Serializable data object Me : Route()
+    @Serializable data object Profile : Route()
     @Serializable data object Friends : Route()
     @Serializable data object Settings : Route()
     @Serializable data class Event(val id: String) : Route()

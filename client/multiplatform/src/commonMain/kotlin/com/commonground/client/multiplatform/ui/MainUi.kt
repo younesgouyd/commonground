@@ -174,7 +174,7 @@ private fun NavGraph( navController: NavHostController, repoStore: RepoStore, st
                 }
             )
         }
-        composable<Route.Me> {
+        composable<Route.Profile> {
             Profile(
                 viewModel = viewModel {
                     ProfileViewModel(
@@ -247,7 +247,7 @@ private fun HomeTopBar(
                         leadingIcon = { Icon(Icons.Default.AccountCircle, null) },
                         onClick = {
                             menuExpanded = false
-                            navController.navigate(Route.Me)
+                            navController.navigate(Route.Profile)
                         }
                     )
                     DropdownMenuItem(
