@@ -41,6 +41,9 @@ import com.commonground.client.multiplatform.ui.destinations.onboarding.Onboardi
 import com.commonground.client.multiplatform.ui.destinations.signup.SignUp
 import com.commonground.client.multiplatform.ui.destinations.signup.SignUpNavActions
 import com.commonground.client.multiplatform.ui.destinations.signup.SignUpViewModel
+import com.commonground.client.multiplatform.ui.destinations.profile.Profile
+import com.commonground.client.multiplatform.ui.destinations.profile.ProfileNavActions
+import com.commonground.client.multiplatform.ui.destinations.profile.ProfileViewModel
 import com.commonground.client.multiplatform.ui.destinations.user.User
 import com.commonground.client.multiplatform.ui.destinations.user.UserNavActions
 import com.commonground.client.multiplatform.ui.destinations.user.UserViewModel
@@ -171,7 +174,23 @@ private fun NavGraph( navController: NavHostController, repoStore: RepoStore, st
                 }
             )
         }
-        composable<Route.Me> { Text("Me Screen") }
+        composable<Route.Me> {
+            Profile(
+                viewModel = viewModel {
+                    ProfileViewModel(
+                        userRepo = repoStore.userRepo,
+                        onEditProfile = { /* TODO: navigate to edit profile */ },
+                        onToSettings = { navController.navigate(Route.Settings) }
+                    )
+                },
+                navActions = object : ProfileNavActions {
+                    override fun toFollowers(id: String) { /* TODO */ }
+                    override fun toFollowing(id: String) { /* TODO */ }
+                    override fun toEvent(id: String) { navController.navigate(Route.Event(id)) }
+                    override fun toUser(id: String) { navController.navigate(Route.User(id)) }
+                }
+            )
+        }
         composable<Route.Settings> { Text("Settings Screen") }
         composable<Route.Event> { entry ->
             val eventRoute = entry.toRoute<Route.Event>()
