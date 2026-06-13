@@ -25,7 +25,7 @@ fun detectTarget(): String {
 kotlin {
     jvmToolchain(libs.versions.java.get().toInt())
     android {
-        namespace = "com.commonground"
+        namespace = "com.commonground.maptesting.multiplatform"
         compileSdk = libs.versions.androidCompileSdk.get().toInt()
         minSdk = libs.versions.androidMinSdk.get().toInt()
         androidResources.enable = true

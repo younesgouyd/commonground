@@ -7,7 +7,7 @@ plugins {
 kotlin {
     jvmToolchain(libs.versions.java.get().toInt())
     android {
-        namespace = "com.commonground"
+        namespace = "com.commonground.core"
         compileSdk = 36
         minSdk = 29
         androidResources.enable = true

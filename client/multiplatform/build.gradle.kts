@@ -9,7 +9,7 @@ plugins {
 kotlin {
     jvmToolchain(libs.versions.java.get().toInt())
     android {
-        namespace = "com.commonground"
+        namespace = "com.commonground.client.multiplatform"
         compileSdk = libs.versions.androidCompileSdk.get().toInt()
         minSdk = libs.versions.androidMinSdk.get().toInt()
         androidResources.enable = true
