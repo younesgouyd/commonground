@@ -3,7 +3,6 @@ package com.commonground.client.multiplatform.ui.destinations.profile
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.commonground.client.multiplatform.data.repositories.UserRepo
-import com.commonground.core.models.Event
 import com.commonground.core.models.User
 import com.commonground.core.models.UserEvents
 import io.github.oshai.kotlinlogging.KotlinLogging

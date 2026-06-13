@@ -1,9 +1,11 @@
 package com.commonground.client.multiplatform.data
 
+import com.commonground.client.multiplatform.Platform
 import com.commonground.client.multiplatform.data.repositories.AuthRepo
 import com.commonground.client.multiplatform.data.repositories.CategoryRepo
 import com.commonground.client.multiplatform.data.repositories.EventRepo
 import com.commonground.client.multiplatform.data.repositories.UserRepo
+import com.commonground.client.multiplatform.platform
 import io.ktor.client.*
 import io.ktor.client.engine.cio.*
 import io.ktor.client.plugins.*
@@ -21,11 +23,16 @@ class RepoStore(
     onRefreshTokenExpired: () -> Unit
 ) {
     companion object {
-        private const val SERVER_HOST = "localhost" // TODO
+        // TODO: set static ip for the backend
+        private val serverHost = when (platform) {
+            Platform.ANDROID -> "10.0.2.2" // from android emulator
+            Platform.JVM -> "localhost"
+        }
+
         private const val SERVER_PORT = 8080 // TODO
     }
 
-    val authRepo = AuthRepo(platformFileStorage, SERVER_HOST, SERVER_PORT)
+    val authRepo = AuthRepo(platformFileStorage, serverHost, SERVER_PORT)
 
     private val client = HttpClient(CIO) {
         install(Logging) { level = LogLevel.ALL }
@@ -38,7 +45,7 @@ class RepoStore(
             contentType(ContentType.Application.Json)
             url {
                 protocol = URLProtocol.HTTP
-                host = SERVER_HOST
+                host = serverHost
                 port = SERVER_PORT
                 path("api/v1/")
             }
@@ -58,7 +65,7 @@ class RepoStore(
                         null
                     }
                 }
-                sendWithoutRequest { request -> request.url.host == SERVER_HOST }
+                sendWithoutRequest { request -> request.url.host == serverHost }
             }
         }
     }

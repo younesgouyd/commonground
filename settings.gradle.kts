@@ -27,8 +27,9 @@ dependencyResolutionManagement {
     versionCatalogs {
         create("libs") {
             val versions = object {
-                val java = version("java", "17")
+                val java = version("java", "21")
                 val kotlin = "2.4.0"
+                val datetime = "0.8.0"
                 val serialization = "1.11.0"
                 val coroutines = "1.11.0"
                 val logging = "8.0.4"
@@ -76,6 +77,7 @@ dependencyResolutionManagement {
             plugin("spring.dependencyManagement", "io.spring.dependency-management").version(versions.spring.dependencyManagement)
             // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< PLUGINS <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
+
             library("kotlin.reflect", "org.jetbrains.kotlin", "kotlin-reflect").version(versions.kotlin)
 
             library("compose.material3", "org.jetbrains.compose.material3", "material3").version(versions.compose.material3)
@@ -87,6 +89,8 @@ dependencyResolutionManagement {
 
             library("maplibre.composeUi", "org.maplibre.compose", "maplibre-compose").version(versions.maplibre)
             library("maplibre.nativeBindingsJni", "org.maplibre.compose", "maplibre-native-bindings-jni").version(versions.maplibre)
+
+            library("datetime", "org.jetbrains.kotlinx", "kotlinx-datetime").version(versions.datetime)
 
             library("serialization.core", "org.jetbrains.kotlinx", "kotlinx-serialization-core").version(versions.serialization)
             library("serialization.json", "org.jetbrains.kotlinx", "kotlinx-serialization-json").version(versions.serialization)

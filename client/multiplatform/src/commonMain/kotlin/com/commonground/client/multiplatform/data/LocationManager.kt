@@ -36,7 +36,7 @@ object LocationManager {
                 val lat = parts[0].toDoubleOrNull()
                 val lon = parts[1].toDoubleOrNull()
                 if (lat != null && lon != null) {
-                    return Coordinates(lat, lon).also { logger.debug { "current location: $it" }}
+                    return Coordinates(lat, lon).also { logger.debug { "current location: $it" } }
                 }
             }
             return null

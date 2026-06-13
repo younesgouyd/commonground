@@ -7,6 +7,7 @@ import com.commonground.core.models.User
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import kotlin.time.Instant
 
 sealed class EventDetailsState {
     data object Loading : EventDetailsState()
@@ -34,7 +35,7 @@ class EventDetailsViewModel(
                     "A competitive open-bracket chess tournament.",
                     "Central Park",
                     Event.Coordinates(33.538667,-7.685083),
-                    "2026-05-15",
+                    Instant.parse("2026-05-15T00:00:00Z"),
                     false,
                     5 * 60,
                     false,
