@@ -1,8 +1,10 @@
 package com.commonground.server.controllers
 
+import com.commonground.core.models.CreateEventRequest
 import com.commonground.core.models.Event
 import com.commonground.core.models.Events
 import com.commonground.server.data.EventRepository
+import com.commonground.server.services.EventService
 import com.commonground.server.util.GeometryUtils
 import com.commonground.server.util.toModel
 import org.springframework.data.domain.PageRequest
@@ -14,7 +16,8 @@ import kotlin.jvm.optionals.getOrNull
 @RestController
 @RequestMapping("/api/v1/events")
 class EventController(
-    private val repo: EventRepository
+    private val repo: EventRepository,
+    private val eventService: EventService
 ) {
     @GetMapping
     fun getEventsNearLocation(
@@ -40,8 +43,8 @@ class EventController(
     }
 
     @PostMapping
-    fun post(@RequestBody event: Event) {
-        // TODO
+    fun post(@RequestBody request: CreateEventRequest): Event {
+        return eventService.createEvent(request)
     }
 
     @PutMapping("/{id}")

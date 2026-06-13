@@ -1,6 +1,7 @@
 package com.commonground.server.controllers
 
 import com.commonground.core.models.ProfileResponse
+import com.commonground.core.models.UserEvents
 import com.commonground.server.services.AuthService
 import com.commonground.server.services.UserService
 import org.springframework.web.bind.annotation.*
@@ -14,6 +15,11 @@ class UserController(
     @GetMapping("/profile")
     fun profile(): ProfileResponse {
         return userService.getMyProfile()
+    }
+
+    @GetMapping("/events")
+    fun myEvents(): UserEvents {
+        return userService.getMyEvents()
     }
 
     @PostMapping("/logout")
