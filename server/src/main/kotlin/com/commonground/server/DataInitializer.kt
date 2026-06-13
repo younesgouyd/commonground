@@ -7,6 +7,8 @@ import com.commonground.server.data.entities.User
 import com.commonground.server.util.GeometryUtils
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder
 import org.springframework.stereotype.Service
+import java.time.LocalDateTime
+import java.time.ZoneOffset
 import kotlin.math.PI
 import kotlin.math.asin
 import kotlin.random.Random
@@ -51,7 +53,8 @@ class DataInitializer(
                         latitude = asin(Random.nextDouble(-1.0, 1.0)) * (180.0 / PI),
                         longitude = Random.nextDouble(-180.0, 180.0)
                     ),
-                    date = "2026-07-${Random.nextInt(1, 29)}T${Random.nextInt(10, 22)}:00:00",
+                    date = LocalDateTime.of(2026, 7, Random.nextInt(1, 29), Random.nextInt(10, 22), 0, 0)
+                        .toInstant(ZoneOffset.UTC),
                     isPrivate = Random.nextBoolean(),
                     durationMinutes = listOf(30L, 60L, 90L, 120L, 180L).random(),
                     isPaid = Random.nextBoolean(),

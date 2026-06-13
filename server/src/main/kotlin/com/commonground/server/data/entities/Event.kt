@@ -21,7 +21,7 @@ class Event(
     @Column(columnDefinition = "geography(Point, 4326)")
     val coordinates: Point,
 
-    @Column(nullable = false) val date: String,
+    @Column(nullable = false) val date: Instant,
     @Column(nullable = false) val isPrivate: Boolean,
     @Column(nullable = false) val durationMinutes: Long,
     @Column(nullable = false) val isPaid: Boolean,

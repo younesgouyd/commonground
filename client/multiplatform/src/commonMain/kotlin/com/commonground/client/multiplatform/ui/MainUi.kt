@@ -48,8 +48,8 @@ import com.commonground.client.multiplatform.ui.destinations.createevent.CreateE
 import com.commonground.client.multiplatform.ui.destinations.eventdetails.EventDetails
 import com.commonground.client.multiplatform.ui.destinations.eventdetails.EventDetailsNavActions
 import com.commonground.client.multiplatform.ui.destinations.eventdetails.EventDetailsViewModel
-import com.commonground.client.multiplatform.ui.destinations.home.Home
 import com.commonground.client.multiplatform.ui.destinations.home.HomeNavActions
+import com.commonground.client.multiplatform.ui.destinations.home.HomeScreen
 import com.commonground.client.multiplatform.ui.destinations.home.HomeViewModel
 import com.commonground.client.multiplatform.ui.destinations.login.Login
 import com.commonground.client.multiplatform.ui.destinations.login.LoginNavActions
@@ -57,12 +57,12 @@ import com.commonground.client.multiplatform.ui.destinations.login.LoginViewMode
 import com.commonground.client.multiplatform.ui.destinations.onboarding.Onboarding
 import com.commonground.client.multiplatform.ui.destinations.onboarding.OnboardingNavActions
 import com.commonground.client.multiplatform.ui.destinations.onboarding.OnboardingViewModel
-import com.commonground.client.multiplatform.ui.destinations.signup.SignUp
-import com.commonground.client.multiplatform.ui.destinations.signup.SignUpNavActions
-import com.commonground.client.multiplatform.ui.destinations.signup.SignUpViewModel
 import com.commonground.client.multiplatform.ui.destinations.profile.Profile
 import com.commonground.client.multiplatform.ui.destinations.profile.ProfileNavActions
 import com.commonground.client.multiplatform.ui.destinations.profile.ProfileViewModel
+import com.commonground.client.multiplatform.ui.destinations.signup.SignUp
+import com.commonground.client.multiplatform.ui.destinations.signup.SignUpNavActions
+import com.commonground.client.multiplatform.ui.destinations.signup.SignUpViewModel
 import com.commonground.client.multiplatform.ui.destinations.user.User
 import com.commonground.client.multiplatform.ui.destinations.user.UserNavActions
 import com.commonground.client.multiplatform.ui.destinations.user.UserViewModel
@@ -248,7 +248,7 @@ private fun NavGraph(navController: NavHostController, repoStore: RepoStore, sta
         }
 
         composable<Route.Home> {
-            Home(
+            HomeScreen(
                 viewModel = viewModel { HomeViewModel(repoStore.eventRepo) },
                 navActions = object : HomeNavActions {
                     override fun toEventDetails(id: String) { navController.navigate(Route.Event(id)) }

@@ -2,6 +2,7 @@ package com.commonground.client.multiplatform.ui.destinations.home
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.commonground.client.multiplatform.data.LocationManager
 import com.commonground.client.multiplatform.data.repositories.EventRepo
 import com.commonground.client.multiplatform.ui.LazyList
 import com.commonground.core.models.Event
@@ -10,37 +11,26 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
-sealed class HomeState {
-    data object Loading : HomeState()
-
-    data class Loaded(
-        val events: LazyList<Event>
-    ) : HomeState()
-
-    data object Error : HomeState()
-}
-
 class HomeViewModel(
     private val eventRepo: EventRepo
 ) : ViewModel() {
     private val logger = KotlinLogging.logger {}
     private val _state: MutableStateFlow<HomeState> = MutableStateFlow(HomeState.Loading)
+    private var viewport: EventViewport? = null
+
     val state = _state.asStateFlow()
 
     init {
         viewModelScope.launch {
+            val currentLocation = LocationManager.getCurrentLocation()?.let {
+                HomeState.Loaded.Coordinates(it.latitude, it.longitude)
+            }
             _state.value = try {
+                viewport = currentLocation?.let { initialViewport(it.latitude, it.longitude) }
                 HomeState.Loaded(
-                    events = LazyList(
-                        coroutineScope = viewModelScope,
-                        load = {
-                            val events = eventRepo.getNearbyEvents(it)
-                            LazyList.Chunk(
-                                items = events.items,
-                                next = events.next
-                            )
-                        }
-                    )
+                    events = createEventsList(viewport),
+                    currentLocation = currentLocation,
+                    onMapViewportChanged = ::setMapViewport
                 )
             } catch (e: Exception) {
                 logger.error(e) {  }
@@ -49,7 +39,46 @@ class HomeViewModel(
         }
     }
 
+    private fun setMapViewport(viewport: EventViewport) {
+        val loaded = _state.value as? HomeState.Loaded ?: return
+        if (this.viewport == viewport) return
+
+        _state.value = loaded.copy(
+            events = createEventsList(viewport)
+        )
+    }
+
     fun search(query: String) {
         // TODO
+    }
+
+    private fun initialViewport(latitude: Double, longitude: Double): EventViewport {
+        return EventViewport(
+            latitude = latitude,
+            longitude = longitude,
+            radiusKilometers = 500
+        )
+    }
+
+    private fun createEventsList(viewport: EventViewport?): LazyList<Event> {
+        return LazyList(
+            coroutineScope = viewModelScope,
+            load = { pageNumber ->
+                if (viewport == null) {
+                    LazyList.Chunk(emptyList(), null)
+                } else {
+                    val events = eventRepo.getNearbyEvents(
+                        latitude = viewport.latitude,
+                        longitude = viewport.longitude,
+                        radiusKilometers = viewport.radiusKilometers.coerceAtLeast(1),
+                        pageNumber = pageNumber
+                    )
+                    LazyList.Chunk(
+                        items = events.items,
+                        next = events.next
+                    )
+                }
+            }
+        )
     }
 }

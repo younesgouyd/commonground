@@ -12,16 +12,18 @@ import io.ktor.client.request.*
 class EventRepo(
     private val client: HttpClient
 ) {
-    suspend fun getNearbyEvents(pageNumber: Int): Events {
-        val coordinates = LocationManager.getCurrentLocation()
-        return if (coordinates != null) {
-            client.get("events") {
-                parameter("latitude", coordinates.latitude)
-                parameter("longitude", coordinates.longitude)
-                parameter("radiusKilometers", 500)
-                parameter("pageNumber", pageNumber)
-            }.body<Events>()
-        } else Events(emptyList(), null)
+    suspend fun getNearbyEvents(
+        latitude: Double,
+        longitude: Double,
+        radiusKilometers: Int,
+        pageNumber: Int
+    ): Events {
+        return client.get("events") {
+            parameter("latitude", latitude)
+            parameter("longitude", longitude)
+            parameter("radiusKilometers", radiusKilometers)
+            parameter("pageNumber", pageNumber)
+        }.body<Events>()
     }
 
     suspend fun getEvent(id: String): Event {
