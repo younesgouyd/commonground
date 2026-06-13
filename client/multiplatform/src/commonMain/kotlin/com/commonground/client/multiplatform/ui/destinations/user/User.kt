@@ -123,47 +123,14 @@ private fun Wide(
             }
             when (selectedTabIndex.second) {
                 Tabs.Events -> items(state.events.created) { event ->
-                    Event(
+                    EventCard(
                         event = event,
-                        onClick = { navActions.toEvent(event.id!!) }
+                        onClick = { navActions.toEvent(event.id) },
+                        onUserClick = {}
                     )
                 }
                 Tabs.Friends -> Unit
             }
-        }
-    }
-}
-
-@Composable
-private fun Event(
-    event: Event,
-    onClick: () -> Unit
-) {
-    Card(onClick) {
-        Column(
-            modifier = Modifier.fillMaxWidth().padding(8.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(4.dp)
-        ) {
-            Image(
-                modifier = Modifier.aspectRatio(1f),
-                imageVector = Icons.Default.Image,
-                contentScale = ContentScale.FillWidth,
-                alignment = Alignment.TopCenter,
-                contentDescription = null
-            )
-            Text(
-                text = event.title,
-                style = MaterialTheme.typography.titleMedium,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
-            )
-            Text(
-                text = event.description ?: "",
-                style = MaterialTheme.typography.bodyMedium,
-                maxLines = 4,
-                overflow = TextOverflow.Ellipsis
-            )
         }
     }
 }

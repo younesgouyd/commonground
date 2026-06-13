@@ -1,6 +1,8 @@
 package com.commonground.client.multiplatform.data.repositories
 
 import com.commonground.client.multiplatform.data.LocationManager
+import com.commonground.core.models.CreateEventRequest
+import com.commonground.core.models.Event
 import com.commonground.core.models.Events
 import com.commonground.core.models.UserEvents
 import io.ktor.client.*
@@ -22,7 +24,17 @@ class EventRepo(
         } else Events(emptyList(), null)
     }
 
+    suspend fun getEvent(id: String): Event {
+        return client.get("events/$id").body<Event>()
+    }
+
+    suspend fun createEvent(request: CreateEventRequest): Event {
+        return client.post("events") {
+            setBody(request)
+        }.body<Event>()
+    }
+
     suspend fun getUserEvents(): UserEvents {
-        TODO()
+        return client.get("user/events").body<UserEvents>()
     }
 }

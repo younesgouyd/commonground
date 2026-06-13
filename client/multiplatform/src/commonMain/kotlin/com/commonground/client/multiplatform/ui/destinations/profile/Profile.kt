@@ -20,6 +20,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.commonground.client.multiplatform.ui.AdaptiveUi
+import com.commonground.client.multiplatform.ui.widgets.EventCard
 import com.commonground.core.models.Event
 
 interface ProfileNavActions {
@@ -337,9 +338,10 @@ private fun ShowAllEventsGrid(
             columns = GridCells.Adaptive(200.dp)
         ) {
             items(events, key = { it.id }) { event ->
-                HorizontalEventCard(
+                EventCard(
                     event = event,
-                    onClick = { onEventClick(event.id) }
+                    onClick = { onEventClick(event.id) },
+                    onUserClick = {}
                 )
             }
         }
@@ -393,63 +395,17 @@ private fun EventSection(
             horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             items(events, key = { it.id }) { event ->
-                HorizontalEventCard(
+                EventCard(
                     event = event,
-                    onClick = { onEventClick(event) }
+                    onClick = { onEventClick(event) },
+                    onUserClick = {}
                 )
             }
         }
     }
 }
 
-@Composable
-private fun HorizontalEventCard(
-    event: Event,
-    onClick: () -> Unit
-) {
-    Card(
-        modifier = Modifier.width(180.dp),
-        onClick = onClick
-    ) {
-        Column(
-            modifier = Modifier.fillMaxWidth().padding(8.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(4.dp)
-        ) {
-            Surface(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .aspectRatio(16f / 9f),
-                color = MaterialTheme.colorScheme.surfaceContainerHigh,
-                shape = MaterialTheme.shapes.medium
-            ) {
-                Box(contentAlignment = Alignment.Center) {
-                    Icon(
-                        Icons.Default.Image,
-                        contentDescription = null,
-                        modifier = Modifier.size(40.dp),
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
-                    )
-                }
-            }
-            Text(
-                text = event.title,
-                style = MaterialTheme.typography.titleSmall,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.fillMaxWidth()
-            )
-            Text(
-                text = event.description ?: "",
-                style = MaterialTheme.typography.bodySmall,
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.fillMaxWidth(),
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-        }
-    }
-}
+
 
 @Composable
 private fun FriendsTab(
