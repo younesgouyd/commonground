@@ -39,7 +39,7 @@ class EventService(
             description = request.description?.trim()?.ifBlank { null },
             locationName = request.locationName.trim(),
             coordinates = point,
-            date = request.date.trim(),
+            date = request.date,
             isPrivate = request.isPrivate,
             durationMinutes = request.durationMinutes,
             isPaid = request.isPaid,
@@ -53,7 +53,8 @@ class EventService(
     private fun validateRequest(request: CreateEventRequest) {
         require(request.title.isNotBlank()) { "Title is required" }
         require(request.locationName.isNotBlank()) { "Location is required" }
-        require(request.date.isNotBlank()) { "Date is required" }
+        //TODO : to be checked
+//        require(request.date != null) { "Date is required" }
         require(request.durationMinutes > 0) { "Duration must be positive" }
     }
 }

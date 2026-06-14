@@ -48,6 +48,7 @@ import com.commonground.client.multiplatform.ui.destinations.createevent.CreateE
 import com.commonground.client.multiplatform.ui.destinations.eventdetails.EventDetails
 import com.commonground.client.multiplatform.ui.destinations.eventdetails.EventDetailsNavActions
 import com.commonground.client.multiplatform.ui.destinations.eventdetails.EventDetailsViewModel
+import com.commonground.client.multiplatform.ui.destinations.home.Home
 import com.commonground.client.multiplatform.ui.destinations.home.HomeNavActions
 import com.commonground.client.multiplatform.ui.destinations.home.HomeScreen
 import com.commonground.client.multiplatform.ui.destinations.home.HomeViewModel
@@ -248,7 +249,7 @@ private fun NavGraph(navController: NavHostController, repoStore: RepoStore, sta
         }
 
         composable<Route.Home> {
-            HomeScreen(
+            Home(
                 viewModel = viewModel { HomeViewModel(repoStore.eventRepo) },
                 navActions = object : HomeNavActions {
                     override fun toEventDetails(id: String) { navController.navigate(Route.Event(id)) }

@@ -3,9 +3,7 @@ package com.commonground.client.multiplatform.ui.widgets
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Image
-import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.Place
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -33,6 +31,7 @@ fun EventCard(
         modifier = modifier
     ) {
         Column(modifier = Modifier.fillMaxWidth()) {
+            // Image placeholder
             Surface(
                 modifier = Modifier.fillMaxWidth().aspectRatio(16f / 9f),
                 color = MaterialTheme.colorScheme.surfaceContainerHigh,
@@ -52,6 +51,7 @@ fun EventCard(
                 modifier = Modifier.padding(12.dp),
                 verticalArrangement = Arrangement.spacedBy(6.dp)
             ) {
+                // Title
                 Text(
                     text = event.title,
                     style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold),
@@ -59,6 +59,7 @@ fun EventCard(
                     overflow = TextOverflow.Ellipsis
                 )
 
+                // Location
                 if (event.locationName.isNotBlank()) {
                     Row(
                         horizontalArrangement = Arrangement.spacedBy(4.dp),
@@ -80,6 +81,7 @@ fun EventCard(
                     }
                 }
 
+                // Description
                 val desc = event.description
                 if (!desc.isNullOrBlank()) {
                     Text(
@@ -92,6 +94,19 @@ fun EventCard(
                     )
                 }
 
+                // Tags (Indoor / Paid)
+                if (event.isPrivate || event.isPaid) {
+                    Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                        if (event.isPrivate) {
+                            Badge("Indoor", Icons.Default.Home)
+                        }
+                        if (event.isPaid) {
+                            Badge("Paid", Icons.Default.Paid)
+                        }
+                    }
+                }
+
+                // Duration + Date
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(6.dp),
@@ -126,6 +141,7 @@ fun EventCard(
                     color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
                 )
 
+                // Creator row (non-clickable)
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(6.dp),
@@ -145,9 +161,12 @@ fun EventCard(
                             )
                         }
                     }
-                    Person(
-                        name = event.creator.displayName ?: event.creator.username,
-                        onClick = { onUserClick(event.creator.id) }
+                    Text(
+                        text = event.creator.displayName ?: event.creator.username,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
                     )
                 }
             }

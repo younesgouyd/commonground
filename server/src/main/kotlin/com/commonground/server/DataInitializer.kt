@@ -54,7 +54,7 @@ class DataInitializer(
                         longitude = Random.nextDouble(-180.0, 180.0)
                     ),
                     date = LocalDateTime.of(2026, 7, Random.nextInt(1, 29), Random.nextInt(10, 22), 0, 0)
-                        .toInstant(ZoneOffset.UTC),
+                        .toInstant(ZoneOffset.UTC).toString(),
                     isPrivate = Random.nextBoolean(),
                     durationMinutes = listOf(30L, 60L, 90L, 120L, 180L).random(),
                     isPaid = Random.nextBoolean(),

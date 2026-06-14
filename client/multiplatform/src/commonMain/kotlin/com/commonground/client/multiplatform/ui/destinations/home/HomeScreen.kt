@@ -10,10 +10,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.commonground.client.multiplatform.ui.AdaptiveUi
 
-interface HomeNavActions {
-    fun toEventDetails(id: String)
-    fun toUser(id: String)
-}
+//TODO : conflict of duplication
+//interface HomeNavActions {
+//    fun toEventDetails(id: String)
+//    fun toUser(id: String)
+//}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

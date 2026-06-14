@@ -315,7 +315,7 @@ private fun Badges(event: Event) {
 }
 
 @Composable
-private fun Date(datetime: Instant) {
+private fun Date(datetime: String) {
     Row(
         horizontalArrangement = Arrangement.spacedBy(4.dp),
         verticalAlignment = Alignment.CenterVertically
@@ -327,7 +327,7 @@ private fun Date(datetime: Instant) {
             tint = MaterialTheme.colorScheme.primary
         )
         Text(
-            text = datetime.formatted(),
+            text = datetime,
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             maxLines = 1,

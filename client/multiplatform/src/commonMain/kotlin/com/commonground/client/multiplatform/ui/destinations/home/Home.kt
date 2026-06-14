@@ -62,7 +62,13 @@ private fun Wide(
             modifier = Modifier.weight(0.55f).fillMaxHeight(),
             tonalElevation = 1.dp
         ) {
-            //MAP
+            Map(
+                modifier = Modifier.weight(1f).fillMaxHeight(),
+                items = items,
+                currentLocation = state.currentLocation,
+                onViewportChanged = state.onMapViewportChanged
+            )
+
         }
 
         Column(
