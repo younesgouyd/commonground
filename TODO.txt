@@ -1,25 +1,21 @@
-
+- fix client crashing when navigating away from map screen while the map is in mid-animation.
+- add dark mode setting.
+- support displaying current events.
+- support setting profile and event images.
+- decide whether Event.coordinates may be optional.
+- implement ui for searching/filtering and sorting events by search keywords, category, follows, date, location, distance from user... etc.
+- relationship with freinds rules
+    - follows.
+    - friend request.
+    - event visibility/privacy options (public, friends, family... etc).
 - delete expired refresh tokens.
 - implement authorization (permissions, access control...).
-
-Tarik:
-
-#TODO 4/2/2026:
-    [] - onboarding
-        [x] - UI
-        [x] - viewModel
-        [] - repository
-    [] - signUP
-        [x] - UI
-        [x] - viewModel
-        [] - repository
-    [] - login
-        [x] - UI
-        [x] - viewModel
-        [] - repository
 
 done:
 - handle refresh token expiration.
 - implement logout in backend.
 - fix login.
 - search about location data and maps.
+- onboarding (UI, viewModel)
+- signUP (UI, viewModel, repository)
+- login (UI, viewModel, repository)
