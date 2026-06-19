@@ -65,7 +65,7 @@ class HomeViewModel(
             coroutineScope = viewModelScope,
             load = { pageNumber ->
                 if (viewport == null) {
-                    LazyList.Chunk(emptyList(), null)
+                    LazyList.Chunk(emptyList(), null, null)
                 } else {
                     val events = eventRepo.getNearbyEvents(
                         latitude = viewport.latitude,
@@ -75,7 +75,8 @@ class HomeViewModel(
                     )
                     LazyList.Chunk(
                         items = events.items,
-                        next = events.next
+                        next = events.next,
+                        totalCount = events.total
                     )
                 }
             }

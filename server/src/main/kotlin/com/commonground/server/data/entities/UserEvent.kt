@@ -1,8 +1,8 @@
 package com.commonground.server.data.entities
 
-import com.commonground.core.models.ImageUrl
 import jakarta.persistence.*
-import org.locationtech.jts.geom.Point
+import org.hibernate.annotations.OnDelete
+import org.hibernate.annotations.OnDeleteAction
 import org.springframework.data.annotation.CreatedDate
 import org.springframework.data.annotation.LastModifiedDate
 import org.springframework.data.jpa.domain.support.AuditingEntityListener
@@ -11,26 +11,22 @@ import java.util.*
 
 @Entity
 @EntityListeners(AuditingEntityListener::class)
-class Event(
+@Table(
+    uniqueConstraints = [UniqueConstraint(columnNames = ["user_id", "event_id"])]
+)
+class UserEvent(
     @Id
     val id: UUID = UUID.randomUUID(),
-    @Column(nullable = false) val title: String,
-    val description: String? = null,
-    @Column(nullable = false) val locationName: String,
-
-    @Column(columnDefinition = "geography(Point, 4326)")
-    val coordinates: Point,
-
-    @Column(nullable = false) val date: Instant,
-    @Column(nullable = false) val isPrivate: Boolean,
-    @Column(nullable = false) val durationMinutes: Long,
-    @Column(nullable = false) val isPaid: Boolean,
-
-    val image: ImageUrl?,
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(nullable = false)
-    val creator: User
+    @OnDelete(action = OnDeleteAction.CASCADE)
+    @JoinColumn(name = "user_id", nullable = false)
+    val user: User,
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @OnDelete(action = OnDeleteAction.CASCADE)
+    @JoinColumn(name = "event_id", nullable = false)
+    val event: Event
 ) {
     @CreatedDate
     @Column(updatable = false, nullable = false)

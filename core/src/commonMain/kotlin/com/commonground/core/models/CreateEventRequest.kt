@@ -1,6 +1,7 @@
 package com.commonground.core.models
 
 import kotlinx.serialization.Serializable
+import kotlin.time.Instant
 
 @Serializable
 data class CreateEventRequest(
@@ -9,7 +10,7 @@ data class CreateEventRequest(
     val locationName: String,
     val latitude: Double? = null,
     val longitude: Double? = null,
-    val date: String,
+    val date: Instant,
     val isPrivate: Boolean = false,
     val durationMinutes: Long,
     val isPaid: Boolean = false

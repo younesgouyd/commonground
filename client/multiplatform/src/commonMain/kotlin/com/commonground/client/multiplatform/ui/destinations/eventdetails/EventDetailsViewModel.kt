@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.commonground.client.multiplatform.data.repositories.EventRepo
 import com.commonground.core.models.Event
 import com.commonground.core.models.User
+import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
@@ -42,6 +43,7 @@ class EventDetailsViewModel(
     val id: String,
     private val eventRepo: EventRepo
 ) : ViewModel() {
+    private val logger = KotlinLogging.logger {  }
     private val _state: MutableStateFlow<EventDetailsState> = MutableStateFlow(EventDetailsState.Loading)
     val state = _state.asStateFlow()
 
@@ -49,14 +51,17 @@ class EventDetailsViewModel(
         viewModelScope.launch {
             _state.value = try {
                 val event = eventRepo.getEvent(id)
-                EventDetailsState.Loaded(
-                    event = event,
-                    creators = listOf(event.creator),
-                    messages = generateMockMessages()
-                )
-            } catch (e: NoSuchElementException) {
+                if (event != null) {
+                    EventDetailsState.Loaded(
+                        event = event,
+                        creators = listOf(event.creator),
+                        messages = generateMockMessages()
+                    )
+                } else EventDetailsState.NotFound
+            } catch (_: NoSuchElementException) {
                 EventDetailsState.NotFound
             } catch (e: Exception) {
+                logger.error(e) {}
                 EventDetailsState.Error(e.message ?: "Failed to load event details.")
             }
         }

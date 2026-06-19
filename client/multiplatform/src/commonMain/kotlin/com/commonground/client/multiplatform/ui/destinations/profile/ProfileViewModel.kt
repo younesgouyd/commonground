@@ -2,38 +2,18 @@ package com.commonground.client.multiplatform.ui.destinations.profile
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.commonground.client.multiplatform.data.repositories.EventRepo
 import com.commonground.client.multiplatform.data.repositories.UserRepo
-import com.commonground.core.models.User
-import com.commonground.core.models.UserEvents
+import com.commonground.client.multiplatform.ui.LazyList
+import com.commonground.core.models.UserEventType
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
-sealed class ProfileState {
-    data object Loading : ProfileState()
-
-    data class Loaded(
-        val user: User,
-        val events: UserEvents,
-        val friends: List<Friend>,
-        val friendCount: Int,
-        val eventCount: Int,
-        val onEditProfile: () -> Unit,
-        val onToSettings: () -> Unit,
-    ) : ProfileState() {
-        data class Friend(
-            val id: String,
-            val username: String,
-            val displayName: String?,
-        )
-    }
-
-    data object Error : ProfileState()
-}
-
 class ProfileViewModel(
     private val userRepo: UserRepo,
+    private val eventRepo: EventRepo,
     private val onEditProfile: () -> Unit = {},
     private val onToSettings: () -> Unit = {},
 ) : ViewModel() {
@@ -49,16 +29,53 @@ class ProfileViewModel(
 
     private suspend fun loadProfile(): ProfileState {
         return try {
-            val profile = userRepo.getMyProfile()
-            ProfileState.Loaded(
-                user = profile.user,
-                events = profile.events,
-                friends = emptyList(), // TODO: getFriends end point not Impl yt
-                friendCount = profile.friendCount,
-                eventCount = profile.eventCount,
-                onEditProfile = onEditProfile,
-                onToSettings = onToSettings,
-            )
+            val profile = userRepo.getLoggedInUser()
+            if (profile == null) {
+                ProfileState.Error
+            } else {
+                ProfileState.Loaded(
+                    user = profile,
+                    events = ProfileState.Loaded.Events(
+                        created = LazyList(
+                            coroutineScope = viewModelScope,
+                            load = { pageNumber ->
+                                val events = eventRepo.getLoggedInUserEvents(UserEventType.Created, pageNumber)
+                                LazyList.Chunk(
+                                    items = events.items,
+                                    next = events.next,
+                                    totalCount = events.total
+                                )
+                            }
+                        ),
+                        attending = LazyList(
+                            coroutineScope = viewModelScope,
+                            load = { pageNumber ->
+                                val events = eventRepo.getLoggedInUserEvents(UserEventType.Attending, pageNumber)
+                                LazyList.Chunk(
+                                    items = events.items,
+                                    next = events.next,
+                                    totalCount = events.total
+                                )
+                            }
+                        ),
+                        went = LazyList(
+                            coroutineScope = viewModelScope,
+                            load = { pageNumber ->
+                                val events = eventRepo.getLoggedInUserEvents(UserEventType.Went, pageNumber)
+                                LazyList.Chunk(
+                                    items = events.items,
+                                    next = events.next,
+                                    totalCount = events.total
+                                )
+                            }
+                        )
+                    ),
+                    friends = emptyList(), // TODO: getFriends end point not Impl yt
+                    friendCount = 0, // TODO
+                    onEditProfile = onEditProfile,
+                    onToSettings = onToSettings,
+                )
+            }
         } catch (e: Exception) {
             logger.error(e) {  }
             ProfileState.Error

@@ -15,11 +15,13 @@ class LazyList<T>(
 ) {
     private val _items: MutableStateFlow<List<T>> = MutableStateFlow(emptyList())
     private val _loading: MutableStateFlow<Boolean> = MutableStateFlow(false)
+    private val _totalCount: MutableStateFlow<Long?> = MutableStateFlow(null)
     private var next: Int? = 0
     private val mutex = Mutex()
 
     val items: StateFlow<List<T>> get() = _items.asStateFlow()
     val loading: StateFlow<Boolean> get() = _loading.asStateFlow()
+    val totalCount: StateFlow<Long?> get() = _totalCount.asStateFlow()
 
     init {
         loadMore()
@@ -36,6 +38,7 @@ class LazyList<T>(
                         _items.update {
                             it + result.items
                         }
+                        _totalCount.value = result.totalCount
                         _loading.value = false
                     }
                 }
@@ -45,6 +48,7 @@ class LazyList<T>(
 
     data class Chunk<Item>(
         val items: List<Item>,
-        val next: Int?
+        val next: Int?,
+        val totalCount: Long?
     )
 }

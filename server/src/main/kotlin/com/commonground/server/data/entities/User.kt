@@ -25,13 +25,7 @@ class User(
 
     val displayName: String? = null,
     val bio: String? = null,
-    val profilePic: ImageUrl? = null,
-
-    @OneToMany(mappedBy = "creator", cascade = [CascadeType.ALL])
-    val createdEvents: MutableList<Event> = mutableListOf(),
-
-    @ManyToMany
-    val attendingEvents: MutableList<Event> = mutableListOf(),
+    val profilePic: ImageUrl? = null
 ) {
     @CreatedDate
     @Column(updatable = false, nullable = false)

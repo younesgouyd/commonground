@@ -20,6 +20,7 @@ kotlin {
 
 dependencies {
     implementation(project(":core"))
+    implementation(libs.datetime)
     implementation(libs.coroutines.core)
     implementation(libs.kotlin.reflect)
 

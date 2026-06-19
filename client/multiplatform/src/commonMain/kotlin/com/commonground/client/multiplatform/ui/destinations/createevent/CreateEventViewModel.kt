@@ -8,6 +8,10 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import java.time.LocalDateTime
+import java.time.ZoneOffset
+import kotlin.random.Random
+import kotlin.time.toKotlinInstant
 
 data class CreateEventState(
     val title: String = "",
@@ -74,7 +78,10 @@ class CreateEventViewModel(
                     locationName = s.locationName.trim(),
                     latitude = s.latitude.toDoubleOrNull(),
                     longitude = s.longitude.toDoubleOrNull(),
-                    date = "${s.date.trim()}T${s.time.trim()}:00",
+                    // TODO
+                    date = LocalDateTime.of(2026, 7, Random.nextInt(1, 29), Random.nextInt(10, 22), 0, 0)
+                        .toInstant(ZoneOffset.UTC)
+                        .toKotlinInstant(), // "${s.date.trim()}T${s.time.trim()}:00",
                     isPrivate = s.isPrivate,
                     durationMinutes = s.durationMinutes,
                     isPaid = s.isPaid

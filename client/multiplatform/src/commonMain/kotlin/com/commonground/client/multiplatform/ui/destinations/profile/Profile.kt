@@ -5,7 +5,9 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
@@ -20,8 +22,11 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.commonground.client.multiplatform.ui.AdaptiveUi
+import com.commonground.client.multiplatform.ui.LazyList
 import com.commonground.client.multiplatform.ui.widgets.EventCard
 import com.commonground.core.models.Event
+import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.flow.map
 
 interface ProfileNavActions {
     fun toFollowers(id: String)
@@ -96,6 +101,7 @@ private fun ProfileSidebar(
     state: ProfileState.Loaded
 ) {
     val scrollState = rememberScrollState()
+    val createdEventsCount by state.events.created.totalCount.collectAsState()
 
     Column(
         modifier = Modifier
@@ -152,8 +158,10 @@ private fun ProfileSidebar(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceEvenly
         ) {
-            StatItem(count = state.eventCount, label = "Events")
-            StatItem(count = state.friendCount, label = "Friends")
+            createdEventsCount?.let {
+                StatItem(count = it, label = "Events")
+            }
+            StatItem(count = state.friendCount.toLong(), label = "Friends")
         }
 
         HorizontalDivider()
@@ -187,7 +195,7 @@ private fun ProfileSidebar(
 }
 
 @Composable
-private fun StatItem(count: Int, label: String) {
+private fun StatItem(count: Long, label: String) {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         Text(
             text = count.toString(),
@@ -201,6 +209,7 @@ private fun StatItem(count: Int, label: String) {
         )
     }
 }
+
 @Composable
 private fun ProfileContent(
     state: ProfileState.Loaded,
@@ -229,7 +238,7 @@ private fun ProfileContent(
 
 private data class ExpandedSection(
     val title: String,
-    val events: List<Event>,
+    val events: LazyList<Event>,
 )
 
 @Composable
@@ -237,7 +246,11 @@ private fun EventsTab(
     state: ProfileState.Loaded,
     navActions: ProfileNavActions
 ) {
-    if (state.events.created.isEmpty() && state.events.going.isEmpty() && state.events.went.isEmpty()) {
+    val created by state.events.created.items.collectAsState()
+    val going by state.events.attending.items.collectAsState()
+    val went by state.events.went.items.collectAsState()
+
+    if (created.isEmpty() && going.isEmpty() && went.isEmpty()) {
         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 Icon(
@@ -256,7 +269,6 @@ private fun EventsTab(
     var expandedSection by remember { mutableStateOf<ExpandedSection?>(null) }
 
     if (expandedSection != null) {
-
         ShowAllEventsGrid(
             title = expandedSection!!.title,
             events = expandedSection!!.events,
@@ -271,35 +283,24 @@ private fun EventsTab(
                 .padding(vertical = 16.dp),
             verticalArrangement = Arrangement.spacedBy(24.dp)
         ) {
-            if (state.events.created.isNotEmpty()) {
-                EventSection(
-                    title = "Created",
-                    count = state.events.created.size,
-                    events = state.events.created,
-                    onShowAll = { expandedSection = ExpandedSection("Created", state.events.created) },
-                    onEventClick = { navActions.toEvent(it.id) }
-                )
-            }
-
-            if (state.events.going.isNotEmpty()) {
-                EventSection(
-                    title = "Going",
-                    count = state.events.going.size,
-                    events = state.events.going,
-                    onShowAll = { expandedSection = ExpandedSection("Going", state.events.going) },
-                    onEventClick = { navActions.toEvent(it.id) }
-                )
-            }
-
-            if (state.events.went.isNotEmpty()) {
-                EventSection(
-                    title = "Went",
-                    count = state.events.went.size,
-                    events = state.events.went,
-                    onShowAll = { expandedSection = ExpandedSection("Went", state.events.went) },
-                    onEventClick = { navActions.toEvent(it.id) }
-                )
-            }
+            EventSection(
+                title = "Created",
+                events = state.events.created,
+                onShowAll = { expandedSection = ExpandedSection("Created", state.events.created) },
+                onEventClick = { navActions.toEvent(it.id) }
+            )
+            EventSection(
+                title = "Going",
+                events = state.events.attending,
+                onShowAll = { expandedSection = ExpandedSection("Going", state.events.attending) },
+                onEventClick = { navActions.toEvent(it.id) }
+            )
+            EventSection(
+                title = "Went",
+                events = state.events.went,
+                onShowAll = { expandedSection = ExpandedSection("Went", state.events.went) },
+                onEventClick = { navActions.toEvent(it.id) }
+            )
         }
     }
 }
@@ -307,10 +308,14 @@ private fun EventsTab(
 @Composable
 private fun ShowAllEventsGrid(
     title: String,
-    events: List<Event>,
+    events: LazyList<Event>,
     onBack: () -> Unit,
     onEventClick: (String) -> Unit
 ) {
+    val listState = rememberLazyGridState()
+    val items by events.items.collectAsState()
+    val loading by events.loading.collectAsState()
+
     Column(modifier = Modifier.fillMaxSize()) {
         Row(
             modifier = Modifier
@@ -332,30 +337,53 @@ private fun ShowAllEventsGrid(
 
         LazyVerticalGrid(
             modifier = Modifier.fillMaxSize(),
+            state = listState,
             contentPadding = PaddingValues(16.dp),
             horizontalArrangement = Arrangement.spacedBy(12.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
             columns = GridCells.Adaptive(200.dp)
         ) {
-            items(events, key = { it.id }) { event ->
+            items(items, key = { it.id }) { event ->
                 EventCard(
                     event = event,
                     onClick = { onEventClick(event.id) },
                     onUserClick = {}
                 )
             }
+            if (loading) {
+                item {
+                    Box(
+                        modifier = Modifier.fillMaxWidth().padding(16.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        CircularProgressIndicator(modifier = Modifier.size(36.dp), strokeWidth = 2.dp)
+                    }
+                }
+            }
         }
+    }
+
+    LaunchedEffect(listState, events, items.size) {
+        snapshotFlow {
+            listState.layoutInfo.visibleItemsInfo.lastOrNull()?.index
+        }.map { it == null ||  it >= items.size - 5  }
+            .filter { it }
+            .collect { events.loadMore() }
     }
 }
 
 @Composable
 private fun EventSection(
     title: String,
-    count: Int,
-    events: List<Event>,
+    events: LazyList<Event>,
     onShowAll: () -> Unit,
     onEventClick: (Event) -> Unit
 ) {
+    val listState = rememberLazyListState()
+    val items by events.items.collectAsState()
+    val loading by events.loading.collectAsState()
+    val count by events.totalCount.collectAsState()
+
     Column {
         Row(
             modifier = Modifier
@@ -391,21 +419,38 @@ private fun EventSection(
         }
 
         LazyRow(
+            state = listState,
             contentPadding = PaddingValues(start = 16.dp, end = 16.dp),
             horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            items(events, key = { it.id }) { event ->
+            items(items, key = { it.id }) { event ->
                 EventCard(
                     event = event,
                     onClick = { onEventClick(event) },
-                    onUserClick = {}
+                    onUserClick = {} // TODO
                 )
+            }
+            if (loading) {
+                item {
+                    Box(
+                        modifier = Modifier.fillMaxWidth().padding(16.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        CircularProgressIndicator(modifier = Modifier.size(36.dp), strokeWidth = 2.dp)
+                    }
+                }
             }
         }
     }
+
+    LaunchedEffect(listState, events, items.size) {
+        snapshotFlow {
+            listState.layoutInfo.visibleItemsInfo.lastOrNull()?.index
+        }.map { it == null ||  it >= items.size - 5  }
+            .filter { it }
+            .collect { events.loadMore() }
+    }
 }
-
-
 
 @Composable
 private fun FriendsTab(
@@ -513,6 +558,8 @@ private fun Compact(
     state: ProfileState.Loaded,
     navActions: ProfileNavActions
 ) {
+    val createdEventsCount by state.events.created.totalCount.collectAsState()
+
     Column(modifier = Modifier.fillMaxSize()) {
         Surface(
             modifier = Modifier.fillMaxWidth(),
@@ -571,8 +618,10 @@ private fun Compact(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceEvenly
                 ) {
-                    StatItem(count = state.eventCount, label = "Events")
-                    StatItem(count = state.friendCount, label = "Friends")
+                    createdEventsCount?.let {
+                        StatItem(count = it, label = "Events")
+                    }
+                    StatItem(count = state.friendCount.toLong(), label = "Friends")
                 }
 
                 Row(

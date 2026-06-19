@@ -12,6 +12,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.commonground.client.multiplatform.ui.formatted
 import com.commonground.core.models.Event
 
 @Composable
@@ -130,7 +131,7 @@ fun EventCard(
                     }
                     Spacer(Modifier.weight(1f))
                     Text(
-                        text = event.date,
+                        text = event.date.formatted(),
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )

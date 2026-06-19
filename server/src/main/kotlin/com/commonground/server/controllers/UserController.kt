@@ -1,29 +1,29 @@
 package com.commonground.server.controllers
 
-import com.commonground.core.models.ProfileResponse
-import com.commonground.core.models.UserEvents
-import com.commonground.server.services.AuthService
+import com.commonground.core.models.Events
+import com.commonground.core.models.User
+import com.commonground.core.models.UserEventType
+import com.commonground.server.services.EventService
 import com.commonground.server.services.UserService
 import org.springframework.web.bind.annotation.*
 
 @RestController
 @RequestMapping("/api/v1/user")
 class UserController(
-    private val authService: AuthService,
-    private val userService: UserService
+    private val userService: UserService,
+    private val eventService: EventService
 ) {
-    @GetMapping("/profile")
-    fun profile(): ProfileResponse {
-        return userService.getMyProfile()
+    @GetMapping("/{id}")
+    fun user(@PathVariable id: String): User? {
+        return userService.getUser(id)
     }
 
-    @GetMapping("/events")
-    fun myEvents(): UserEvents {
-        return userService.getMyEvents()
-    }
-
-    @PostMapping("/logout")
-    fun logout(@RequestBody refreshToken: String) {
-        authService.logout(refreshToken)
+    @GetMapping("/{id}/events")
+    fun events(
+        @PathVariable id: String,
+        @RequestParam type: UserEventType,
+        @RequestParam pageNumber: Int
+    ): Events {
+        return eventService.getUserEvents(id, type, pageNumber)
     }
 }

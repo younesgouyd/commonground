@@ -3,48 +3,41 @@ package com.commonground.server.controllers
 import com.commonground.core.models.CreateEventRequest
 import com.commonground.core.models.Event
 import com.commonground.core.models.Events
-import com.commonground.server.data.EventRepository
 import com.commonground.server.services.EventService
-import com.commonground.server.util.GeometryUtils
-import com.commonground.server.util.toModel
-import org.springframework.data.domain.PageRequest
-import org.springframework.http.ResponseEntity
+import org.springframework.security.core.annotation.AuthenticationPrincipal
 import org.springframework.web.bind.annotation.*
-import java.util.*
-import kotlin.jvm.optionals.getOrNull
 
 @RestController
 @RequestMapping("/api/v1/events")
 class EventController(
-    private val repo: EventRepository,
     private val eventService: EventService
 ) {
     @GetMapping
-    fun getEventsNearLocation(
+    fun events(
         @RequestParam latitude: Double,
         @RequestParam longitude: Double,
         @RequestParam radiusKilometers: Int,
         @RequestParam pageNumber: Int
     ): Events {
-        val slice = repo.findEventsNearLocation(
-            location = GeometryUtils.createPoint(latitude, longitude),
-            radiusMeters = radiusKilometers * 1000,
-            pageable = PageRequest.of(pageNumber, 50)
-        ).map(com.commonground.server.data.entities.Event::toModel)
-        return Events(
-            items = slice.content,
-            next = if (slice.hasNext()) slice.nextPageable().pageNumber else null
+        return eventService.getEventsNearLocation(
+            latitude = latitude,
+            longitude = longitude,
+            radiusKilometers = radiusKilometers,
+            pageNumber = pageNumber
         )
     }
 
     @GetMapping("/{id}")
-    fun event(@PathVariable id: String): ResponseEntity<Event> {
-        return repo.findById(id.toUuid()).getOrNull()?.let { ResponseEntity.ok(it.toModel()) } ?: ResponseEntity.notFound().build()
+    fun event(@PathVariable id: String): Event? {
+        return eventService.getEvent(id)
     }
 
     @PostMapping
-    fun post(@RequestBody request: CreateEventRequest): Event {
-        return eventService.createEvent(request)
+    fun post(
+        @AuthenticationPrincipal userId: String,
+        @RequestBody request: CreateEventRequest
+    ): Event {
+        return eventService.createEvent(request, userId)
     }
 
     @PutMapping("/{id}")
@@ -55,8 +48,6 @@ class EventController(
 
     @DeleteMapping("/{id}")
     fun delete(@PathVariable id: String) {
-        repo.deleteById(id.toUuid())
+        eventService.delete(id)
     }
-
-    private fun String.toUuid() = UUID.fromString(this)
 }
