@@ -5,13 +5,11 @@ import com.commonground.core.models.Users
 import com.commonground.server.data.entities.UserFollow
 import com.commonground.server.data.repositories.UserFollowRepository
 import com.commonground.server.data.repositories.UserRepository
-import com.commonground.server.util.toModel
 import com.commonground.server.util.toUuid
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.PageRequest
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
-import kotlin.jvm.optionals.getOrNull
 
 @Service
 class UserService(
@@ -19,8 +17,8 @@ class UserService(
     private val userFollowRepository: UserFollowRepository
 ) {
     @Transactional
-    fun getUser(userId: String): User? {
-        return userRepository.findById(userId.toUuid()).getOrNull()?.toModel()
+    fun getUserWithFollowState(userId: String, followStateUserId: String): User? {
+        return userRepository.findByIdWithFollowState(userId.toUuid(), followStateUserId.toUuid())
     }
 
     @Transactional
@@ -92,6 +90,21 @@ class UserService(
             items = this.content,
             next = if (this.hasNext()) this.nextPageable().pageNumber else null,
             total = this.totalElements
+        )
+    }
+
+    @Transactional
+    fun update(
+        id: String,
+        username: String,
+        displayName: String?,
+        bio: String?
+    ) {
+        userRepository.update(
+            id = id.toUuid(),
+            username = username,
+            displayName = displayName,
+            bio = bio
         )
     }
 }

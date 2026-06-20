@@ -49,14 +49,14 @@ import com.commonground.client.multiplatform.ui.destinations.onboarding.Onboardi
 import com.commonground.client.multiplatform.ui.destinations.onboarding.OnboardingNavActions
 import com.commonground.client.multiplatform.ui.destinations.onboarding.OnboardingViewModel
 import com.commonground.client.multiplatform.ui.destinations.profile.Profile
-import com.commonground.client.multiplatform.ui.destinations.profile.ProfileNavActions
 import com.commonground.client.multiplatform.ui.destinations.profile.ProfileViewModel
+import com.commonground.client.multiplatform.ui.destinations.settings.Settings
 import com.commonground.client.multiplatform.ui.destinations.signup.SignUp
 import com.commonground.client.multiplatform.ui.destinations.signup.SignUpNavActions
 import com.commonground.client.multiplatform.ui.destinations.signup.SignUpViewModel
 import com.commonground.client.multiplatform.ui.destinations.user.User
-import com.commonground.client.multiplatform.ui.destinations.user.UserNavActions
 import com.commonground.client.multiplatform.ui.destinations.user.UserViewModel
+import com.commonground.client.multiplatform.ui.widgets.ProfileNavActions
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -97,96 +97,128 @@ fun MainUi(fileStorage: PlatformFileStorage) {
         if (isAuthFlow) {
             NavGraph(navController, repoStore, startDestination!!)
         } else if (isCompact) {
-            Scaffold(
-                bottomBar = {
-                    NavigationBar {
-                        NavigationBarItem(
-                            selected = inHome,
-                            onClick = {
-                                navController.navigate(Route.Home) {
-                                    popUpTo(navController.graph.startDestinationId) { saveState = true }
-                                    launchSingleTop = true
-                                    restoreState = true
-                                }
-                            },
-                            icon = { Icon(Icons.Default.Home, contentDescription = "Home") },
-                            label = { Text("Home") }
-                        )
-                        NavigationBarItem(
-                            selected = currentDestination?.hasRoute<Route.Profile>() == true,
-                            onClick = {
-                                navController.navigate(Route.Profile) {
-                                    popUpTo(navController.graph.startDestinationId) { saveState = true }
-                                    launchSingleTop = true
-                                    restoreState = true
-                                }
-                            },
-                            icon = { Icon(Icons.Default.Person, contentDescription = "Profile") },
-                            label = { Text("Profile") }
-                        )
-                        NavigationBarItem(
-                            selected = currentDestination?.hasRoute<Route.Settings>() == true,
-                            onClick = {
-                                navController.navigate(Route.Settings) {
-                                    popUpTo(navController.graph.startDestinationId) { saveState = true }
-                                    launchSingleTop = true
-                                    restoreState = true
-                                }
-                            },
-                            icon = { Icon(Icons.Default.Settings, contentDescription = "Settings") },
-                            label = { Text("Settings") }
-                        )
-                    }
-                },
-                content = { padding ->
-                    Box(modifier = Modifier.padding(padding).fillMaxSize()) {
-                        NavGraph(navController, repoStore, startDestination!!)
-                    }
-                }
+            Compact(
+                inHome = inHome,
+                navController = navController,
+                currentDestination = currentDestination,
+                repoStore = repoStore,
+                startDestination = startDestination
             )
         } else {
-            Row(modifier = Modifier.fillMaxSize()) {
-                AppSidebar(
-                    currentDestination = currentDestination,
-                    onNavigate = { route ->
-                        navController.navigate(route) {
-                            popUpTo(navController.graph.startDestinationId) { saveState = true }
-                            launchSingleTop = true
-                            restoreState = true
-                        }
-                    },
-                    onLogout = viewModel::logout
-                )
-                VerticalDivider()
-                Scaffold(
-                    topBar = {
-                        if (!inHome) {
-                            CenterAlignedTopAppBar(
-                                modifier = Modifier.fillMaxWidth(),
-                                navigationIcon = {
-                                    IconButton(onClick = { navController.popBackStack() }) {
-                                        Icon(Icons.AutoMirrored.Filled.ArrowBack, null)
-                                    }
-                                },
-                                title = {}
-                            )
-                        }
-                    },
-                    content = { padding ->
-                        Box(modifier = Modifier.padding(padding).fillMaxSize()) {
-                            NavGraph(navController, repoStore, startDestination!!)
-                        }
-                    }
-                )
-            }
+            Wide(
+                currentDestination = currentDestination,
+                navController = navController,
+                viewModel = viewModel,
+                inHome = inHome,
+                repoStore = repoStore,
+                startDestination = startDestination
+            )
         }
     }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun Wide(
+    currentDestination: NavDestination?,
+    navController: NavHostController,
+    viewModel: MainUiViewModel,
+    inHome: Boolean,
+    repoStore: RepoStore,
+    startDestination: Route?
+) {
+    Row(modifier = Modifier.fillMaxSize()) {
+        AppSidebar(
+            currentDestination = currentDestination,
+            onNavigate = { route ->
+                navController.navigate(route) {
+                    popUpTo(navController.graph.startDestinationId)
+                    launchSingleTop = true
+                }
+            },
+            onLogout = viewModel::logout
+        )
+        VerticalDivider()
+        Scaffold(
+            topBar = {
+                if (!inHome) {
+                    CenterAlignedTopAppBar(
+                        modifier = Modifier.fillMaxWidth(),
+                        navigationIcon = {
+                            IconButton(onClick = { navController.popBackStack() }) {
+                                Icon(Icons.AutoMirrored.Filled.ArrowBack, null)
+                            }
+                        },
+                        title = {}
+                    )
+                }
+            },
+            content = { padding ->
+                Box(modifier = Modifier.padding(padding).fillMaxSize()) {
+                    NavGraph(navController, repoStore, startDestination!!)
+                }
+            }
+        )
+    }
+}
+
+@Composable
+private fun Compact(
+    inHome: Boolean,
+    navController: NavHostController,
+    currentDestination: NavDestination?,
+    repoStore: RepoStore,
+    startDestination: Route?
+) {
+    Scaffold(
+        bottomBar = {
+            NavigationBar {
+                NavigationBarItem(
+                    selected = inHome,
+                    onClick = {
+                        navController.navigate(Route.Home) {
+                            popUpTo(navController.graph.startDestinationId)
+                            launchSingleTop = true
+                        }
+                    },
+                    icon = { Icon(Icons.Default.Home, contentDescription = "Home") },
+                    label = { Text("Home") }
+                )
+                NavigationBarItem(
+                    selected = currentDestination?.hasRoute<Route.Profile>() == true,
+                    onClick = {
+                        navController.navigate(Route.Profile) {
+                            popUpTo(navController.graph.startDestinationId)
+                            launchSingleTop = true
+                        }
+                    },
+                    icon = { Icon(Icons.Default.Person, contentDescription = "Profile") },
+                    label = { Text("Profile") }
+                )
+                NavigationBarItem(
+                    selected = currentDestination?.hasRoute<Route.Settings>() == true,
+                    onClick = {
+                        navController.navigate(Route.Settings) {
+                            popUpTo(navController.graph.startDestinationId)
+                            launchSingleTop = true
+                        }
+                    },
+                    icon = { Icon(Icons.Default.Settings, contentDescription = "Settings") },
+                    label = { Text("Settings") }
+                )
+            }
+        },
+        content = { padding ->
+            Box(modifier = Modifier.padding(padding).fillMaxSize()) {
+                NavGraph(navController, repoStore, startDestination!!)
+            }
+        }
+    )
 }
 
 @Composable
 private fun NavGraph(navController: NavHostController, repoStore: RepoStore, startDestination: Route) {
     NavHost(navController = navController, startDestination = startDestination) {
-
         composable<Route.Login> {
             Login(
                 viewModel = viewModel {
@@ -270,23 +302,19 @@ private fun NavGraph(navController: NavHostController, repoStore: RepoStore, sta
                 viewModel = viewModel {
                     ProfileViewModel(
                         userRepo = repoStore.userRepo,
-                        eventRepo = repoStore.eventRepo,
-                        onEditProfile = { /* TODO */ },
-                        onToSettings = { navController.navigate(Route.Settings) }
+                        eventRepo = repoStore.eventRepo
                     )
                 },
                 navActions = object : ProfileNavActions {
-                    override fun toFollowers(id: String) { /* TODO */ }
-                    override fun toFollowing(id: String) { /* TODO */ }
                     override fun toEvent(id: String) { navController.navigate(Route.Event(id)) }
                     override fun toUser(id: String) { navController.navigate(Route.User(id)) }
                 }
             )
         }
         composable<Route.Settings> {
-            SettingsScreen(onLogout = {
-                navController.navigate(Route.Login) { popUpTo(0) { inclusive = true } }
-            })
+            Settings(
+                onLogout = { navController.navigate(Route.Login) { popUpTo(0) { inclusive = true } } }
+            )
         }
         composable<Route.Event> { entry ->
             val eventRoute = entry.toRoute<Route.Event>()
@@ -304,8 +332,13 @@ private fun NavGraph(navController: NavHostController, repoStore: RepoStore, sta
         composable<Route.User> { entry ->
             val route = entry.toRoute<Route.User>()
             User(
-                viewModel = viewModel { UserViewModel(route.id) },
-                navActions = object : UserNavActions {
+                viewModel = viewModel {
+                    UserViewModel(route.id,
+                        userRepo = repoStore.userRepo,
+                        eventRepo = repoStore.eventRepo
+                    )
+                },
+                navActions = object : ProfileNavActions {
                     override fun toUser(id: String) { navController.navigate(Route.User(id)) }
                     override fun toEvent(id: String) { navController.navigate(Route.Event(id)) }
                 }
@@ -314,33 +347,6 @@ private fun NavGraph(navController: NavHostController, repoStore: RepoStore, sta
     }
 }
 
-@Composable
-private fun SettingsScreen(onLogout: () -> Unit) {
-    Column(
-        modifier = Modifier.fillMaxSize().padding(24.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
-    ) {
-        Text(
-            "Settings",
-            style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold)
-        )
-        HorizontalDivider()
-        Text(
-            "Settings options will appear here.",
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-        Spacer(Modifier.weight(1f))
-        OutlinedButton(
-            onClick = onLogout,
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Icon(Icons.AutoMirrored.Filled.Logout, contentDescription = null, modifier = Modifier.size(18.dp))
-            Spacer(Modifier.padding(8.dp))
-            Text("Logout")
-        }
-    }
-}
 
 @Composable
 private fun AppSidebar(

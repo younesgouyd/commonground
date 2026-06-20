@@ -1,5 +1,6 @@
 package com.commonground.client.multiplatform.data.repositories
 
+import com.commonground.core.models.UpdateProfileRequest
 import com.commonground.core.models.User
 import com.commonground.core.models.Users
 import io.ktor.client.*
@@ -11,6 +12,22 @@ class UserRepo(
 ) {
     suspend fun getLoggedInUser(): User? {
         return client.get("me").body<User?>()
+    }
+
+    suspend fun updateProfile(
+        username: String,
+        displayName: String?,
+        bio: String?
+    ) {
+        client.patch("me") {
+            setBody(
+                UpdateProfileRequest(
+                    username = username,
+                    displayName = displayName,
+                    bio = bio
+                )
+            )
+        }
     }
 
     suspend fun getLoggedInUserFollowers(pageNumber: Int): Users {
@@ -26,13 +43,13 @@ class UserRepo(
     }
 
     suspend fun getUserFollowers(userId: String, pageNumber: Int): Users {
-        return client.get("user/$userId/followers") {
+        return client.get("users/$userId/followers") {
             parameter("pageNumber", pageNumber)
         }.body<Users>()
     }
 
     suspend fun getUserFollowees(userId: String, pageNumber: Int): Users {
-        return client.get("user/$userId/followees") {
+        return client.get("users/$userId/followees") {
             parameter("pageNumber", pageNumber)
         }.body<Users>()
     }
@@ -50,9 +67,7 @@ class UserRepo(
     }
 
     suspend fun getUser(id: String): User? {
-        return client.get("user") {
-            parameter("id", id)
-        }.body<User?>()
+        return client.get("users/$id").body<User?>()
     }
 
     suspend fun getUserFriends(id: String): List<User> {

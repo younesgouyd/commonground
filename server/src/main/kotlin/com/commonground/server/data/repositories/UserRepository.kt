@@ -4,14 +4,40 @@ import com.commonground.server.data.entities.User
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.data.jpa.repository.JpaRepository
+import org.springframework.data.jpa.repository.Modifying
 import org.springframework.data.jpa.repository.Query
 import org.springframework.data.repository.query.Param
+import org.springframework.transaction.annotation.Transactional
 import java.util.*
 
 interface UserRepository : JpaRepository<User, UUID> {
     fun findByUsernameOrEmailAddress(username: String, emailAddress: String): User?
     fun existsByUsername(username: String): Boolean
     fun existsByEmailAddress(emailAddress: String): Boolean
+
+    /**
+     * Retrieves a specific user by their [id].
+     *
+     * It determines if the [followStateUserId] (typically the currently logged-in user)
+     * is following this user, populating the `isFollowed` flag.
+     *
+     * @param id The ID of the user to retrieve.
+     * @param followStateUserId The ID of the user observing the profile, used to determine the `isFollowed` state.
+     * @return The [com.commonground.core.models.User] model, or null if not found.
+     */
+    @Query(
+        """
+            SELECT 
+                CAST(u.id AS string), u.username, u.displayName, u.bio, u.emailAddress, u.profilePic,
+                CASE WHEN (SELECT 1 FROM UserFollow uf WHERE uf.follower.id = :followStateUserId AND uf.followee = u) IS NOT NULL THEN true ELSE false END AS isFollowed
+            FROM User u
+            WHERE u.id = :id
+        """
+    )
+    fun findByIdWithFollowState(
+        @Param("id") id: UUID,
+        @Param("followStateUserId") followStateUserId: UUID,
+    ): com.commonground.core.models.User?
 
     /**
      * Retrieves a paginated list of users who follow the specified [followee].
@@ -66,4 +92,23 @@ interface UserRepository : JpaRepository<User, UUID> {
         @Param("followStateUser") followStateUser: User,
         pageable: Pageable
     ): Page<com.commonground.core.models.User>
+
+    @Modifying
+    @Transactional
+    @Query(
+        """
+            UPDATE User
+            SET username = :username,
+                displayName = :displayName,
+                bio = :bio,
+                updatedAt = CURRENT_TIMESTAMP
+            WHERE id = :id
+        """
+    )
+    fun update(
+        id: UUID,
+        username: String,
+        displayName: String?,
+        bio: String?
+    )
 }

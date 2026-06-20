@@ -4,14 +4,14 @@
 - support setting profile and event images.
 - decide whether Event.coordinates may be optional.
 - implement ui for searching/filtering and sorting events by search keywords, category, follows, date, location, distance from user... etc.
-- relationship with freinds rules
-    - follows.
+- relationship with friends rules:
     - friend request.
     - event visibility/privacy options (public, friends, family... etc).
 - delete expired refresh tokens.
 - implement authorization (permissions, access control...).
 
 done:
+- relationship with friends rules: follows.
 - handle refresh token expiration.
 - implement logout in backend.
 - fix login.

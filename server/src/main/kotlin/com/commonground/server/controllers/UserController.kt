@@ -10,14 +10,17 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal
 import org.springframework.web.bind.annotation.*
 
 @RestController
-@RequestMapping("/api/v1/user")
+@RequestMapping("/api/v1/users")
 class UserController(
     private val userService: UserService,
     private val eventService: EventService
 ) {
     @GetMapping("/{id}")
-    fun user(@PathVariable id: String): User? {
-        return userService.getUser(id)
+    fun user(
+        @PathVariable id: String,
+        @AuthenticationPrincipal loggedInUserId: String
+    ): User? {
+        return userService.getUserWithFollowState(id, loggedInUserId)
     }
 
     @GetMapping("/{id}/followers")

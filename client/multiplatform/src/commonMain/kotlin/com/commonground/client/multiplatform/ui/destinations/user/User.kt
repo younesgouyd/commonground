@@ -1,31 +1,29 @@
 package com.commonground.client.multiplatform.ui.destinations.user
 
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.GridItemSpan
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.PersonAdd
-import androidx.compose.material.icons.filled.PersonAddAlt
-import androidx.compose.material.icons.filled.PersonRemove
+import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.commonground.client.multiplatform.ui.AdaptiveUi
-import com.commonground.client.multiplatform.ui.widgets.*
-
-interface UserNavActions {
-    fun toUser(id: String)
-    fun toEvent(id: String)
-}
+import com.commonground.client.multiplatform.ui.widgets.ProfileContent
+import com.commonground.client.multiplatform.ui.widgets.ProfileNavActions
+import com.commonground.client.multiplatform.ui.widgets.StatItem
+import com.commonground.core.models.User
+import kotlinx.coroutines.launch
 
 @Composable
 fun User(
     viewModel: UserViewModel,
-    navActions: UserNavActions
+    navActions: ProfileNavActions
 ) {
     val state by viewModel.state.collectAsState()
 
@@ -35,99 +33,146 @@ fun User(
     )
 }
 
-
 @Composable
 private fun Wide(
     state: UserState,
-    navActions: UserNavActions
+    navActions: ProfileNavActions
 ) {
     when (state) {
-        is UserState.Loading -> Text("Loading...")
+        is UserState.Loading -> {
+            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                CircularProgressIndicator()
+            }
+        }
         is UserState.Loaded -> Wide(state, navActions)
-        is UserState.NotFound -> Text(text = "Something went wrong", color = MaterialTheme.colorScheme.error)
+        is UserState.Error -> {
+            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                Text(text = "Something went wrong", color = MaterialTheme.colorScheme.error)
+            }
+        }
     }
 }
 
-private enum class Tabs { Events, Friends }
 
 @Composable
 private fun Wide(
     state: UserState.Loaded,
-    navActions: UserNavActions
+    navActions: ProfileNavActions
 ) {
-    val tabs = remember { Tabs.entries }
-    var selectedTabIndex by remember { mutableStateOf(Pair(0, tabs.first())) }
-
-    Surface(
+    Row(
         modifier = Modifier.fillMaxSize(),
-        color = MaterialTheme.colorScheme.background
+        horizontalArrangement = Arrangement.spacedBy(0.dp)
     ) {
-        LazyVerticalGrid(
-            modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 16.dp),
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-            columns = GridCells.Adaptive(200.dp)
+        Surface(
+            modifier = Modifier.width(320.dp).fillMaxHeight(),
+            color = MaterialTheme.colorScheme.surfaceContainerLow,
+            tonalElevation = 2.dp
         ) {
-            item(span = { GridItemSpan(maxLineSpan) }) {
-                ItemDetailsHeaderWide(
-                    modifier = Modifier.fillMaxWidth().height(500.dp),
-                    title = state.user.displayName ?: state.user.username,
-                    image = Image.ImageVector(Icons.Default.Person), // TODO
-                    mainAction = when (state.friendState) {
-                        is UserState.Loaded.FriendState.Friend -> MainHeaderAction(
-                            label = "Unfriend",
-                            icon = Icons.Default.PersonRemove,
-                            onClick = state.friendState.onRemoveClick
-                        )
+            ProfileSidebar(state)
+        }
+        Surface(
+            modifier = Modifier.weight(1f).fillMaxHeight(),
+            color = MaterialTheme.colorScheme.background
+        ) {
+            ProfileContent(state.events, state.follows, navActions)
+        }
+    }
+}
 
-                        is UserState.Loaded.FriendState.NonFriend -> MainHeaderAction(
-                            label = "Send friend request",
-                            icon = Icons.Default.PersonAdd,
-                            onClick = state.friendState.onSendRequestClick
-                        )
-                    },
-                    actions = listOf(
-                        HeaderAction.DropDown(
-                            label = "Follow",
-                            icon = Icons.Default.PersonAddAlt,
-                            options = listOf(
-                                DropdownOption("Followed", UserState.Loaded.FollowState.Followed),
-                                DropdownOption(
-                                    "Followed with notifications",
-                                    UserState.Loaded.FollowState.FollowedWithNotifications
-                                ),
-                                DropdownOption("Unfollowed", UserState.Loaded.FollowState.Unfollowed),
-                            ),
-                            selectedOption = state.followState,
-                            onChange = { state.onChangeFollowState(it as UserState.Loaded.FollowState) }
-                        )
-                    )
+@Composable
+private fun ProfileSidebar(state: UserState.Loaded) {
+    val scrollState = rememberScrollState()
+    val user by state.user.collectAsState()
+    val followers by state.follows.followers.collectAsState()
+    val following by state.follows.following.collectAsState()
+    val followersCount by followers.totalCount.collectAsState()
+    val followingCount by following.totalCount.collectAsState()
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .verticalScroll(scrollState)
+            .padding(24.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
+        Surface(
+            modifier = Modifier.size(140.dp),
+            shape = CircleShape,
+            color = MaterialTheme.colorScheme.primaryContainer,
+            onClick = { TODO() }
+        ) {
+            Box(contentAlignment = Alignment.Center) {
+                Icon(
+                    modifier = Modifier.size(80.dp),
+                    imageVector = Icons.Default.AccountCircle,
+                    contentDescription = "Profile picture",
+                    tint = MaterialTheme.colorScheme.onPrimaryContainer
                 )
             }
-            item(span = { GridItemSpan(maxLineSpan)}) {
-                PrimaryTabRow(
-                    modifier = Modifier.fillMaxWidth(),
-                    selectedTabIndex = selectedTabIndex.first
-                ) {
-                    tabs.forEachIndexed { index, item ->
-                        Tab(
-                            text = { Text(item.name) },
-                            selected = false,
-                            onClick = { selectedTabIndex = Pair(index, item) }
-                        )
-                    }
-                }
+        }
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(4.dp)
+        ) {
+            Text(
+                text = user.displayName ?: user.username,
+                style = MaterialTheme.typography.headlineMedium,
+                textAlign = TextAlign.Center
+            )
+            Text(
+                text = "@${user.username}",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+        user.bio.let { bio ->
+            if (!bio.isNullOrBlank()) {
+                Text(
+                    text = bio,
+                    style = MaterialTheme.typography.bodyMedium,
+                    textAlign = TextAlign.Center,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
             }
-            when (selectedTabIndex.second) {
-                Tabs.Events -> items(state.events.created) { event ->
-                    EventCard(
-                        event = event,
-                        onClick = { navActions.toEvent(event.id) },
-                        onUserClick = {}
-                    )
-                }
-                Tabs.Friends -> Unit
+        }
+        HorizontalDivider()
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceEvenly
+        ) {
+            followersCount?.let {
+                StatItem(count = it, label = "Followers")
+            }
+            followingCount?.let {
+                StatItem(count = it, label = "Following")
+            }
+        }
+        HorizontalDivider()
+        ToggleFollowState(
+            user = user,
+            onUnfollowUserClick = state.follows.onUnfollowUserClick,
+            onFollowUserClick = state.follows.onFollowUserClick
+        )
+    }
+}
+
+@Composable
+private fun Compact(
+    state: UserState,
+    navActions: ProfileNavActions
+) {
+    when (state) {
+        is UserState.Loading -> {
+            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                CircularProgressIndicator()
+            }
+        }
+
+        is UserState.Loaded -> Compact(state, navActions)
+        is UserState.Error -> {
+            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                Text(text = "Something went wrong", color = MaterialTheme.colorScheme.error)
             }
         }
     }
@@ -135,8 +180,156 @@ private fun Wide(
 
 @Composable
 private fun Compact(
-    state: UserState,
-    navActions: UserNavActions
+    state: UserState.Loaded,
+    navActions: ProfileNavActions
 ) {
+    val user by state.user.collectAsState()
+    val followers by state.follows.followers.collectAsState()
+    val following by state.follows.following.collectAsState()
+    val followersCount by followers.totalCount.collectAsState()
+    val followingCount by following.totalCount.collectAsState()
 
+    Column(modifier = Modifier.fillMaxSize()) {
+        Surface(
+            modifier = Modifier.fillMaxWidth(),
+            color = MaterialTheme.colorScheme.surfaceContainerLow,
+            tonalElevation = 2.dp
+        ) {
+            Column(
+                modifier = Modifier.fillMaxWidth().padding(16.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Surface(
+                    modifier = Modifier.size(140.dp),
+                    shape = CircleShape,
+                    color = MaterialTheme.colorScheme.primaryContainer,
+                    onClick = { TODO() }
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Icon(
+                            modifier = Modifier.size(80.dp),
+                            imageVector = Icons.Default.AccountCircle,
+                            contentDescription = "Profile picture",
+                            tint = MaterialTheme.colorScheme.onPrimaryContainer
+                        )
+                    }
+                }
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(2.dp)
+                ) {
+                    Text(
+                        text = user.displayName ?: user.username,
+                        style = MaterialTheme.typography.headlineSmall,
+                        textAlign = TextAlign.Center
+                    )
+                    Text(
+                        text = "@${user.username}",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                user.bio.let { bio ->
+                    if (!bio.isNullOrBlank()) {
+                        Text(
+                            text = bio,
+                            style = MaterialTheme.typography.bodySmall,
+                            textAlign = TextAlign.Center,
+                            color = MaterialTheme.colorScheme.onSurface,
+                            maxLines = 3,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
+                }
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceEvenly
+                ) {
+                    followersCount?.let {
+                        StatItem(count = it, label = "Followers")
+                    }
+                    followingCount?.let {
+                        StatItem(count = it, label = "Following")
+                    }
+                }
+                ToggleFollowState(
+                    user = user,
+                    onUnfollowUserClick = state.follows.onUnfollowUserClick,
+                    onFollowUserClick = state.follows.onFollowUserClick
+                )
+            }
+        }
+        ProfileContent(state.events, state.follows, navActions)
+    }
+}
+
+@Composable
+private fun ToggleFollowState(
+    user: User,
+    onUnfollowUserClick: suspend (userId: String) -> Unit,
+    onFollowUserClick: suspend (userId: String) -> Unit
+) {
+    val scope = rememberCoroutineScope()
+    var isSubmitting by remember { mutableStateOf(false) }
+
+    if (user.isFollowed != null) {
+        if (user.isFollowed == true) {
+            OutlinedButton(
+                onClick = {
+                    scope.launch {
+                        isSubmitting = true
+                        try {
+                            onUnfollowUserClick(user.id)
+                        } finally {
+                            isSubmitting = false
+                        }
+                    }
+                },
+                enabled = !isSubmitting,
+                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 0.dp)
+            ) {
+                if (isSubmitting) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(16.dp),
+                        strokeWidth = 2.dp,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                } else {
+                    Text(
+                        text = "Following",
+                        style = MaterialTheme.typography.labelMedium
+                    )
+                }
+            }
+        } else {
+            Button(
+                onClick = {
+                    scope.launch {
+                        isSubmitting = true
+                        try {
+                            onFollowUserClick(user.id)
+                        } finally {
+                            isSubmitting = false
+                        }
+                    }
+                },
+                enabled = !isSubmitting,
+                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 0.dp)
+            ) {
+                if (isSubmitting) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(16.dp),
+                        strokeWidth = 2.dp,
+                        color = MaterialTheme.colorScheme.onPrimary
+                    )
+                } else {
+                    Text(
+                        text = "Follow",
+                        style = MaterialTheme.typography.labelMedium
+                    )
+                }
+            }
+        }
+    }
 }

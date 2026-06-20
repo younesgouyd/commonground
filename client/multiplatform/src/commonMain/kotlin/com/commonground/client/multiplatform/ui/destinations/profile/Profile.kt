@@ -1,16 +1,12 @@
 package com.commonground.client.multiplatform.ui.destinations.profile
 
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.grid.*
-import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.filled.AccountCircle
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -19,22 +15,11 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.commonground.client.multiplatform.ui.AdaptiveUi
-import com.commonground.client.multiplatform.ui.LazyList
-import com.commonground.client.multiplatform.ui.widgets.EventCard
-import com.commonground.core.models.Event
+import com.commonground.client.multiplatform.ui.widgets.ProfileContent
+import com.commonground.client.multiplatform.ui.widgets.ProfileNavActions
+import com.commonground.client.multiplatform.ui.widgets.StatItem
 import com.commonground.core.models.User
-import kotlinx.coroutines.flow.filter
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
-
-interface ProfileNavActions {
-    fun toFollowers(id: String)
-    fun toFollowing(id: String)
-    fun toEvent(id: String)
-    fun toUser(id: String)
-}
-
-private enum class ProfileTabs { Events, Follows }
 
 @Composable
 fun Profile(
@@ -90,20 +75,29 @@ private fun Wide(
             modifier = Modifier.weight(1f).fillMaxHeight(),
             color = MaterialTheme.colorScheme.background
         ) {
-            ProfileContent(state, navActions)
+            ProfileContent(state.events, state.follows, navActions)
         }
     }
 }
 
 @Composable
-private fun ProfileSidebar(
-    state: ProfileState.Loaded
-) {
+private fun ProfileSidebar(state: ProfileState.Loaded) {
     val scrollState = rememberScrollState()
+    val user by state.user.collectAsState()
     val followers by state.follows.followers.collectAsState()
     val following by state.follows.following.collectAsState()
     val followersCount by followers.totalCount.collectAsState()
     val followingCount by following.totalCount.collectAsState()
+    var showEditDialog by remember { mutableStateOf(false) }
+
+    if (showEditDialog) {
+        val user by state.user.collectAsState()
+        EditProfileDialog(
+            user = user,
+            onDismiss = { showEditDialog = false },
+            onSave = state.onUpdateProfile
+        )
+    }
 
     Column(
         modifier = Modifier
@@ -113,49 +107,58 @@ private fun ProfileSidebar(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        Surface(
-            modifier = Modifier.size(140.dp),
-            shape = CircleShape,
-            color = MaterialTheme.colorScheme.primaryContainer
-        ) {
-            Box(contentAlignment = Alignment.Center) {
-                Icon(
-                    modifier = Modifier.size(80.dp),
-                    imageVector = Icons.Default.AccountCircle,
-                    contentDescription = "Profile picture",
-                    tint = MaterialTheme.colorScheme.onPrimaryContainer
+        Box(contentAlignment = Alignment.BottomEnd) {
+            Surface(
+                modifier = Modifier.size(140.dp),
+                shape = CircleShape,
+                color = MaterialTheme.colorScheme.primaryContainer,
+                onClick = { TODO() }
+            ) {
+                Box(contentAlignment = Alignment.Center) {
+                    Icon(
+                        modifier = Modifier.size(80.dp),
+                        imageVector = Icons.Default.AccountCircle,
+                        contentDescription = "Profile picture",
+                        tint = MaterialTheme.colorScheme.onPrimaryContainer
+                    )
+                }
+            }
+            FilledIconButton(
+                onClick = { TODO() },
+                modifier = Modifier.size(28.dp),
+                colors = IconButtonDefaults.filledIconButtonColors(
+                    containerColor = MaterialTheme.colorScheme.primary
                 )
+            ) {
+                Icon(Icons.Default.Edit, contentDescription = "Edit Profile Picture", modifier = Modifier.size(14.dp))
             }
         }
-
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(4.dp)
         ) {
             Text(
-                text = state.user.displayName ?: state.user.username,
+                text = user.displayName ?: user.username,
                 style = MaterialTheme.typography.headlineMedium,
                 textAlign = TextAlign.Center
             )
             Text(
-                text = "@${state.user.username}",
+                text = "@${user.username}",
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
-
-        val bio = state.user.bio
-        if (!bio.isNullOrBlank()) {
-            Text(
-                text = bio,
-                style = MaterialTheme.typography.bodyMedium,
-                textAlign = TextAlign.Center,
-                color = MaterialTheme.colorScheme.onSurface
-            )
+        user.bio.let { bio ->
+            if (!bio.isNullOrBlank()) {
+                Text(
+                    text = bio,
+                    style = MaterialTheme.typography.bodyMedium,
+                    textAlign = TextAlign.Center,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+            }
         }
-
         HorizontalDivider()
-
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceEvenly
@@ -167,12 +170,10 @@ private fun ProfileSidebar(
                 StatItem(count = it, label = "Following")
             }
         }
-
         HorizontalDivider()
-
         Button(
             modifier = Modifier.fillMaxWidth(),
-            onClick = state.onEditProfile
+            onClick = { showEditDialog = true }
         ) {
             Row(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -180,485 +181,6 @@ private fun ProfileSidebar(
             ) {
                 Icon(Icons.Default.Edit, contentDescription = null, modifier = Modifier.size(18.dp))
                 Text("Edit Profile")
-            }
-        }
-
-        OutlinedButton(
-            modifier = Modifier.fillMaxWidth(),
-            onClick = state.onToSettings
-        ) {
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Icon(Icons.Default.Settings, contentDescription = null, modifier = Modifier.size(18.dp))
-                Text("Settings")
-            }
-        }
-    }
-}
-
-@Composable
-private fun StatItem(count: Long, label: String) {
-    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        Text(
-            text = count.toString(),
-            style = MaterialTheme.typography.titleLarge,
-            color = MaterialTheme.colorScheme.primary
-        )
-        Text(
-            text = label,
-            style = MaterialTheme.typography.labelMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-    }
-}
-
-@Composable
-private fun ProfileContent(
-    state: ProfileState.Loaded,
-    navActions: ProfileNavActions
-) {
-    val tabs = remember { ProfileTabs.entries }
-    var selectedTab by remember { mutableStateOf(ProfileTabs.Events) }
-
-    Column(modifier = Modifier.fillMaxSize()) {
-        PrimaryTabRow(selectedTabIndex = selectedTab.ordinal) {
-            tabs.forEachIndexed { index, tab ->
-                Tab(
-                    text = { Text(tab.name) },
-                    selected = selectedTab == tab,
-                    onClick = { selectedTab = tab }
-                )
-            }
-        }
-
-        when (selectedTab) {
-            ProfileTabs.Events -> EventsTab(state, navActions)
-            ProfileTabs.Follows -> FollowsTab(state, navActions)
-        }
-    }
-}
-
-private data class ExpandedSection(
-    val title: String,
-    val events: LazyList<Event>,
-)
-
-@Composable
-private fun EventsTab(
-    state: ProfileState.Loaded,
-    navActions: ProfileNavActions
-) {
-    val created by state.events.created.items.collectAsState()
-    val going by state.events.attending.items.collectAsState()
-    val went by state.events.went.items.collectAsState()
-
-    if (created.isEmpty() && going.isEmpty() && went.isEmpty()) {
-        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Icon(
-                    Icons.Default.EventBusy,
-                    contentDescription = null,
-                    modifier = Modifier.size(48.dp),
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                Spacer(Modifier.height(8.dp))
-                Text("No events yet", style = MaterialTheme.typography.bodyLarge)
-            }
-        }
-        return
-    }
-
-    var expandedSection by remember { mutableStateOf<ExpandedSection?>(null) }
-
-    if (expandedSection != null) {
-        ShowAllEventsGrid(
-            title = expandedSection!!.title,
-            events = expandedSection!!.events,
-            onBack = { expandedSection = null },
-            onEventClick = { eventId -> navActions.toEvent(eventId) }
-        )
-    } else {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .verticalScroll(rememberScrollState())
-                .padding(vertical = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(24.dp)
-        ) {
-            EventSection(
-                title = "Created",
-                events = state.events.created,
-                onShowAll = { expandedSection = ExpandedSection("Created", state.events.created) },
-                onEventClick = { navActions.toEvent(it.id) }
-            )
-            EventSection(
-                title = "Going",
-                events = state.events.attending,
-                onShowAll = { expandedSection = ExpandedSection("Going", state.events.attending) },
-                onEventClick = { navActions.toEvent(it.id) }
-            )
-            EventSection(
-                title = "Went",
-                events = state.events.went,
-                onShowAll = { expandedSection = ExpandedSection("Went", state.events.went) },
-                onEventClick = { navActions.toEvent(it.id) }
-            )
-        }
-    }
-}
-
-@Composable
-private fun ShowAllEventsGrid(
-    title: String,
-    events: LazyList<Event>,
-    onBack: () -> Unit,
-    onEventClick: (String) -> Unit
-) {
-    val listState = rememberLazyGridState()
-    val items by events.items.collectAsState()
-    val loading by events.loading.collectAsState()
-
-    Column(modifier = Modifier.fillMaxSize()) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 4.dp, vertical = 8.dp),
-            horizontalArrangement = Arrangement.spacedBy(4.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            IconButton(onClick = onBack) {
-                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
-            }
-            Text(
-                text = title,
-                style = MaterialTheme.typography.titleLarge
-            )
-        }
-
-        HorizontalDivider()
-
-        LazyVerticalGrid(
-            modifier = Modifier.fillMaxSize(),
-            state = listState,
-            contentPadding = PaddingValues(16.dp),
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-            columns = GridCells.Adaptive(200.dp)
-        ) {
-            items(items, key = { it.id }) { event ->
-                EventCard(
-                    event = event,
-                    onClick = { onEventClick(event.id) },
-                    onUserClick = {}
-                )
-            }
-            if (loading) {
-                item {
-                    Box(
-                        modifier = Modifier.fillMaxWidth().padding(16.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        CircularProgressIndicator(modifier = Modifier.size(36.dp), strokeWidth = 2.dp)
-                    }
-                }
-            }
-        }
-    }
-
-    LaunchedEffect(listState, events, items.size) {
-        snapshotFlow {
-            listState.layoutInfo.visibleItemsInfo.lastOrNull()?.index
-        }.map { it == null ||  it >= items.size - 5  }
-            .filter { it }
-            .collect { events.loadMore() }
-    }
-}
-
-@Composable
-private fun EventSection(
-    title: String,
-    events: LazyList<Event>,
-    onShowAll: () -> Unit,
-    onEventClick: (Event) -> Unit
-) {
-    val listState = rememberLazyListState()
-    val items by events.items.collectAsState()
-    val loading by events.loading.collectAsState()
-    val count by events.totalCount.collectAsState()
-
-    Column {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = title,
-                    style = MaterialTheme.typography.titleMedium
-                )
-                Surface(
-                    shape = MaterialTheme.shapes.small,
-                    color = MaterialTheme.colorScheme.secondaryContainer
-                ) {
-                    Text(
-                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
-                        text = count.toString(),
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSecondaryContainer
-                    )
-                }
-            }
-
-            TextButton(onClick = onShowAll) {
-                Text("Show all")
-            }
-        }
-
-        LazyRow(
-            state = listState,
-            contentPadding = PaddingValues(start = 16.dp, end = 16.dp),
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            items(items, key = { it.id }) { event ->
-                EventCard(
-                    event = event,
-                    onClick = { onEventClick(event) },
-                    onUserClick = {} // TODO
-                )
-            }
-            if (loading) {
-                item {
-                    Box(
-                        modifier = Modifier.fillMaxWidth().padding(16.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        CircularProgressIndicator(modifier = Modifier.size(36.dp), strokeWidth = 2.dp)
-                    }
-                }
-            }
-        }
-    }
-
-    LaunchedEffect(listState, events, items.size) {
-        snapshotFlow {
-            listState.layoutInfo.visibleItemsInfo.lastOrNull()?.index
-        }.map { it == null ||  it >= items.size - 5  }
-            .filter { it }
-            .collect { events.loadMore() }
-    }
-}
-
-private enum class FollowsTabs { Followers, Following }
-
-@Composable
-private fun FollowsTab(
-    state: ProfileState.Loaded,
-    navActions: ProfileNavActions
-) {
-    val tabs = remember { FollowsTabs.entries }
-    var selectedTab by remember { mutableStateOf(FollowsTabs.Followers) }
-    val followers by state.follows.followers.collectAsState()
-    val following by state.follows.following.collectAsState()
-
-    Column(modifier = Modifier.fillMaxSize()) {
-        SecondaryTabRow(
-            modifier = Modifier.fillMaxWidth(),
-            selectedTabIndex = selectedTab.ordinal
-        ) {
-            for (tab in tabs) {
-                Tab(
-                    text = { Text(tab.name) },
-                    selected = selectedTab == tab,
-                    onClick = { selectedTab = tab }
-                )
-            }
-        }
-
-        when (selectedTab) {
-            FollowsTabs.Followers -> FollowsSubTab("followers", followers, state.follows.onFollowUserClick, state.follows.onUnfollowUserClick, navActions)
-            FollowsTabs.Following -> FollowsSubTab("following", following, state.follows.onFollowUserClick, state.follows.onUnfollowUserClick, navActions)
-        }
-    }
-}
-
-@Composable
-private fun FollowsSubTab(
-    followsTypeLabel: String,
-    users: LazyList<User>,
-    onFollowUserClick: suspend (userId: String) -> Unit,
-    onUnfollowUserClick: suspend (userId: String) -> Unit,
-    navActions: ProfileNavActions
-) {
-    val listState = rememberLazyListState()
-    val items by users.items.collectAsState()
-    val loading by users.loading.collectAsState()
-
-    if (items.isEmpty()) {
-        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Icon(
-                    Icons.Default.People,
-                    contentDescription = null,
-                    modifier = Modifier.size(48.dp),
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                Spacer(Modifier.height(8.dp))
-                Text("No $followsTypeLabel yet", style = MaterialTheme.typography.bodyLarge)
-            }
-        }
-        return
-    }
-
-    LazyVerticalGrid(
-        modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(16.dp),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp),
-        columns = GridCells.Adaptive(300.dp)
-    ) {
-        items(items) { user ->
-            UserCard(
-                user = user,
-                onClick = { navActions.toUser(user.id) },
-                onFollowClick = { onFollowUserClick(user.id) },
-                onUnfollowClick = { onUnfollowUserClick(user.id) }
-            )
-        }
-        if (loading) {
-            item(span = { GridItemSpan(maxLineSpan) }) {
-                Box(
-                    modifier = Modifier.fillMaxWidth().padding(16.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    CircularProgressIndicator(modifier = Modifier.size(36.dp), strokeWidth = 2.dp)
-                }
-            }
-        }
-    }
-
-    LaunchedEffect(listState, users, items.size) {
-        snapshotFlow {
-            listState.layoutInfo.visibleItemsInfo.lastOrNull()?.index
-        }.map { it == null ||  it >= items.size - 5  }
-            .filter { it }
-            .collect { users.loadMore() }
-    }
-}
-
-@Composable
-private fun UserCard(
-    user: User,
-    onClick: () -> Unit,
-    onFollowClick: suspend () -> Unit,
-    onUnfollowClick: suspend () -> Unit
-) {
-    val scope = rememberCoroutineScope()
-    var isSubmitting by remember { mutableStateOf(false) }
-
-    Card(onClick = onClick) {
-        Row(
-            modifier = Modifier.fillMaxWidth().padding(12.dp),
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Surface(
-                modifier = Modifier.size(44.dp),
-                shape = CircleShape,
-                color = MaterialTheme.colorScheme.primaryContainer
-            ) {
-                Box(contentAlignment = Alignment.Center) {
-                    Icon(
-                        Icons.Default.Person,
-                        contentDescription = null,
-                        modifier = Modifier.size(28.dp),
-                        tint = MaterialTheme.colorScheme.onPrimaryContainer
-                    )
-                }
-            }
-            Column {
-                Text(
-                    text = user.displayName ?: user.username,
-                    style = MaterialTheme.typography.bodyMedium,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-                if (user.displayName != null) {
-                    Text(
-                        text = "@${user.username}",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                }
-            }
-            if (user.isFollowed != null) {
-                Spacer(modifier = Modifier.weight(1f))
-                if (user.isFollowed == true) {
-                    OutlinedButton(
-                        onClick = {
-                            scope.launch {
-                                isSubmitting = true
-                                try {
-                                    onUnfollowClick()
-                                } finally {
-                                    isSubmitting = false
-                                }
-                            }
-                        },
-                        enabled = !isSubmitting,
-                        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 0.dp)
-                    ) {
-                        if (isSubmitting) {
-                            CircularProgressIndicator(
-                                modifier = Modifier.size(16.dp),
-                                strokeWidth = 2.dp,
-                                color = MaterialTheme.colorScheme.onSurface
-                            )
-                        } else {
-                            Text(
-                                text = "Following",
-                                style = MaterialTheme.typography.labelMedium
-                            )
-                        }
-                    }
-                } else {
-                    Button(
-                        onClick = {
-                            scope.launch {
-                                isSubmitting = true
-                                try {
-                                    onFollowClick()
-                                } finally {
-                                    isSubmitting = false
-                                }
-                            }
-                        },
-                        enabled = !isSubmitting,
-                        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 0.dp)
-                    ) {
-                        if (isSubmitting) {
-                            CircularProgressIndicator(
-                                modifier = Modifier.size(16.dp),
-                                strokeWidth = 2.dp,
-                                color = MaterialTheme.colorScheme.onPrimary
-                            )
-                        } else {
-                            Text(
-                                text = "Follow",
-                                style = MaterialTheme.typography.labelMedium
-                            )
-                        }
-                    }
-                }
             }
         }
     }
@@ -689,10 +211,20 @@ private fun Compact(
     state: ProfileState.Loaded,
     navActions: ProfileNavActions
 ) {
+    val user by state.user.collectAsState()
     val followers by state.follows.followers.collectAsState()
     val following by state.follows.following.collectAsState()
     val followersCount by followers.totalCount.collectAsState()
     val followingCount by following.totalCount.collectAsState()
+    var showEditDialog by remember { mutableStateOf(false) }
+
+    if (showEditDialog) {
+        EditProfileDialog(
+            user = user,
+            onDismiss = { showEditDialog = false },
+            onSave = state.onUpdateProfile
+        )
+    }
 
     Column(modifier = Modifier.fillMaxSize()) {
         Surface(
@@ -705,49 +237,59 @@ private fun Compact(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                Surface(
-                    modifier = Modifier.size(100.dp),
-                    shape = CircleShape,
-                    color = MaterialTheme.colorScheme.primaryContainer
-                ) {
-                    Box(contentAlignment = Alignment.Center) {
-                        Icon(
-                            modifier = Modifier.size(56.dp),
-                            imageVector = Icons.Default.AccountCircle,
-                            contentDescription = "Profile picture",
-                            tint = MaterialTheme.colorScheme.onPrimaryContainer
+                Box(contentAlignment = Alignment.BottomEnd) {
+                    Surface(
+                        modifier = Modifier.size(140.dp),
+                        shape = CircleShape,
+                        color = MaterialTheme.colorScheme.primaryContainer,
+                        onClick = { TODO() }
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Icon(
+                                modifier = Modifier.size(80.dp),
+                                imageVector = Icons.Default.AccountCircle,
+                                contentDescription = "Profile picture",
+                                tint = MaterialTheme.colorScheme.onPrimaryContainer
+                            )
+                        }
+                    }
+                    FilledIconButton(
+                        onClick = { TODO() },
+                        modifier = Modifier.size(28.dp),
+                        colors = IconButtonDefaults.filledIconButtonColors(
+                            containerColor = MaterialTheme.colorScheme.primary
                         )
+                    ) {
+                        Icon(Icons.Default.Edit, contentDescription = "Edit Profile Picture", modifier = Modifier.size(14.dp))
                     }
                 }
-
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.spacedBy(2.dp)
                 ) {
                     Text(
-                        text = state.user.displayName ?: state.user.username,
+                        text = user.displayName ?: user.username,
                         style = MaterialTheme.typography.headlineSmall,
                         textAlign = TextAlign.Center
                     )
                     Text(
-                        text = "@${state.user.username}",
+                        text = "@${user.username}",
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
-
-                val bio = state.user.bio
-                if (!bio.isNullOrBlank()) {
-                    Text(
-                        text = bio,
-                        style = MaterialTheme.typography.bodySmall,
-                        textAlign = TextAlign.Center,
-                        color = MaterialTheme.colorScheme.onSurface,
-                        maxLines = 3,
-                        overflow = TextOverflow.Ellipsis
-                    )
+                user.bio.let { bio ->
+                    if (!bio.isNullOrBlank()) {
+                        Text(
+                            text = bio,
+                            style = MaterialTheme.typography.bodySmall,
+                            textAlign = TextAlign.Center,
+                            color = MaterialTheme.colorScheme.onSurface,
+                            maxLines = 3,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
                 }
-
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceEvenly
@@ -759,39 +301,109 @@ private fun Compact(
                         StatItem(count = it, label = "Following")
                     }
                 }
-
-                Row(
+                Button(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    onClick = { showEditDialog = true }
                 ) {
-                    Button(
-                        modifier = Modifier.weight(1f),
-                        onClick = state.onEditProfile
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Row(
-                            horizontalArrangement = Arrangement.spacedBy(4.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Icon(Icons.Default.Edit, contentDescription = null, modifier = Modifier.size(16.dp))
-                            Text("Edit", style = MaterialTheme.typography.labelMedium)
-                        }
-                    }
-                    OutlinedButton(
-                        modifier = Modifier.weight(1f),
-                        onClick = state.onToSettings
-                    ) {
-                        Row(
-                            horizontalArrangement = Arrangement.spacedBy(4.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Icon(Icons.Default.Settings, contentDescription = null, modifier = Modifier.size(16.dp))
-                            Text("Settings", style = MaterialTheme.typography.labelMedium)
-                        }
+                        Icon(Icons.Default.Edit, contentDescription = null, modifier = Modifier.size(18.dp))
+                        Text("Edit Profile")
                     }
                 }
             }
         }
-
-        ProfileContent(state, navActions)
+        ProfileContent(state.events, state.follows, navActions)
     }
+}
+
+@Composable
+private fun EditProfileDialog(
+    user: User,
+    onDismiss: () -> Unit,
+    onSave: suspend (username: String, displayName: String?, bio: String?) -> Unit
+) {
+    var username by remember { mutableStateOf(user.username) }
+    var displayName by remember { mutableStateOf(user.displayName ?: "") }
+    var bio by remember { mutableStateOf(user.bio ?: "") }
+
+    val scope = rememberCoroutineScope()
+    var isSaving by remember { mutableStateOf(false) }
+
+    AlertDialog(
+        onDismissRequest = { if (!isSaving) onDismiss() },
+        title = { Text("Edit Profile") },
+        text = {
+            Column(
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                OutlinedTextField(
+                    value = displayName,
+                    onValueChange = { displayName = it },
+                    label = { Text("Display Name") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                    enabled = !isSaving
+                )
+                OutlinedTextField(
+                    value = username,
+                    onValueChange = { username = it },
+                    label = { Text("Username") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                    isError = username.isBlank(),
+                    enabled = !isSaving
+                )
+                OutlinedTextField(
+                    value = bio,
+                    onValueChange = { bio = it },
+                    label = { Text("Bio") },
+                    maxLines = 3,
+                    modifier = Modifier.fillMaxWidth(),
+                    enabled = !isSaving
+                )
+            }
+        },
+        confirmButton = {
+            Button(
+                enabled = username.isNotBlank() && !isSaving,
+                onClick = {
+                    scope.launch {
+                        isSaving = true
+                        try {
+                            onSave(
+                                username.trim(),
+                                displayName.trim().takeIf { it.isNotBlank() },
+                                bio.trim().takeIf { it.isNotBlank() }
+                            )
+                            onDismiss()
+                        } finally {
+                            isSaving = false
+                        }
+                    }
+                }
+            ) {
+                if (isSaving) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(16.dp),
+                        strokeWidth = 2.dp,
+                        color = MaterialTheme.colorScheme.onPrimary
+                    )
+                } else {
+                    Text("Save")
+                }
+            }
+        },
+        dismissButton = {
+            TextButton(
+                enabled = !isSaving,
+                onClick = onDismiss
+            ) {
+                Text("Cancel")
+            }
+        }
+    )
 }

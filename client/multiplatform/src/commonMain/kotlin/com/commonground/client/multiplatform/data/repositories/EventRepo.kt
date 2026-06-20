@@ -50,8 +50,7 @@ class EventRepo(
         type: UserEventType,
         pageNumber: Int
     ): Events {
-        return client.get("user/events") {
-            parameter("id", id)
+        return client.get("users/$id/events") {
             parameter("type", type)
             parameter("pageNumber", pageNumber)
         }.body<Events>()

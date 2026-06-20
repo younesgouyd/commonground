@@ -1,9 +1,6 @@
 package com.commonground.server.controllers
 
-import com.commonground.core.models.Events
-import com.commonground.core.models.User
-import com.commonground.core.models.UserEventType
-import com.commonground.core.models.Users
+import com.commonground.core.models.*
 import com.commonground.server.services.AuthService
 import com.commonground.server.services.EventService
 import com.commonground.server.services.UserService
@@ -19,7 +16,20 @@ class MeController(
 ) {
     @GetMapping
     fun me(@AuthenticationPrincipal userId: String): User? {
-        return userService.getUser(userId)
+        return userService.getUserWithFollowState(userId, userId)
+    }
+
+    @PatchMapping
+    fun me(
+        @AuthenticationPrincipal userId: String,
+        @RequestBody requestBody: UpdateProfileRequest
+    ) {
+        userService.update(
+            id = userId,
+            username = requestBody.username,
+            displayName = requestBody.displayName,
+            bio = requestBody.bio
+        )
     }
 
     @GetMapping("/followers")

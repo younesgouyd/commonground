@@ -5,6 +5,8 @@ import androidx.lifecycle.viewModelScope
 import com.commonground.client.multiplatform.data.repositories.EventRepo
 import com.commonground.client.multiplatform.data.repositories.UserRepo
 import com.commonground.client.multiplatform.ui.LazyList
+import com.commonground.client.multiplatform.ui.widgets.Events
+import com.commonground.client.multiplatform.ui.widgets.Follows
 import com.commonground.core.models.User
 import com.commonground.core.models.UserEventType
 import io.github.oshai.kotlinlogging.KotlinLogging
@@ -14,9 +16,7 @@ import kotlinx.coroutines.launch
 
 class ProfileViewModel(
     private val userRepo: UserRepo,
-    private val eventRepo: EventRepo,
-    private val onEditProfile: () -> Unit = {},
-    private val onToSettings: () -> Unit = {},
+    private val eventRepo: EventRepo
 ) : ViewModel() {
     private val logger = KotlinLogging.logger {}
     private val _state: MutableStateFlow<ProfileState> = MutableStateFlow(ProfileState.Loading)
@@ -30,15 +30,16 @@ class ProfileViewModel(
 
     private suspend fun loadProfile(): ProfileState {
         return try {
-            val profile = userRepo.getLoggedInUser()
-            if (profile == null) {
+            val user = userRepo.getLoggedInUser()
+            if (user == null) {
                 ProfileState.Error
             } else {
+                val user: MutableStateFlow<User> = MutableStateFlow(user)
                 val followers = MutableStateFlow(getFollowers())
                 val followees = MutableStateFlow(getFollowees())
                 ProfileState.Loaded(
-                    user = profile,
-                    events = ProfileState.Loaded.Events(
+                    user = user.asStateFlow(),
+                    events = Events(
                         created = LazyList(
                             coroutineScope = viewModelScope,
                             load = { pageNumber ->
@@ -73,7 +74,7 @@ class ProfileViewModel(
                             }
                         )
                     ),
-                    follows = ProfileState.Loaded.Follows(
+                    follows = Follows(
                         followers = followers.asStateFlow(),
                         following = followees.asStateFlow(),
                         onFollowUserClick = { userId ->
@@ -91,8 +92,15 @@ class ProfileViewModel(
                             followers.value = getFollowers()
                         }
                     ),
-                    onEditProfile = onEditProfile,
-                    onToSettings = onToSettings,
+                    onUpdateProfile = { username: String, displayName: String?, bio: String? ->
+                        viewModelScope.launch { userRepo.updateProfile(username, displayName, bio) }.join()
+                        val newUser = userRepo.getLoggedInUser()
+                        if (newUser == null) {
+                            _state.value = ProfileState.Error
+                        } else {
+                            user.value = newUser
+                        }
+                    }
                 )
             }
         } catch (e: Exception) {
