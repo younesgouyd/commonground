@@ -65,7 +65,7 @@ class EventService(
         return eventRepository.findEventsNearLocation(
             location = GeometryUtils.createPoint(latitude, longitude),
             radiusMeters = radiusKilometers * 1000,
-            pageable = PageRequest.of(pageNumber, PAGE_SIZE)
+            pageable = PageRequest.of(pageNumber, DEFAULT_PAGE_SIZE)
         ).map(com.commonground.server.data.entities.Event::toModel)
             .toModel()
     }
@@ -90,7 +90,7 @@ class EventService(
                     creator = userRef,
                     pageable = PageRequest.of(
                         pageNumber,
-                        PAGE_SIZE,
+                        DEFAULT_PAGE_SIZE,
                         Sort.by(
                             Sort.Order.asc("createdAt"),
                             Sort.Order.asc("id")
@@ -103,7 +103,7 @@ class EventService(
                 eventRepository.findUserEventsAfterDate(
                     user = userRef,
                     date = Instant.now(),
-                    pageable = PageRequest.of(pageNumber, PAGE_SIZE)
+                    pageable = PageRequest.of(pageNumber, DEFAULT_PAGE_SIZE)
                 ).map(com.commonground.server.data.entities.Event::toModel)
                     .toModel()
             }
@@ -111,7 +111,7 @@ class EventService(
                 eventRepository.findUserEventsBeforeDate(
                     user = userRef,
                     date = Instant.now(),
-                    pageable = PageRequest.of(pageNumber, PAGE_SIZE)
+                    pageable = PageRequest.of(pageNumber, DEFAULT_PAGE_SIZE)
                 ).map(com.commonground.server.data.entities.Event::toModel)
                     .toModel()
             }

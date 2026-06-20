@@ -2,10 +2,7 @@ package com.commonground.client.multiplatform.ui.destinations.profile
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
-import androidx.compose.foundation.lazy.grid.rememberLazyGridState
+import androidx.compose.foundation.lazy.grid.*
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
@@ -25,8 +22,10 @@ import com.commonground.client.multiplatform.ui.AdaptiveUi
 import com.commonground.client.multiplatform.ui.LazyList
 import com.commonground.client.multiplatform.ui.widgets.EventCard
 import com.commonground.core.models.Event
+import com.commonground.core.models.User
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.launch
 
 interface ProfileNavActions {
     fun toFollowers(id: String)
@@ -35,7 +34,7 @@ interface ProfileNavActions {
     fun toUser(id: String)
 }
 
-private enum class ProfileTabs { Events, Friends }
+private enum class ProfileTabs { Events, Follows }
 
 @Composable
 fun Profile(
@@ -101,7 +100,10 @@ private fun ProfileSidebar(
     state: ProfileState.Loaded
 ) {
     val scrollState = rememberScrollState()
-    val createdEventsCount by state.events.created.totalCount.collectAsState()
+    val followers by state.follows.followers.collectAsState()
+    val following by state.follows.following.collectAsState()
+    val followersCount by followers.totalCount.collectAsState()
+    val followingCount by following.totalCount.collectAsState()
 
     Column(
         modifier = Modifier
@@ -158,10 +160,12 @@ private fun ProfileSidebar(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceEvenly
         ) {
-            createdEventsCount?.let {
-                StatItem(count = it, label = "Events")
+            followersCount?.let {
+                StatItem(count = it, label = "Followers")
             }
-            StatItem(count = state.friendCount.toLong(), label = "Friends")
+            followingCount?.let {
+                StatItem(count = it, label = "Following")
+            }
         }
 
         HorizontalDivider()
@@ -231,7 +235,7 @@ private fun ProfileContent(
 
         when (selectedTab) {
             ProfileTabs.Events -> EventsTab(state, navActions)
-            ProfileTabs.Friends -> FriendsTab(state, navActions)
+            ProfileTabs.Follows -> FollowsTab(state, navActions)
         }
     }
 }
@@ -452,12 +456,52 @@ private fun EventSection(
     }
 }
 
+private enum class FollowsTabs { Followers, Following }
+
 @Composable
-private fun FriendsTab(
+private fun FollowsTab(
     state: ProfileState.Loaded,
     navActions: ProfileNavActions
 ) {
-    if (state.friends.isEmpty()) {
+    val tabs = remember { FollowsTabs.entries }
+    var selectedTab by remember { mutableStateOf(FollowsTabs.Followers) }
+    val followers by state.follows.followers.collectAsState()
+    val following by state.follows.following.collectAsState()
+
+    Column(modifier = Modifier.fillMaxSize()) {
+        SecondaryTabRow(
+            modifier = Modifier.fillMaxWidth(),
+            selectedTabIndex = selectedTab.ordinal
+        ) {
+            for (tab in tabs) {
+                Tab(
+                    text = { Text(tab.name) },
+                    selected = selectedTab == tab,
+                    onClick = { selectedTab = tab }
+                )
+            }
+        }
+
+        when (selectedTab) {
+            FollowsTabs.Followers -> FollowsSubTab("followers", followers, state.follows.onFollowUserClick, state.follows.onUnfollowUserClick, navActions)
+            FollowsTabs.Following -> FollowsSubTab("following", following, state.follows.onFollowUserClick, state.follows.onUnfollowUserClick, navActions)
+        }
+    }
+}
+
+@Composable
+private fun FollowsSubTab(
+    followsTypeLabel: String,
+    users: LazyList<User>,
+    onFollowUserClick: suspend (userId: String) -> Unit,
+    onUnfollowUserClick: suspend (userId: String) -> Unit,
+    navActions: ProfileNavActions
+) {
+    val listState = rememberLazyListState()
+    val items by users.items.collectAsState()
+    val loading by users.loading.collectAsState()
+
+    if (items.isEmpty()) {
         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 Icon(
@@ -467,7 +511,7 @@ private fun FriendsTab(
                     tint = MaterialTheme.colorScheme.onSurfaceVariant
                 )
                 Spacer(Modifier.height(8.dp))
-                Text("No friends yet", style = MaterialTheme.typography.bodyLarge)
+                Text("No $followsTypeLabel yet", style = MaterialTheme.typography.bodyLarge)
             }
         }
         return
@@ -478,22 +522,47 @@ private fun FriendsTab(
         contentPadding = PaddingValues(16.dp),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp),
-        columns = GridCells.Adaptive(160.dp)
+        columns = GridCells.Adaptive(300.dp)
     ) {
-        items(state.friends) { friend ->
-            FriendCard(
-                friend = friend,
-                onClick = { navActions.toUser(friend.id) }
+        items(items) { user ->
+            UserCard(
+                user = user,
+                onClick = { navActions.toUser(user.id) },
+                onFollowClick = { onFollowUserClick(user.id) },
+                onUnfollowClick = { onUnfollowUserClick(user.id) }
             )
         }
+        if (loading) {
+            item(span = { GridItemSpan(maxLineSpan) }) {
+                Box(
+                    modifier = Modifier.fillMaxWidth().padding(16.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    CircularProgressIndicator(modifier = Modifier.size(36.dp), strokeWidth = 2.dp)
+                }
+            }
+        }
+    }
+
+    LaunchedEffect(listState, users, items.size) {
+        snapshotFlow {
+            listState.layoutInfo.visibleItemsInfo.lastOrNull()?.index
+        }.map { it == null ||  it >= items.size - 5  }
+            .filter { it }
+            .collect { users.loadMore() }
     }
 }
 
 @Composable
-private fun FriendCard(
-    friend: ProfileState.Loaded.Friend,
-    onClick: () -> Unit
+private fun UserCard(
+    user: User,
+    onClick: () -> Unit,
+    onFollowClick: suspend () -> Unit,
+    onUnfollowClick: suspend () -> Unit
 ) {
+    val scope = rememberCoroutineScope()
+    var isSubmitting by remember { mutableStateOf(false) }
+
     Card(onClick = onClick) {
         Row(
             modifier = Modifier.fillMaxWidth().padding(12.dp),
@@ -516,17 +585,79 @@ private fun FriendCard(
             }
             Column {
                 Text(
-                    text = friend.displayName ?: friend.username,
+                    text = user.displayName ?: user.username,
                     style = MaterialTheme.typography.bodyMedium,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
-                if (friend.displayName != null) {
+                if (user.displayName != null) {
                     Text(
-                        text = "@${friend.username}",
+                        text = "@${user.username}",
                         style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
                     )
+                }
+            }
+            if (user.isFollowed != null) {
+                Spacer(modifier = Modifier.weight(1f))
+                if (user.isFollowed == true) {
+                    OutlinedButton(
+                        onClick = {
+                            scope.launch {
+                                isSubmitting = true
+                                try {
+                                    onUnfollowClick()
+                                } finally {
+                                    isSubmitting = false
+                                }
+                            }
+                        },
+                        enabled = !isSubmitting,
+                        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 0.dp)
+                    ) {
+                        if (isSubmitting) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(16.dp),
+                                strokeWidth = 2.dp,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                        } else {
+                            Text(
+                                text = "Following",
+                                style = MaterialTheme.typography.labelMedium
+                            )
+                        }
+                    }
+                } else {
+                    Button(
+                        onClick = {
+                            scope.launch {
+                                isSubmitting = true
+                                try {
+                                    onFollowClick()
+                                } finally {
+                                    isSubmitting = false
+                                }
+                            }
+                        },
+                        enabled = !isSubmitting,
+                        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 0.dp)
+                    ) {
+                        if (isSubmitting) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(16.dp),
+                                strokeWidth = 2.dp,
+                                color = MaterialTheme.colorScheme.onPrimary
+                            )
+                        } else {
+                            Text(
+                                text = "Follow",
+                                style = MaterialTheme.typography.labelMedium
+                            )
+                        }
+                    }
                 }
             }
         }
@@ -558,7 +689,10 @@ private fun Compact(
     state: ProfileState.Loaded,
     navActions: ProfileNavActions
 ) {
-    val createdEventsCount by state.events.created.totalCount.collectAsState()
+    val followers by state.follows.followers.collectAsState()
+    val following by state.follows.following.collectAsState()
+    val followersCount by followers.totalCount.collectAsState()
+    val followingCount by following.totalCount.collectAsState()
 
     Column(modifier = Modifier.fillMaxSize()) {
         Surface(
@@ -618,10 +752,12 @@ private fun Compact(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceEvenly
                 ) {
-                    createdEventsCount?.let {
-                        StatItem(count = it, label = "Events")
+                    followersCount?.let {
+                        StatItem(count = it, label = "Followers")
                     }
-                    StatItem(count = state.friendCount.toLong(), label = "Friends")
+                    followingCount?.let {
+                        StatItem(count = it, label = "Following")
+                    }
                 }
 
                 Row(

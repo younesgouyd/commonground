@@ -3,8 +3,10 @@ package com.commonground.server
 import com.commonground.server.data.entities.Event
 import com.commonground.server.data.entities.User
 import com.commonground.server.data.entities.UserEvent
+import com.commonground.server.data.entities.UserFollow
 import com.commonground.server.data.repositories.EventRepository
 import com.commonground.server.data.repositories.UserEventRepository
+import com.commonground.server.data.repositories.UserFollowRepository
 import com.commonground.server.data.repositories.UserRepository
 import com.commonground.server.util.GeometryUtils
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder
@@ -19,7 +21,8 @@ import kotlin.random.Random
 class DataInitializer(
     private val userRepository: UserRepository,
     private val eventRepository: EventRepository,
-    private val userEventRepository: UserEventRepository
+    private val userEventRepository: UserEventRepository,
+    private val userFollowRepository: UserFollowRepository
 ) {
     fun populateTestData() {
         val passwordEncoder = BCryptPasswordEncoder()
@@ -37,6 +40,26 @@ class DataInitializer(
             )
         }
         val savedUsers = userRepository.saveAll(usersToSave)
+
+        // --- Generate Random Follows ---
+        val allFollows = mutableListOf<UserFollow>()
+        savedUsers.forEach { follower ->
+            val followCount = Random.nextInt(0, 50)
+            val randomlyFollowed = mutableSetOf<User>()
+            while (randomlyFollowed.size < followCount) {
+                val followed = savedUsers.random()
+                if (followed.id != follower.id) {
+                    randomlyFollowed.add(followed)
+                }
+            }
+            randomlyFollowed.forEach { followee ->
+                allFollows.add(UserFollow(follower = follower, followee = followee))
+            }
+        }
+        allFollows.chunked(1000).forEach { batch ->
+            userFollowRepository.saveAllAndFlush(batch)
+        }
+        // -------------------------------
 
         val totalEvents = 50000
         val batchSize = 500
@@ -67,8 +90,7 @@ class DataInitializer(
                         Random.nextInt(0, 23),
                         0,
                         0
-                    )
-                        .toInstant(ZoneOffset.UTC),
+                    ).toInstant(ZoneOffset.UTC),
                     isPrivate = Random.nextBoolean(),
                     durationMinutes = listOf(30L, 60L, 90L, 120L, 180L).random(),
                     isPaid = Random.nextBoolean(),

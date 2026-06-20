@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.commonground.client.multiplatform.data.repositories.EventRepo
 import com.commonground.client.multiplatform.data.repositories.UserRepo
 import com.commonground.client.multiplatform.ui.LazyList
+import com.commonground.core.models.User
 import com.commonground.core.models.UserEventType
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -33,6 +34,8 @@ class ProfileViewModel(
             if (profile == null) {
                 ProfileState.Error
             } else {
+                val followers = MutableStateFlow(getFollowers())
+                val followees = MutableStateFlow(getFollowees())
                 ProfileState.Loaded(
                     user = profile,
                     events = ProfileState.Loaded.Events(
@@ -70,8 +73,24 @@ class ProfileViewModel(
                             }
                         )
                     ),
-                    friends = emptyList(), // TODO: getFriends end point not Impl yt
-                    friendCount = 0, // TODO
+                    follows = ProfileState.Loaded.Follows(
+                        followers = followers.asStateFlow(),
+                        following = followees.asStateFlow(),
+                        onFollowUserClick = { userId ->
+                            viewModelScope.launch { userRepo.followUser(userId) }.join()
+
+                            // TODO: we're reloading the entire list just to reflect the follow state of one item. find a better way
+                            followers.value = getFollowers()
+                            followees.value = getFollowees()
+                        },
+                        onUnfollowUserClick = { userId ->
+                            viewModelScope.launch { userRepo.unfollowUser(userId) }.join()
+
+                            // TODO: we're reloading the entire list just to reflect the follow state of one item. find a better way
+                            followees.value = getFollowees()
+                            followers.value = getFollowers()
+                        }
+                    ),
                     onEditProfile = onEditProfile,
                     onToSettings = onToSettings,
                 )
@@ -80,5 +99,25 @@ class ProfileViewModel(
             logger.error(e) {  }
             ProfileState.Error
         }
+    }
+
+    private fun getFollowers(): LazyList<User> {
+        return LazyList(
+            coroutineScope = viewModelScope,
+            load = { pageNumber ->
+                val users = userRepo.getLoggedInUserFollowers(pageNumber)
+                LazyList.Chunk(users.items, users.next, users.total)
+            }
+        )
+    }
+
+    private fun getFollowees(): LazyList<User> {
+        return LazyList(
+            coroutineScope = viewModelScope,
+            load = { pageNumber ->
+                val users = userRepo.getLoggedInUserFollowees(pageNumber)
+                LazyList.Chunk(users.items, users.next, users.total)
+            }
+        )
     }
 }
