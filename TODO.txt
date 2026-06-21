@@ -1,3 +1,7 @@
+- implement editing events.
+- make all items the same height.
+- show map on compact mode.
+- fix android system top bar and navigation bar overlaying on the app.
 - fix client crashing when navigating away from map screen while the map is in mid-animation.
 - add dark mode setting.
 - support displaying current events.
