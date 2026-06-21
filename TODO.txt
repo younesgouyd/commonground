@@ -1,17 +1,21 @@
+- implement editing events.
+- make all items the same height.
+- show map on compact mode.
+- fix android system top bar and navigation bar overlaying on the app.
 - fix client crashing when navigating away from map screen while the map is in mid-animation.
 - add dark mode setting.
 - support displaying current events.
-- support setting profile and event images.
+- support setting profile picture.
 - decide whether Event.coordinates may be optional.
 - implement ui for searching/filtering and sorting events by search keywords, category, follows, date, location, distance from user... etc.
-- relationship with freinds rules
-    - follows.
+- relationship with friends rules:
     - friend request.
     - event visibility/privacy options (public, friends, family... etc).
 - delete expired refresh tokens.
 - implement authorization (permissions, access control...).
 
 done:
+- relationship with friends rules: follows.
 - handle refresh token expiration.
 - implement logout in backend.
 - fix login.
