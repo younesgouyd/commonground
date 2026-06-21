@@ -78,7 +78,7 @@ class DataInitializer(
                 val event = Event(
                     title = "Community Event $i",
                     description = "Testing authorization and data isolation mechanics with a random crowd.",
-                    locationName = listOf("Casablanca, Morocco", "Online", "Paris, France", "Remote Hub").random(),
+                    locationName = listOf("Casablanca, Morocco", "Paris, France", "Remote Hub").random(),
                     coordinates = GeometryUtils.createPoint(
                         latitude = asin(Random.nextDouble(-1.0, 1.0)) * (180.0 / PI),
                         longitude = Random.nextDouble(-180.0, 180.0)

@@ -1,5 +1,6 @@
 package com.commonground.server.data.repositories
 
+import com.commonground.core.models.ImageUrl
 import com.commonground.server.data.entities.User
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
@@ -110,5 +111,18 @@ interface UserRepository : JpaRepository<User, UUID> {
         username: String,
         displayName: String?,
         bio: String?
+    )
+
+    @Modifying
+    @Transactional
+    @Query("""
+            UPDATE User
+            SET profilePic = :profilePic,
+                updatedAt = CURRENT_TIMESTAMP
+            WHERE id = :id
+    """)
+    fun updateProfilePic(
+        id: UUID,
+        profilePic: ImageUrl
     )
 }

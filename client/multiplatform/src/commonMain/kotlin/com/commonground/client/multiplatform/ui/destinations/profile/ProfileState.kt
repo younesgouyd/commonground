@@ -12,6 +12,7 @@ sealed class ProfileState {
         val user: StateFlow<User>,
         val follows: Follows,
         val events: Events,
+        val onUpdateProfilePic: (ByteArray) -> Unit,
         val onUpdateProfile: suspend (username: String, displayName: String?, bio: String?) -> Unit
     ) : ProfileState()
 

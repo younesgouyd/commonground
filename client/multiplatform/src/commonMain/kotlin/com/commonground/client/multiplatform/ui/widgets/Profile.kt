@@ -56,6 +56,7 @@ private data class ExpandedSection(
 
 @Composable
 fun ProfileContent(
+    modifier: Modifier = Modifier,
     events: Events,
     follows: Follows,
     navActions: ProfileNavActions
@@ -63,20 +64,25 @@ fun ProfileContent(
     val tabs = remember { ProfileTabs.entries }
     var selectedTab by remember { mutableStateOf(ProfileTabs.Events) }
 
-    Column(modifier = Modifier.fillMaxSize()) {
-        PrimaryTabRow(selectedTabIndex = selectedTab.ordinal) {
-            tabs.forEachIndexed { index, tab ->
-                Tab(
-                    text = { Text(tab.name) },
-                    selected = selectedTab == tab,
-                    onClick = { selectedTab = tab }
-                )
+    Surface(
+        modifier = modifier,
+        color = MaterialTheme.colorScheme.background
+    ) {
+        Column(modifier = Modifier.fillMaxSize()) {
+            PrimaryTabRow(selectedTabIndex = selectedTab.ordinal) {
+                tabs.forEachIndexed { index, tab ->
+                    Tab(
+                        text = { Text(tab.name) },
+                        selected = selectedTab == tab,
+                        onClick = { selectedTab = tab }
+                    )
+                }
             }
-        }
 
-        when (selectedTab) {
-            ProfileTabs.Events -> EventsTab(events, navActions::toEvent)
-            ProfileTabs.Follows -> FollowsTab(follows, navActions)
+            when (selectedTab) {
+                ProfileTabs.Events -> EventsTab(events, navActions::toEvent)
+                ProfileTabs.Follows -> FollowsTab(follows, navActions)
+            }
         }
     }
 }

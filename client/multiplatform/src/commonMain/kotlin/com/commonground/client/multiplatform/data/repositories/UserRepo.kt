@@ -6,6 +6,8 @@ import com.commonground.core.models.Users
 import io.ktor.client.*
 import io.ktor.client.call.*
 import io.ktor.client.request.*
+import io.ktor.client.request.forms.*
+import io.ktor.http.*
 
 class UserRepo(
     private val client: HttpClient
@@ -25,6 +27,25 @@ class UserRepo(
                     username = username,
                     displayName = displayName,
                     bio = bio
+                )
+            )
+        }
+    }
+
+    suspend fun updateProfilePic(image: ByteArray) {
+        client.patch("me/profilePic") {
+            setBody(
+                MultiPartFormDataContent(
+                    parts = formData {
+                        append(
+                            key = "file",
+                            value = image,
+                            headers = Headers.build {
+                                append(HttpHeaders.ContentType, "image/jpeg")
+                                append(HttpHeaders.ContentDisposition, "filename=\"profile.jpg\"")
+                            }
+                        )
+                    }
                 )
             )
         }

@@ -70,12 +70,12 @@ private fun Wide(
         ) {
             ProfileSidebar(state)
         }
-        Surface(
+        ProfileContent(
             modifier = Modifier.weight(1f).fillMaxHeight(),
-            color = MaterialTheme.colorScheme.background
-        ) {
-            ProfileContent(state.events, state.follows, navActions)
-        }
+            events = state.events,
+            follows = state.follows,
+            navActions = navActions
+        )
     }
 }
 
@@ -260,7 +260,11 @@ private fun Compact(
                 )
             }
         }
-        ProfileContent(state.events, state.follows, navActions)
+        ProfileContent(
+            events = state.events,
+            follows = state.follows,
+            navActions = navActions
+        )
     }
 }
 

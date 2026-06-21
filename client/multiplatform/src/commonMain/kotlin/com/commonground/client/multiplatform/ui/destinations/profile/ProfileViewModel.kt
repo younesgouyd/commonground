@@ -92,14 +92,15 @@ class ProfileViewModel(
                             followers.value = getFollowers()
                         }
                     ),
+                    onUpdateProfilePic = { bytes ->
+                        viewModelScope.launch {
+                            userRepo.updateProfilePic(bytes)
+                            refreshUser(user)
+                        }
+                    },
                     onUpdateProfile = { username: String, displayName: String?, bio: String? ->
                         viewModelScope.launch { userRepo.updateProfile(username, displayName, bio) }.join()
-                        val newUser = userRepo.getLoggedInUser()
-                        if (newUser == null) {
-                            _state.value = ProfileState.Error
-                        } else {
-                            user.value = newUser
-                        }
+                        refreshUser(user)
                     }
                 )
             }
@@ -127,5 +128,14 @@ class ProfileViewModel(
                 LazyList.Chunk(users.items, users.next, users.total)
             }
         )
+    }
+
+    private suspend fun refreshUser(user: MutableStateFlow<User>) {
+        val newUser = userRepo.getLoggedInUser()
+        if (newUser == null) {
+            _state.value = ProfileState.Error
+        } else {
+            user.value = newUser
+        }
     }
 }

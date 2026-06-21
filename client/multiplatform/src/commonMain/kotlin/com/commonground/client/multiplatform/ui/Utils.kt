@@ -1,5 +1,6 @@
 package com.commonground.client.multiplatform.ui
 
+import com.commonground.client.multiplatform.data.RepoStore
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.format.MonthNames
 import kotlinx.datetime.format.char
@@ -23,3 +24,5 @@ fun Instant.formatted(
     }
     return eventCardFormat.format(localDateTime)
 }
+
+fun String.toBackendUrl() = "http://${RepoStore.serverHost}:${RepoStore.SERVER_PORT}$this"

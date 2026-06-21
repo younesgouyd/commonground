@@ -1,5 +1,6 @@
 package com.commonground.server.services
 
+import com.commonground.core.models.ImageUrl
 import com.commonground.core.models.User
 import com.commonground.core.models.Users
 import com.commonground.server.data.entities.UserFollow
@@ -106,5 +107,10 @@ class UserService(
             displayName = displayName,
             bio = bio
         )
+    }
+
+    @Transactional
+    fun updateProfilePic(id: String, profilePic: ImageUrl) {
+        userRepository.updateProfilePic(id.toUuid(), profilePic)
     }
 }
