@@ -1,3 +1,5 @@
+- support choosing coordinates through map.
+- show custom markers.
 - implement editing events.
 - make all items the same height.
 - show map on compact mode.
@@ -5,7 +7,6 @@
 - fix client crashing when navigating away from map screen while the map is in mid-animation.
 - add dark mode setting.
 - support displaying current events.
-- support setting profile picture.
 - decide whether Event.coordinates may be optional.
 - implement ui for searching/filtering and sorting events by search keywords, category, follows, date, location, distance from user... etc.
 - relationship with friends rules:
