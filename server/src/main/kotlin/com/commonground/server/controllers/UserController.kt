@@ -53,8 +53,14 @@ class UserController(
     fun events(
         @PathVariable id: String,
         @RequestParam type: UserEventType,
-        @RequestParam pageNumber: Int
+        @RequestParam pageNumber: Int,
+        @AuthenticationPrincipal loggedInUserId: String
     ): Events {
-        return eventService.getUserEvents(id, type, pageNumber)
+        return eventService.getUserEvents(
+            userId = id,
+            type = type,
+            observerUserId = loggedInUserId,
+            pageNumber = pageNumber
+        )
     }
 }

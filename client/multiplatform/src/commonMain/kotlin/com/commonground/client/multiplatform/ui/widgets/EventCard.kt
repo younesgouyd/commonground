@@ -113,25 +113,27 @@ fun EventCard(
                     horizontalArrangement = Arrangement.spacedBy(6.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Surface(
-                        shape = RoundedCornerShape(6.dp),
-                        color = MaterialTheme.colorScheme.secondaryContainer
-                    ) {
-                        Text(
-                            text = event.duration.toComponents { hours, minutes ->
-                                when {
-                                    hours > 0 -> "${hours}h ${minutes}m"
-                                    else -> "${minutes}m"
-                                }
-                            },
-                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onSecondaryContainer
-                        )
+                    event.duration?.let { duration ->
+                        Surface(
+                            shape = RoundedCornerShape(6.dp),
+                            color = MaterialTheme.colorScheme.secondaryContainer
+                        ) {
+                            Text(
+                                text = duration.toComponents { hours, minutes ->
+                                    when {
+                                        hours > 0 -> "${hours}h ${minutes}m"
+                                        else -> "${minutes}m"
+                                    }
+                                },
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSecondaryContainer
+                            )
+                        }
                     }
                     Spacer(Modifier.weight(1f))
                     Text(
-                        text = event.date.formatted(),
+                        text = event.startDate.formatted(),
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )

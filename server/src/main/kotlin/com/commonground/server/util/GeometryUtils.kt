@@ -1,5 +1,6 @@
 package com.commonground.server.util
 
+import com.commonground.core.models.Coordinates
 import org.locationtech.jts.geom.Coordinate
 import org.locationtech.jts.geom.GeometryFactory
 import org.locationtech.jts.geom.Point
@@ -10,5 +11,13 @@ object GeometryUtils {
 
     fun createPoint(latitude: Double, longitude: Double): Point {
         return geometryFactory.createPoint(Coordinate(longitude, latitude))
+    }
+
+    fun Coordinates.toPoint(): Point {
+        return geometryFactory.createPoint(Coordinate(this.longitude, this.latitude))
+    }
+
+    fun fromCoordinates(coordinates: Coordinates): Point {
+        return geometryFactory.createPoint(Coordinate(coordinates.longitude, coordinates.latitude))
     }
 }

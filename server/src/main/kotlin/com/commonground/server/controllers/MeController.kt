@@ -3,7 +3,6 @@ package com.commonground.server.controllers
 import com.commonground.core.models.*
 import com.commonground.server.services.AuthService
 import com.commonground.server.services.EventService
-import com.commonground.server.services.ImageService
 import com.commonground.server.services.UserService
 import org.springframework.security.core.annotation.AuthenticationPrincipal
 import org.springframework.web.bind.annotation.*
@@ -14,8 +13,7 @@ import org.springframework.web.multipart.MultipartFile
 class MeController(
     private val authService: AuthService,
     private val userService: UserService,
-    private val eventService: EventService,
-    private val imageService: ImageService
+    private val eventService: EventService
 ) {
     @GetMapping
     fun me(@AuthenticationPrincipal userId: String): User? {
@@ -24,8 +22,8 @@ class MeController(
 
     @PatchMapping
     fun me(
-        @AuthenticationPrincipal userId: String,
-        @RequestBody requestBody: UpdateProfileRequest
+        @RequestBody requestBody: UpdateProfileRequest,
+        @AuthenticationPrincipal userId: String
     ) {
         userService.update(
             id = userId,
@@ -36,59 +34,68 @@ class MeController(
     }
 
     @PatchMapping("/profilePic")
-    fun me(
-        @AuthenticationPrincipal userId: String,
-        @RequestParam("file") file: MultipartFile
+    fun patchProfilePic(
+        @RequestParam("file") file: MultipartFile,
+        @AuthenticationPrincipal userId: String
     ) {
-        val imgUrl = imageService.store(file, "profile_pic")
-        userService.updateProfilePic(userId, imgUrl)
+        userService.updateProfilePic(userId, file)
+    }
+
+    @DeleteMapping("/profilePic")
+    fun deleteProfilePic(@AuthenticationPrincipal userId: String) {
+        userService.clearProfilePic(userId)
     }
 
     @GetMapping("/followers")
     fun followers(
-        @AuthenticationPrincipal userId: String,
-        @RequestParam pageNumber: Int
+        @RequestParam pageNumber: Int,
+        @AuthenticationPrincipal userId: String
     ): Users {
         return userService.getFollowersWithFollowState(userId, userId, pageNumber)
     }
 
     @GetMapping("/followees")
     fun followees(
-        @AuthenticationPrincipal userId: String,
-        @RequestParam pageNumber: Int
+        @RequestParam pageNumber: Int,
+        @AuthenticationPrincipal userId: String
     ): Users {
         return userService.getFolloweesWithFollowState(userId, userId, pageNumber)
     }
 
     @PutMapping("/followees")
     fun follow(
-        @AuthenticationPrincipal loggedInUserId: String,
-        @RequestParam userId: String
+        @RequestParam userId: String,
+        @AuthenticationPrincipal loggedInUserId: String
     ) {
         userService.followUser(followerId = loggedInUserId, followeeId =  userId)
     }
 
     @DeleteMapping("/followees")
     fun unfollow(
-        @AuthenticationPrincipal loggedInUserId: String,
-        @RequestParam userId: String
+        @RequestParam userId: String,
+        @AuthenticationPrincipal loggedInUserId: String
     ) {
         userService.unfollowUser(followerId = loggedInUserId, followeeId = userId)
     }
 
     @GetMapping("/events")
     fun events(
-        @AuthenticationPrincipal userId: String,
         @RequestParam type: UserEventType,
-        @RequestParam pageNumber: Int
+        @RequestParam pageNumber: Int,
+        @AuthenticationPrincipal userId: String
     ): Events {
-        return eventService.getUserEvents(userId, type, pageNumber)
+        return eventService.getUserEvents(
+            userId = userId,
+            type = type,
+            observerUserId = userId,
+            pageNumber = pageNumber
+        )
     }
 
     @PostMapping("/logout")
     fun logout(
-        @AuthenticationPrincipal userId: String,
-        @RequestBody refreshToken: String
+        @RequestBody refreshToken: String,
+        @AuthenticationPrincipal userId: String
     ) {
         authService.logout(userId, refreshToken)
     }

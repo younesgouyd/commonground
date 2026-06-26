@@ -11,5 +11,6 @@ sealed class Route {
     @Serializable data object Settings : Route()
     @Serializable data class Event(val id: String) : Route()
     @Serializable data object CreateEvent : Route()
+    @Serializable data class UpdateEvent(val id: String) : Route()
     @Serializable data class User(val id: String) : Route()
 }

@@ -43,6 +43,7 @@ data class Follows(
 interface ProfileNavActions {
     fun toEvent(id: String)
     fun toUser(id: String)
+    fun toCreateEvent()
 }
 
 private enum class ProfileTabs { Events, Follows }

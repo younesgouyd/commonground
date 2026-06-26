@@ -98,6 +98,12 @@ class ProfileViewModel(
                             refreshUser(user)
                         }
                     },
+                    onClearProfilePic = {
+                        viewModelScope.launch {
+                            userRepo.clearProfilePic()
+                            refreshUser(user)
+                        }
+                    },
                     onUpdateProfile = { username: String, displayName: String?, bio: String? ->
                         viewModelScope.launch { userRepo.updateProfile(username, displayName, bio) }.join()
                         refreshUser(user)

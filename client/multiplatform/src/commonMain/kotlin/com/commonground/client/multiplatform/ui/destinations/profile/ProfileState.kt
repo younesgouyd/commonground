@@ -13,6 +13,7 @@ sealed class ProfileState {
         val follows: Follows,
         val events: Events,
         val onUpdateProfilePic: (ByteArray) -> Unit,
+        val onClearProfilePic: () -> Unit,
         val onUpdateProfile: suspend (username: String, displayName: String?, bio: String?) -> Unit
     ) : ProfileState()
 

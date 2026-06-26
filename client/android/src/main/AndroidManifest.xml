@@ -6,7 +6,8 @@
             android:label="Common Ground"
             android:supportsRtl="true"
             android:largeHeap="true"
-            android:usesCleartextTraffic="true">
+            android:usesCleartextTraffic="true"
+            android:theme="@style/Theme.CommonGround">
         <activity
                 android:name="com.commonground.client.android.MainActivity"
                 android:exported="true">

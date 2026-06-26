@@ -69,7 +69,6 @@ private fun Wide(
                 currentLocation = state.currentLocation,
                 onViewportChanged = state.onMapViewportChanged
             )
-
         }
 
         Column(
@@ -227,7 +226,12 @@ private fun Compact(
                 }
             }
         ) { padding ->
-            //MAP
+            Map(
+                modifier = Modifier.fillMaxSize().padding(padding),
+                items = items,
+                currentLocation = state.currentLocation,
+                onViewportChanged = state.onMapViewportChanged
+            )
         }
 
         FloatingActionButton(

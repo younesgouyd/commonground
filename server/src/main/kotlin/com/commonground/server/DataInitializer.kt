@@ -75,6 +75,17 @@ class DataInitializer(
                         randomAttendees.add(attendee)
                     }
                 }
+
+                val startDate = LocalDateTime.of(
+                    2026,
+                    Random.nextInt(1, 12),
+                    Random.nextInt(1, 29),
+                    Random.nextInt(0, 23),
+                    0,
+                    0
+                ).toInstant(ZoneOffset.UTC)
+                val durationMinutes = listOf(30L, 60L, 90L, 120L, 180L, null).random()
+                val endDate = durationMinutes?.let { startDate.plusSeconds(it * 60) }
                 val event = Event(
                     title = "Community Event $i",
                     description = "Testing authorization and data isolation mechanics with a random crowd.",
@@ -83,16 +94,10 @@ class DataInitializer(
                         latitude = asin(Random.nextDouble(-1.0, 1.0)) * (180.0 / PI),
                         longitude = Random.nextDouble(-180.0, 180.0)
                     ),
-                    date = LocalDateTime.of(
-                        2026,
-                        Random.nextInt(1, 12),
-                        Random.nextInt(1, 29),
-                        Random.nextInt(0, 23),
-                        0,
-                        0
-                    ).toInstant(ZoneOffset.UTC),
+                    startDate = startDate,
+                    endDate = endDate,
                     isPrivate = Random.nextBoolean(),
-                    durationMinutes = listOf(30L, 60L, 90L, 120L, 180L).random(),
+                    isPrivatePlace = Random.nextBoolean(),
                     isPaid = Random.nextBoolean(),
                     image = null,
                     creator = creatorUser

@@ -16,6 +16,38 @@ interface UserRepository : JpaRepository<User, UUID> {
     fun existsByUsername(username: String): Boolean
     fun existsByEmailAddress(emailAddress: String): Boolean
 
+    @Modifying
+    @Transactional
+    @Query(
+        """
+            UPDATE User
+            SET username = :username,
+                displayName = :displayName,
+                bio = :bio,
+                updatedAt = CURRENT_TIMESTAMP
+            WHERE id = :id
+        """
+    )
+    fun update(
+        id: UUID,
+        username: String,
+        displayName: String?,
+        bio: String?
+    )
+
+    @Modifying
+    @Transactional
+    @Query("""
+            UPDATE User
+            SET profilePic = :profilePic,
+                updatedAt = CURRENT_TIMESTAMP
+            WHERE id = :id
+    """)
+    fun updateProfilePic(
+        id: UUID,
+        profilePic: ImageUrl?
+    )
+
     /**
      * Retrieves a specific user by their [id].
      *
@@ -93,36 +125,4 @@ interface UserRepository : JpaRepository<User, UUID> {
         @Param("followStateUser") followStateUser: User,
         pageable: Pageable
     ): Page<com.commonground.core.models.User>
-
-    @Modifying
-    @Transactional
-    @Query(
-        """
-            UPDATE User
-            SET username = :username,
-                displayName = :displayName,
-                bio = :bio,
-                updatedAt = CURRENT_TIMESTAMP
-            WHERE id = :id
-        """
-    )
-    fun update(
-        id: UUID,
-        username: String,
-        displayName: String?,
-        bio: String?
-    )
-
-    @Modifying
-    @Transactional
-    @Query("""
-            UPDATE User
-            SET profilePic = :profilePic,
-                updatedAt = CURRENT_TIMESTAMP
-            WHERE id = :id
-    """)
-    fun updateProfilePic(
-        id: UUID,
-        profilePic: ImageUrl
-    )
 }

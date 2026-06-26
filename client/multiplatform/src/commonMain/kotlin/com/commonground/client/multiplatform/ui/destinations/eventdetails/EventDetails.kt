@@ -10,21 +10,27 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.commonground.client.multiplatform.ui.AdaptiveUi
 import com.commonground.client.multiplatform.ui.formatted
+import com.commonground.client.multiplatform.ui.toBackendUrl
+import com.commonground.client.multiplatform.ui.widgets.Image
 import com.commonground.client.multiplatform.ui.widgets.Person
+import com.commonground.client.multiplatform.ui.widgets.SystemFilePicker
+import com.commonground.core.models.ImageUrl
+import kotlinx.coroutines.launch
 
 interface EventDetailsNavActions {
     fun toUser(id: String)
+    fun toUpdateEvent()
     fun onBack()
 }
 
@@ -92,29 +98,11 @@ private fun WideLoaded(
                     modifier = Modifier.fillMaxWidth().height(280.dp),
                     contentAlignment = Alignment.Center
                 ) {
-                    Surface(
+                    EventImage(
                         modifier = Modifier.fillMaxSize(),
-                        color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.6f)
-                    ) {
-                        Box(
-                            modifier = Modifier.fillMaxSize(),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                Icon(
-                                    Icons.Default.Event,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(72.dp),
-                                    tint = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.6f)
-                                )
-                                Spacer(Modifier.height(12.dp))
-                                Text( "Event Cover",
-                                    style = MaterialTheme.typography.labelLarge,
-                                    color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.5f)
-                                )
-                            }
-                        }
-                    }
+                        image = event.image,
+                        updateImage = state.updateImage
+                    )
                 }
 
                 Column(
@@ -126,14 +114,14 @@ private fun WideLoaded(
                         style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold)
                     )
 
-                    MetaRow(Icons.Default.CalendarMonth, "Date", event.date.formatted())
+                    MetaRow(Icons.Default.CalendarMonth, "Date", event.startDate.formatted())
                     MetaRow(Icons.Default.Place, "Location", event.locationName)
-                    MetaRow(
-                        Icons.Default.Schedule, "Duration",
-                        event.duration.toComponents { h, m ->
-                            if (h > 0) "${h}h ${m}m" else "${m}m"
-                        }
-                    )
+                    event.duration?.let {
+                        MetaRow(
+                            icon = Icons.Default.Schedule, label = "Duration",
+                            value = it.toComponents { h, m -> if (h > 0) "${h}h ${m}m" else "${m}m" }
+                        )
+                    }
                     MetaRow(
                         icon = if (event.isPaid) Icons.Default.AttachMoney else Icons.Default.CardGiftcard,
                         label = "Entry",
@@ -141,8 +129,8 @@ private fun WideLoaded(
                     )
                     MetaRow(
                         icon = if (event.isPrivate) Icons.Default.Lock else Icons.Default.Public,
-                        label = "Visibility",
-                        value = if (event.isPrivate) "Private" else "Public"
+                        label = "Privacy",
+                        value = if (event.isPrivate) "Followers only" else "Anyone"
                     )
 
                     HorizontalDivider()
@@ -186,7 +174,34 @@ private fun WideLoaded(
 
                     Spacer(Modifier.weight(1f))
 
-                    BookingButton(state, viewModel)
+                    if (state.isLoggedInUserEvent) {
+                        Button(
+                            modifier = Modifier.fillMaxWidth().height(52.dp),
+                            onClick = navActions::toUpdateEvent,
+                            enabled = !state.isBooking,
+                            shape = RoundedCornerShape(14.dp),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = if (state.isBooked) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.primary
+                            )
+                        ) {
+                            Row(
+                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(
+                                    modifier = Modifier.size(20.dp),
+                                    imageVector = Icons.Default.Edit,
+                                    contentDescription = null
+                                )
+                                Text(
+                                    text = "Edit",
+                                    style = MaterialTheme.typography.titleMedium
+                                )
+                            }
+                        }
+                    } else {
+                        BookingButton(state, viewModel)
+                    }
                 }
             }
         }
@@ -223,6 +238,64 @@ private fun WideLoaded(
     }
 }
 
+@Composable
+private fun EventImage(
+    modifier: Modifier = Modifier,
+    image: ImageUrl?,
+    updateImage: suspend (ByteArray) -> ImageUrl?
+) {
+    val scope = rememberCoroutineScope()
+    var image2 by remember(image) { mutableStateOf(image) }
+    var showSystemFilePicker by remember { mutableStateOf(false) }
+
+    image2?.let { img ->
+        Image(
+            modifier = modifier.fillMaxSize(),
+            url = img.toBackendUrl(),
+            contentScale = ContentScale.FillWidth
+        )
+    } ?: Surface(
+        modifier = modifier.fillMaxSize(),
+        color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.6f)
+    ) {
+        Box(
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = Alignment.Center
+        ) {
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Icon(
+                    Icons.Default.Event,
+                    contentDescription = null,
+                    modifier = Modifier.size(72.dp),
+                    tint = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.6f)
+                )
+                Spacer(Modifier.height(12.dp))
+                Text(
+                    "Event Cover",
+                    style = MaterialTheme.typography.labelLarge,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.5f)
+                )
+                TextButton(
+                    content = { Text("Set an image") },
+                    onClick = { showSystemFilePicker = true }
+                )
+            }
+        }
+    }
+
+    if (showSystemFilePicker) {
+        SystemFilePicker(
+            onFileChosen = {
+                showSystemFilePicker = false
+                scope.launch {
+                    image2 = updateImage(it)
+                }
+            },
+            dismiss = { showSystemFilePicker = false }
+        )
+    }
+}
+
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -255,30 +328,11 @@ private fun CompactLoaded(
                     modifier = Modifier.fillMaxWidth().height(200.dp),
                     contentAlignment = Alignment.Center
                 ) {
-                    Surface(
+                    EventImage(
                         modifier = Modifier.fillMaxSize(),
-                        color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.6f)
-                    ) {
-                        Box(
-                            modifier = Modifier.fillMaxSize(),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                Icon(
-                                    Icons.Default.Event,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(56.dp),
-                                    tint = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.6f)
-                                )
-                                Spacer(Modifier.height(8.dp))
-                                Text(
-                                    "Event Cover",
-                                    style = MaterialTheme.typography.labelLarge,
-                                    color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.5f)
-                                )
-                            }
-                        }
-                    }
+                        image = event.image,
+                        updateImage = state.updateImage
+                    )
                 }
             }
 
@@ -294,7 +348,7 @@ private fun CompactLoaded(
 
                     Row(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
                         Icon(Icons.Default.CalendarMonth, null, Modifier.size(18.dp), tint = MaterialTheme.colorScheme.primary)
-                        Text(event.date.formatted(), style = MaterialTheme.typography.bodyMedium)
+                        Text(event.startDate.formatted(), style = MaterialTheme.typography.bodyMedium)
                     }
                     Row(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
                         Icon(Icons.Default.Place, null, Modifier.size(18.dp), tint = MaterialTheme.colorScheme.primary)
@@ -302,16 +356,18 @@ private fun CompactLoaded(
                     }
 
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        MetaChip(
-                            event.duration.toComponents { h, m -> if (h > 0) "${h}h ${m}m" else "${m}m" },
-                            Icons.Default.Schedule
-                        )
+                        event.duration?.let {
+                            MetaChip(
+                                text = it.toComponents { h, m -> if (h > 0) "${h}h ${m}m" else "${m}m" },
+                                icon = Icons.Default.Schedule
+                            )
+                        }
                         MetaChip(
                             if (event.isPaid) "Paid" else "Free",
                             if (event.isPaid) Icons.Default.AttachMoney else Icons.Default.CardGiftcard
                         )
                         if (event.isPrivate) {
-                            MetaChip("Private", Icons.Default.Lock)
+                            MetaChip("Followers only", Icons.Default.Lock)
                         }
                     }
 
@@ -328,6 +384,33 @@ private fun CompactLoaded(
                             name = event.creator.displayName ?: event.creator.username,
                             onClick = { navActions.toUser(event.creator.id) }
                         )
+                    }
+
+                    if (state.isLoggedInUserEvent) {
+                        Button(
+                            modifier = Modifier.fillMaxWidth().height(52.dp),
+                            onClick = navActions::toUpdateEvent,
+                            enabled = !state.isBooking,
+                            shape = RoundedCornerShape(14.dp),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = if (state.isBooked) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.primary
+                            )
+                        ) {
+                            Row(
+                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(
+                                    modifier = Modifier.size(20.dp),
+                                    imageVector = Icons.Default.Edit,
+                                    contentDescription = null
+                                )
+                                Text(
+                                    text = "Edit",
+                                    style = MaterialTheme.typography.titleMedium
+                                )
+                            }
+                        }
                     }
 
                     HorizontalDivider(Modifier.padding(top = 8.dp))
@@ -377,7 +460,7 @@ private fun EmptyScreen(message: String) {
 }
 
 @Composable
-private fun MetaRow(icon: androidx.compose.ui.graphics.vector.ImageVector, label: String, value: String) {
+private fun MetaRow(icon: ImageVector, label: String, value: String) {
     Row(
         horizontalArrangement = Arrangement.spacedBy(12.dp),
         verticalAlignment = Alignment.CenterVertically
@@ -391,7 +474,7 @@ private fun MetaRow(icon: androidx.compose.ui.graphics.vector.ImageVector, label
 }
 
 @Composable
-private fun MetaChip(text: String, icon: androidx.compose.ui.graphics.vector.ImageVector) {
+private fun MetaChip(text: String, icon: ImageVector) {
     Surface(
         shape = RoundedCornerShape(8.dp),
         color = MaterialTheme.colorScheme.secondaryContainer
@@ -581,7 +664,9 @@ private fun BookingSection(
             }
 
             Spacer(Modifier.height(16.dp))
-            BookingButton(state, viewModel)
+            if (!state.isLoggedInUserEvent) {
+                BookingButton(state, viewModel)
+            }
         }
     }
 }

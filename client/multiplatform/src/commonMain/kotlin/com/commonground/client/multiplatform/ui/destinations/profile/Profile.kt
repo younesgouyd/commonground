@@ -6,6 +6,8 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -64,7 +66,7 @@ private fun Wide(
         modifier = Modifier.fillMaxSize(),
         horizontalArrangement = Arrangement.spacedBy(0.dp)
     ) {
-        ProfileSidebar(state)
+        ProfileSidebar(state, navActions)
         ProfileContent(
             modifier = Modifier.weight(1f).fillMaxHeight(),
             events = state.events,
@@ -75,7 +77,10 @@ private fun Wide(
 }
 
 @Composable
-private fun ProfileSidebar(state: ProfileState.Loaded) {
+private fun ProfileSidebar(
+    state: ProfileState.Loaded,
+    navActions: ProfileNavActions
+) {
     val scrollState = rememberScrollState()
     val user by state.user.collectAsState()
     val followers by state.follows.followers.collectAsState()
@@ -127,7 +132,7 @@ private fun ProfileSidebar(state: ProfileState.Loaded) {
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            Box(contentAlignment = Alignment.BottomEnd) {
+            Box(contentAlignment = Alignment.BottomCenter) {
                 user.profilePic?.let { profilePic ->
                     Surface(
                         modifier = Modifier.size(140.dp),
@@ -157,14 +162,29 @@ private fun ProfileSidebar(state: ProfileState.Loaded) {
                         }
                     }
                 }
-                FilledIconButton(
-                    onClick = { showSystemFilePicker = true },
-                    modifier = Modifier.size(28.dp),
-                    colors = IconButtonDefaults.filledIconButtonColors(
-                        containerColor = MaterialTheme.colorScheme.primary
-                    )
+                Row(
+                    modifier = Modifier.offset(y = 14.dp),
+                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Icon(Icons.Default.Edit, contentDescription = "Edit Profile Picture", modifier = Modifier.size(14.dp))
+                    FilledIconButton(
+                        onClick = { showSystemFilePicker = true },
+                        modifier = Modifier.size(28.dp),
+                        colors = IconButtonDefaults.filledIconButtonColors(
+                            containerColor = MaterialTheme.colorScheme.primary
+                        )
+                    ) {
+                        Icon(Icons.Default.Edit, contentDescription = "Edit Profile Picture", modifier = Modifier.size(14.dp))
+                    }
+                    FilledIconButton(
+                        onClick = state.onClearProfilePic,
+                        modifier = Modifier.size(28.dp),
+                        colors = IconButtonDefaults.filledIconButtonColors(
+                            containerColor = MaterialTheme.colorScheme.primary
+                        )
+                    ) {
+                        Icon(Icons.Default.Clear, contentDescription = "Clear Profile Picture", modifier = Modifier.size(14.dp))
+                    }
                 }
             }
             Column(
@@ -215,6 +235,18 @@ private fun ProfileSidebar(state: ProfileState.Loaded) {
                 ) {
                     Icon(Icons.Default.Edit, contentDescription = null, modifier = Modifier.size(18.dp))
                     Text("Edit Profile")
+                }
+            }
+            Button(
+                modifier = Modifier.fillMaxWidth(),
+                onClick = navActions::toCreateEvent
+            ) {
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(18.dp))
+                    Text("Create Event")
                 }
             }
         }

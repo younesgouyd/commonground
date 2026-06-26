@@ -1,5 +1,6 @@
 package com.commonground.server.services
 
+import com.commonground.core.models.ImageUrl
 import org.springframework.stereotype.Service
 import org.springframework.web.multipart.MultipartFile
 import java.nio.file.Files
@@ -29,5 +30,16 @@ class ImageService {
 
         // Return the relative URL path to be saved in the DB
         return "/images/$folder/$uniqueFilename"
+    }
+
+    fun delete(relativeUrl: ImageUrl): Boolean {
+        // Extract the relative folder/filename path by stripping the "/images/" prefix
+        val relativePath = relativeUrl.removePrefix("/images/")
+        val filePath = Paths.get(root, relativePath).normalize()
+
+        // Guard against path traversal attacks (e.g., matching outside the root directory)
+        require(filePath.startsWith(Paths.get(root).normalize())) { "Invalid file path navigation attempt." }
+
+        return Files.deleteIfExists(filePath)
     }
 }

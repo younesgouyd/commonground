@@ -252,24 +252,26 @@ private fun CreateEventForm(
         )
     }
 
-    DurationDropdown(
-        selected = state.durationMinutes,
-        onChange = viewModel::onDurationChange,
-        modifier = Modifier.fillMaxWidth()
-    )
-
     Surface(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(12.dp),
-        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+        shape = MaterialTheme.shapes.medium,
+        color = MaterialTheme.colorScheme.surfaceContainer
     ) {
         Column(modifier = Modifier.padding(4.dp)) {
             SwitchRow(
                 icon = Icons.Default.Lock,
-                label = "Private event",
-                description = "Only invited people can see this event",
+                label = "Privacy",
+                description = "Only followers can see this event",
                 checked = state.isPrivate,
                 onCheckedChange = viewModel::onPrivateChange
+            )
+            HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
+            SwitchRow(
+                icon = Icons.Default.Home,
+                label = "Private place",
+                description = "The event takes place inside a private or restricted venue like a home, hotel, restaurant, or school",
+                checked = state.isPrivatePlace,
+                onCheckedChange = viewModel::onPrivatePlaceChange
             )
             HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
             SwitchRow(
@@ -513,8 +515,8 @@ private fun CoordinatesSection(
 
     Surface(
         modifier = modifier,
-        shape = RoundedCornerShape(12.dp),
-        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+        shape = MaterialTheme.shapes.medium,
+        color = MaterialTheme.colorScheme.surfaceContainer
     ) {
         Column {
             Row(

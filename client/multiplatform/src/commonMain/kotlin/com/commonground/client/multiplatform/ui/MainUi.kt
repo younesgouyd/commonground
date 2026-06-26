@@ -12,7 +12,6 @@ import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.*
-import androidx.compose.material3.windowsizeclass.WindowWidthSizeClass
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -54,13 +53,19 @@ import com.commonground.client.multiplatform.ui.destinations.settings.Settings
 import com.commonground.client.multiplatform.ui.destinations.signup.SignUp
 import com.commonground.client.multiplatform.ui.destinations.signup.SignUpNavActions
 import com.commonground.client.multiplatform.ui.destinations.signup.SignUpViewModel
+import com.commonground.client.multiplatform.ui.destinations.updateevent.UpdateEvent
+import com.commonground.client.multiplatform.ui.destinations.updateevent.UpdateEventNavActions
+import com.commonground.client.multiplatform.ui.destinations.updateevent.UpdateEventViewModel
 import com.commonground.client.multiplatform.ui.destinations.user.User
 import com.commonground.client.multiplatform.ui.destinations.user.UserViewModel
 import com.commonground.client.multiplatform.ui.widgets.ProfileNavActions
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun MainUi(fileStorage: PlatformFileStorage) {
+fun MainUi(
+    modifier: Modifier = Modifier,
+    fileStorage: PlatformFileStorage
+) {
     val navController = rememberNavController()
     val viewModel = viewModel {
         MainUiViewModel(
@@ -73,7 +78,7 @@ fun MainUi(fileStorage: PlatformFileStorage) {
     val startDestination by viewModel.startDestination
     if (startDestination == null) {
         Box(
-            modifier = Modifier.fillMaxSize(),
+            modifier = modifier.fillMaxSize(),
             contentAlignment = Alignment.Center
         ) {
             CircularProgressIndicator()
@@ -90,28 +95,32 @@ fun MainUi(fileStorage: PlatformFileStorage) {
     } ?: false
     val inHome = currentDestination?.hasRoute<Route.Home>() == true
 
-    val windowSizeClass = getWindowSizeClass()
-    val isCompact = windowSizeClass == WindowWidthSizeClass.Compact
-
     MaterialTheme(colorScheme = if (isSystemInDarkTheme()) darkColorScheme() else lightColorScheme()) {
         if (isAuthFlow) {
             NavGraph(navController, repoStore, startDestination!!)
-        } else if (isCompact) {
-            Compact(
-                inHome = inHome,
-                navController = navController,
-                currentDestination = currentDestination,
-                repoStore = repoStore,
-                startDestination = startDestination
-            )
         } else {
-            Wide(
-                currentDestination = currentDestination,
-                navController = navController,
-                viewModel = viewModel,
-                inHome = inHome,
-                repoStore = repoStore,
-                startDestination = startDestination
+            AdaptiveUi(
+                wide = {
+                    Wide(
+                        modifier = modifier,
+                        currentDestination = currentDestination,
+                        navController = navController,
+                        viewModel = viewModel,
+                        inHome = inHome,
+                        repoStore = repoStore,
+                        startDestination = startDestination
+                    )
+                },
+                compact = {
+                    Compact(
+                        modifier = modifier,
+                        inHome = inHome,
+                        navController = navController,
+                        currentDestination = currentDestination,
+                        repoStore = repoStore,
+                        startDestination = startDestination
+                    )
+                }
             )
         }
     }
@@ -120,6 +129,7 @@ fun MainUi(fileStorage: PlatformFileStorage) {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun Wide(
+    modifier: Modifier = Modifier,
     currentDestination: NavDestination?,
     navController: NavHostController,
     viewModel: MainUiViewModel,
@@ -127,7 +137,7 @@ private fun Wide(
     repoStore: RepoStore,
     startDestination: Route?
 ) {
-    Row(modifier = Modifier.fillMaxSize()) {
+    Row(modifier = modifier.fillMaxSize()) {
         AppSidebar(
             currentDestination = currentDestination,
             onNavigate = { route ->
@@ -164,6 +174,7 @@ private fun Wide(
 
 @Composable
 private fun Compact(
+    modifier: Modifier = Modifier,
     inHome: Boolean,
     navController: NavHostController,
     currentDestination: NavDestination?,
@@ -171,6 +182,7 @@ private fun Compact(
     startDestination: Route?
 ) {
     Scaffold(
+        modifier = modifier,
         bottomBar = {
             NavigationBar {
                 NavigationBarItem(
@@ -236,7 +248,6 @@ private fun NavGraph(navController: NavHostController, repoStore: RepoStore, sta
                 }
             )
         }
-
         composable<Route.SignUp> {
             SignUp(
                 viewModel = viewModel {
@@ -254,7 +265,21 @@ private fun NavGraph(navController: NavHostController, repoStore: RepoStore, sta
                 }
             )
         }
-
+        composable<Route.UpdateEvent> { entry ->
+            val eventRoute = entry.toRoute<Route.Event>()
+            UpdateEvent(
+                viewModel = viewModel {
+                    UpdateEventViewModel(
+                        id = eventRoute.id,
+                        eventRepo = repoStore.eventRepo,
+                        onDone = { navController.popBackStack() }
+                    )
+                },
+                navActions = object : UpdateEventNavActions {
+                    override fun onBack() { navController.popBackStack() }
+                }
+            )
+        }
         composable<Route.Onboarding> {
             Onboarding(
                 viewModel = viewModel {
@@ -308,6 +333,7 @@ private fun NavGraph(navController: NavHostController, repoStore: RepoStore, sta
                 navActions = object : ProfileNavActions {
                     override fun toEvent(id: String) { navController.navigate(Route.Event(id)) }
                     override fun toUser(id: String) { navController.navigate(Route.User(id)) }
+                    override fun toCreateEvent() { navController.navigate(Route.CreateEvent) }
                 }
             )
         }
@@ -319,12 +345,16 @@ private fun NavGraph(navController: NavHostController, repoStore: RepoStore, sta
         composable<Route.Event> { entry ->
             val eventRoute = entry.toRoute<Route.Event>()
             EventDetails(
-                viewModel = viewModel { EventDetailsViewModel(
-                    eventRoute.id,
-                    eventRepo = repoStore.eventRepo
-                ) },
+                viewModel = viewModel {
+                    EventDetailsViewModel(
+                        id = eventRoute.id,
+                        eventRepo = repoStore.eventRepo,
+                        userRepo = repoStore.userRepo
+                    )
+                },
                 navActions = object : EventDetailsNavActions {
                     override fun toUser(id: String) { navController.navigate(Route.User(id)) }
+                    override fun toUpdateEvent() { navController.navigate(Route.UpdateEvent(eventRoute.id)) }
                     override fun onBack() { navController.popBackStack() }
                 }
             )
@@ -341,12 +371,12 @@ private fun NavGraph(navController: NavHostController, repoStore: RepoStore, sta
                 navActions = object : ProfileNavActions {
                     override fun toUser(id: String) { navController.navigate(Route.User(id)) }
                     override fun toEvent(id: String) { navController.navigate(Route.Event(id)) }
+                    override fun toCreateEvent() { navController.navigate(Route.CreateEvent) }
                 }
             )
         }
     }
 }
-
 
 @Composable
 private fun AppSidebar(

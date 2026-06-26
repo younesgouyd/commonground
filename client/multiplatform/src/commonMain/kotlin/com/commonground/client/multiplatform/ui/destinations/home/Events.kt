@@ -190,7 +190,7 @@ private fun WideEventCard(
                 Badges(event)
                 Person(event.creator.displayName ?: event.creator.username)
                 Location(event.locationName)
-                Date(event.date.formatted())
+                Date(event.startDate.formatted())
             }
         }
     }

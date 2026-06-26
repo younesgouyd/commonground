@@ -16,7 +16,7 @@ fun main() {
             ),
             onCloseRequest = { exitApplication() }
         ) {
-            MainUi(fileStorage)
+            MainUi(fileStorage = fileStorage)
         }
     }
 }

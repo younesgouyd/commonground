@@ -3,9 +3,12 @@ package com.commonground.client.multiplatform.ui.destinations.eventdetails
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.commonground.client.multiplatform.data.repositories.EventRepo
+import com.commonground.client.multiplatform.data.repositories.UserRepo
 import com.commonground.core.models.Event
+import com.commonground.core.models.ImageUrl
 import com.commonground.core.models.User
 import io.github.oshai.kotlinlogging.KotlinLogging
+import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
@@ -25,11 +28,13 @@ sealed class EventDetailsState {
     data class Loaded(
         val event: Event,
         val creators: List<User>,
+        val isLoggedInUserEvent: Boolean,
         val isBooked: Boolean = false,
         val bookingCount: Int = 12,
         val messages: List<ChatMessage> = emptyList(),
         val newMessage: String = "",
-        val isBooking: Boolean = false
+        val isBooking: Boolean = false,
+        val updateImage: suspend (ByteArray) -> ImageUrl?
     ) : EventDetailsState()
 
     data object NotFound : EventDetailsState()
@@ -41,7 +46,8 @@ sealed class EventDetailsState {
 
 class EventDetailsViewModel(
     val id: String,
-    private val eventRepo: EventRepo
+    private val eventRepo: EventRepo,
+    private val userRepo: UserRepo
 ) : ViewModel() {
     private val logger = KotlinLogging.logger {  }
     private val _state: MutableStateFlow<EventDetailsState> = MutableStateFlow(EventDetailsState.Loading)
@@ -51,15 +57,23 @@ class EventDetailsViewModel(
         viewModelScope.launch {
             _state.value = try {
                 val event = eventRepo.getEvent(id)
-                if (event != null) {
+                val loggedInUser = userRepo.getLoggedInUser()
+                if (loggedInUser == null) {
+                    EventDetailsState.Error("Something went wrong.")
+                } else if (event != null) {
                     EventDetailsState.Loaded(
                         event = event,
                         creators = listOf(event.creator),
-                        messages = generateMockMessages()
+                        isLoggedInUserEvent = event.creator.id == loggedInUser.id,
+                        messages = generateMockMessages(),
+                        updateImage = {
+                            viewModelScope.async {
+                                eventRepo.updateImage(id, it)
+                                eventRepo.getEvent(id)?.image
+                            }.await()
+                        }
                     )
                 } else EventDetailsState.NotFound
-            } catch (_: NoSuchElementException) {
-                EventDetailsState.NotFound
             } catch (e: Exception) {
                 logger.error(e) {}
                 EventDetailsState.Error(e.message ?: "Failed to load event details.")

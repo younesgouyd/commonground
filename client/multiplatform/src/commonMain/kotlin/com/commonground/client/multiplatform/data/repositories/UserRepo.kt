@@ -51,6 +51,10 @@ class UserRepo(
         }
     }
 
+    suspend fun clearProfilePic() {
+        client.delete("me/profilePic")
+    }
+
     suspend fun getLoggedInUserFollowers(pageNumber: Int): Users {
         return client.get("me/followers") {
             parameter("pageNumber", pageNumber)

@@ -1,6 +1,5 @@
 package com.commonground.server.services
 
-import com.commonground.core.models.ImageUrl
 import com.commonground.core.models.User
 import com.commonground.core.models.Users
 import com.commonground.server.data.entities.UserFollow
@@ -11,11 +10,14 @@ import org.springframework.data.domain.Page
 import org.springframework.data.domain.PageRequest
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import org.springframework.web.multipart.MultipartFile
+import kotlin.jvm.optionals.getOrNull
 
 @Service
 class UserService(
     private val userRepository: UserRepository,
-    private val userFollowRepository: UserFollowRepository
+    private val userFollowRepository: UserFollowRepository,
+    private val imageService: ImageService
 ) {
     @Transactional
     fun getUserWithFollowState(userId: String, followStateUserId: String): User? {
@@ -110,7 +112,24 @@ class UserService(
     }
 
     @Transactional
-    fun updateProfilePic(id: String, profilePic: ImageUrl) {
-        userRepository.updateProfilePic(id.toUuid(), profilePic)
+    fun updateProfilePic(
+        id: String,
+        file: MultipartFile
+    ) {
+        val user = userRepository.findById(id.toUuid()).getOrNull() ?: return
+        val imgUrl = imageService.store(file, "profile_pic")
+        userRepository.updateProfilePic(id.toUuid(), imgUrl)
+        user.profilePic?.let {
+            imageService.delete(it)
+        }
+    }
+
+    @Transactional
+    fun clearProfilePic(id: String) {
+        val user = userRepository.findById(id.toUuid()).getOrNull() ?: return
+        user.profilePic?.let {
+            imageService.delete(it)
+            userRepository.updateProfilePic(id.toUuid(), null)
+        }
     }
 }
