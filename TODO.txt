@@ -1,21 +1,21 @@
-- support choosing coordinates through map.
 - show custom markers.
-- implement editing events.
 - make all items the same height.
-- show map on compact mode.
-- fix android system top bar and navigation bar overlaying on the app.
 - fix client crashing when navigating away from map screen while the map is in mid-animation.
 - add dark mode setting.
 - support displaying current events.
-- decide whether Event.coordinates may be optional.
 - implement ui for searching/filtering and sorting events by search keywords, category, follows, date, location, distance from user... etc.
 - relationship with friends rules:
     - friend request.
     - event visibility/privacy options (public, friends, family... etc).
 - delete expired refresh tokens.
-- implement authorization (permissions, access control...).
 
 done:
+- decide whether Event.coordinates may be optional.
+- fix android system top bar and navigation bar overlaying on the app.
+- show map on compact mode.
+- implement editing events.
+- support choosing coordinates through map.
+- implement authorization (permissions, access control...).
 - implement editing and saving profile pictures.
 - relationship with friends rules: follows.
 - handle refresh token expiration.
