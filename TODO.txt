@@ -16,6 +16,7 @@
 - implement authorization (permissions, access control...).
 
 done:
+- implement editing and saving profile pictures.
 - relationship with friends rules: follows.
 - handle refresh token expiration.
 - implement logout in backend.

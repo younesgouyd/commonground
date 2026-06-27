@@ -14,26 +14,32 @@ import java.util.*
 class Event(
     @Id
     val id: UUID = UUID.randomUUID(),
-    @Column(nullable = false) val title: String,
+
+    @Column(nullable = false)
+    val title: String,
+
     val description: String? = null,
-    @Column(nullable = false) val locationName: String,
+
+    @Column(nullable = false)
+    val locationName: String,
 
     @Column(columnDefinition = "geography(Point, 4326)")
     val coordinates: Point,
 
-    @Column(nullable = false) val date: String,
-    @Column(nullable = false) val isPrivate: Boolean,
-    @Column(nullable = false) val durationMinutes: Long,
+    @Column(nullable = false)
+    val startDate: Instant,
+
+    val endDate: Instant?,
+
+    @Column(nullable = false) val isPrivate: Boolean, // followers only
+    @Column(nullable = false) val isPrivatePlace: Boolean, // home, hotel, restaurant, school... etc
     @Column(nullable = false) val isPaid: Boolean,
 
     val image: ImageUrl?,
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(nullable = false)
-    val creator: User,
-
-    @ManyToMany(mappedBy = "attendingEvents")
-    val attendees: MutableList<User> = mutableListOf()
+    val creator: User
 ) {
     @CreatedDate
     @Column(updatable = false, nullable = false)

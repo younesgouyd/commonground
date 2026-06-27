@@ -3,11 +3,16 @@ package com.commonground.client.multiplatform.ui.destinations.createevent
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.commonground.client.multiplatform.data.repositories.EventRepo
-import com.commonground.core.models.CreateEventRequest
+import com.commonground.core.models.Coordinates
+import com.commonground.core.models.SaveEventRequest
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import java.time.LocalDateTime
+import java.time.ZoneOffset
+import kotlin.random.Random
+import kotlin.time.toKotlinInstant
 
 data class CreateEventState(
     val title: String = "",
@@ -15,8 +20,8 @@ data class CreateEventState(
     val locationName: String = "",
     val date: String = "",
     val time: String = "18:00",
-    val durationMinutes: Long = 60,
     val isPrivate: Boolean = false,
+    val isPrivatePlace: Boolean = false,
     val isPaid: Boolean = false,
     val latitude: String = "",
     val longitude: String = "",
@@ -42,8 +47,8 @@ class CreateEventViewModel(
     fun onLocationNameChange(v: String) = _state.update { it.copy(locationName = v, locationError = null, generalError = null) }
     fun onDateChange(v: String) = _state.update { it.copy(date = v, dateError = null, generalError = null) }
     fun onTimeChange(v: String) = _state.update { it.copy(time = v, generalError = null) }
-    fun onDurationChange(v: Long) = _state.update { it.copy(durationMinutes = v, generalError = null) }
     fun onPrivateChange(v: Boolean) = _state.update { it.copy(isPrivate = v, generalError = null) }
+    fun onPrivatePlaceChange(v: Boolean) = _state.update { it.copy(isPrivatePlace = v, generalError = null) }
     fun onPaidChange(v: Boolean) = _state.update { it.copy(isPaid = v, generalError = null) }
     fun onLatitudeChange(v: String) = _state.update { it.copy(latitude = v, generalError = null) }
     fun onLongitudeChange(v: String) = _state.update { it.copy(longitude = v, generalError = null) }
@@ -68,15 +73,24 @@ class CreateEventViewModel(
         _state.update { it.copy(isSubmitting = true, generalError = null) }
         viewModelScope.launch {
             try {
-                val request = CreateEventRequest(
+                val request = SaveEventRequest(
                     title = s.title.trim(),
                     description = s.description.trim().ifBlank { null },
                     locationName = s.locationName.trim(),
-                    latitude = s.latitude.toDoubleOrNull(),
-                    longitude = s.longitude.toDoubleOrNull(),
-                    date = "${s.date.trim()}T${s.time.trim()}:00",
+                    coordinates = run {
+                        val latitude = s.latitude.toDoubleOrNull()
+                        val longitude = s.longitude.toDoubleOrNull()
+                        if (latitude != null && longitude != null) {
+                            Coordinates(latitude = latitude, longitude = longitude)
+                        } else null
+                    },
+                    // TODO
+                    startDate = LocalDateTime.of(2026, 7, Random.nextInt(1, 29), Random.nextInt(10, 22), 0, 0)
+                        .toInstant(ZoneOffset.UTC)
+                        .toKotlinInstant(), // "${s.date.trim()}T${s.time.trim()}:00",
+                    endDate = null,
                     isPrivate = s.isPrivate,
-                    durationMinutes = s.durationMinutes,
+                    isPrivatePlace = s.isPrivatePlace,
                     isPaid = s.isPaid
                 )
                 val created = eventRepo.createEvent(request)

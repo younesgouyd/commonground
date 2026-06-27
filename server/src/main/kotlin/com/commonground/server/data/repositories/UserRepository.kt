@@ -1,0 +1,128 @@
+package com.commonground.server.data.repositories
+
+import com.commonground.core.models.ImageUrl
+import com.commonground.server.data.entities.User
+import org.springframework.data.domain.Page
+import org.springframework.data.domain.Pageable
+import org.springframework.data.jpa.repository.JpaRepository
+import org.springframework.data.jpa.repository.Modifying
+import org.springframework.data.jpa.repository.Query
+import org.springframework.data.repository.query.Param
+import org.springframework.transaction.annotation.Transactional
+import java.util.*
+
+interface UserRepository : JpaRepository<User, UUID> {
+    fun findByUsernameOrEmailAddress(username: String, emailAddress: String): User?
+    fun existsByUsername(username: String): Boolean
+    fun existsByEmailAddress(emailAddress: String): Boolean
+
+    @Modifying
+    @Transactional
+    @Query(
+        """
+            UPDATE User
+            SET username = :username,
+                displayName = :displayName,
+                bio = :bio,
+                updatedAt = CURRENT_TIMESTAMP
+            WHERE id = :id
+        """
+    )
+    fun update(
+        id: UUID,
+        username: String,
+        displayName: String?,
+        bio: String?
+    )
+
+    @Modifying
+    @Transactional
+    @Query("""
+            UPDATE User
+            SET profilePic = :profilePic,
+                updatedAt = CURRENT_TIMESTAMP
+            WHERE id = :id
+    """)
+    fun updateProfilePic(
+        id: UUID,
+        profilePic: ImageUrl?
+    )
+
+    /**
+     * Retrieves a specific user by their [id].
+     *
+     * It determines if the [followStateUserId] (typically the currently logged-in user)
+     * is following this user, populating the `isFollowed` flag.
+     *
+     * @param id The ID of the user to retrieve.
+     * @param followStateUserId The ID of the user observing the profile, used to determine the `isFollowed` state.
+     * @return The [com.commonground.core.models.User] model, or null if not found.
+     */
+    @Query(
+        """
+            SELECT 
+                CAST(u.id AS string), u.username, u.displayName, u.bio, u.emailAddress, u.profilePic,
+                CASE WHEN (SELECT 1 FROM UserFollow uf WHERE uf.follower.id = :followStateUserId AND uf.followee = u) IS NOT NULL THEN true ELSE false END AS isFollowed
+            FROM User u
+            WHERE u.id = :id
+        """
+    )
+    fun findByIdWithFollowState(
+        @Param("id") id: UUID,
+        @Param("followStateUserId") followStateUserId: UUID,
+    ): com.commonground.core.models.User?
+
+    /**
+     * Retrieves a paginated list of users who follow the specified [followee].
+     *
+     * For each follower returned, it determines if the [followStateUser] (typically the
+     * currently logged-in user) is also following them, populating the `isFollowed` flag.
+     *
+     * @param followStateUser The user observing the list, used to determine the `isFollowed` state.
+     * @param followee The user whose followers are being retrieved.
+     * @param pageable Pagination configuration.
+     * @return A page of [com.commonground.core.models.User] models.
+     */
+    @Query(
+        """
+            SELECT 
+                CAST(uf.follower.id AS string), uf.follower.username, uf.follower.displayName, uf.follower.bio, uf.follower.emailAddress, uf.follower.profilePic,
+                CASE WHEN (SELECT 1 FROM UserFollow uf2 WHERE uf2.follower = :followStateUser AND uf2.followee = uf.follower) IS NOT NULL THEN true ELSE false END AS isFollowed
+            FROM UserFollow uf
+            WHERE uf.followee = :followee
+            ORDER BY uf.createdAt DESC, uf.id
+        """
+    )
+    fun findFollowersWithFollowState(
+        @Param("followee") followee: User,
+        @Param("followStateUser") followStateUser: User,
+        pageable: Pageable
+    ): Page<com.commonground.core.models.User>
+
+    /**
+     * Retrieves a paginated list of users that the specified [follower] is following.
+     *
+     * For each followee returned, it determines if the [followStateUser] (typically the
+     * currently logged-in user) is also following them, populating the `isFollowed` flag.
+     *
+     * @param followStateUser The user observing the list, used to determine the `isFollowed` state.
+     * @param follower The user whose followings (followees) are being retrieved.
+     * @param pageable Pagination configuration.
+     * @return A page of [com.commonground.core.models.User] models.
+     */
+    @Query(
+        """
+        SELECT 
+            CAST(uf.followee.id AS string), uf.followee.username, uf.followee.displayName, uf.followee.bio, uf.followee.emailAddress, uf.followee.profilePic,
+            CASE WHEN (SELECT 1 FROM UserFollow uf2 WHERE uf2.follower = :followStateUser AND uf2.followee = uf.followee) IS NOT NULL THEN true ELSE false END AS isFollowed
+        FROM UserFollow uf
+        WHERE uf.follower = :follower
+        ORDER BY uf.createdAt DESC, uf.id
+    """
+    )
+    fun findFolloweesWithFollowState(
+        @Param("follower") follower: User,
+        @Param("followStateUser") followStateUser: User,
+        pageable: Pageable
+    ): Page<com.commonground.core.models.User>
+}

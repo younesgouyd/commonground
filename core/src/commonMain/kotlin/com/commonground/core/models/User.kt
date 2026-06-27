@@ -9,5 +9,6 @@ data class User(
     val displayName: String? = null,
     val bio: String? = null,
     val emailAddress: String? = null,
-    val profilePic: ImageUrl? = null
+    val profilePic: ImageUrl? = null,
+    val isFollowed: Boolean? = null
 )

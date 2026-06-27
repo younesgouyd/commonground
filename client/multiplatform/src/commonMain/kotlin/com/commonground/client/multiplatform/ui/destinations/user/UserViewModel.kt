@@ -2,82 +2,136 @@ package com.commonground.client.multiplatform.ui.destinations.user
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.commonground.core.models.Event
-import com.commonground.core.models.ImageUrl
+import com.commonground.client.multiplatform.data.repositories.EventRepo
+import com.commonground.client.multiplatform.data.repositories.UserRepo
+import com.commonground.client.multiplatform.ui.LazyList
+import com.commonground.client.multiplatform.ui.widgets.Events
+import com.commonground.client.multiplatform.ui.widgets.Follows
 import com.commonground.core.models.User
+import com.commonground.core.models.UserEventType
+import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
-sealed class UserState {
-    data object Loading : UserState()
-
-    data class Loaded(
-        val user: User,
-        val friends: List<Friend>,
-        val events: Events,
-        val friendState: FriendState,
-        val followState: FollowState,
-        val onChangeFollowState: (FollowState) -> Unit,
-    ) : UserState() {
-        data class Friend(
-            val id: String,
-            val username: String,
-            val displayName: String?,
-            val profilePic: ImageUrl?
-        )
-
-        data class Events(
-            val created: List<Event>,
-            val going: List<Event>,
-            val went: List<Event>
-        )
-
-        sealed class FriendState {
-            data class Friend(val onRemoveClick: () -> Unit) : FriendState()
-            data class NonFriend(val onSendRequestClick: () -> Unit) : FriendState()
-        }
-
-        enum class FollowState {
-            Followed, FollowedWithNotifications, Unfollowed
-        }
-    }
-
-    data object NotFound : UserState()
-}
-
 class UserViewModel(
-    val id: String
+    val id: String,
+    private val userRepo: UserRepo,
+    private val eventRepo: EventRepo
 ) : ViewModel() {
+    private val logger = KotlinLogging.logger {}
     private val _state: MutableStateFlow<UserState> = MutableStateFlow(UserState.Loading)
     val state = _state.asStateFlow()
 
     init {
         viewModelScope.launch {
-            _state.value = UserState.Loaded(
-                user = User(
-                    id = id,
-                    username = "morpheus",
-                    displayName = "Morpheus",
-                    profilePic = null
-                ),
-                friends = listOf(
-                    UserState.Loaded.Friend("2", "trinity", "Trinity", null),
-                    UserState.Loaded.Friend("3", "neo", "Thomas A. Anderson", null)
-                ),
-                events = UserState.Loaded.Events(
-                    created = emptyList(),
-                    going = emptyList(),
-                    went = emptyList()
-                ),
-                friendState = UserState.Loaded.FriendState.NonFriend(onSendRequestClick = {
-                    println("Request sent to $id")
-                }),
-                followState = UserState.Loaded.FollowState.Unfollowed,
-                onChangeFollowState = { newState ->
-                    println("Follow state changed to: $newState")
-                }
-            )
+            _state.value = loadProfile()
         }
+    }
+
+    private suspend fun loadProfile(): UserState {
+        return try {
+            val user = userRepo.getUser(id)
+            if (user == null) {
+                UserState.Error
+            } else {
+                val user = MutableStateFlow(user)
+                val followers = MutableStateFlow(getFollowers())
+                val followees = MutableStateFlow(getFollowees())
+                UserState.Loaded(
+                    user = user.asStateFlow(),
+                    events = Events(
+                        created = LazyList(
+                            coroutineScope = viewModelScope,
+                            load = { pageNumber ->
+                                val events = eventRepo.getUserEvents(id, UserEventType.Created, pageNumber)
+                                LazyList.Chunk(
+                                    items = events.items,
+                                    next = events.next,
+                                    totalCount = events.total
+                                )
+                            }
+                        ),
+                        attending = LazyList(
+                            coroutineScope = viewModelScope,
+                            load = { pageNumber ->
+                                val events = eventRepo.getUserEvents(id, UserEventType.Attending, pageNumber)
+                                LazyList.Chunk(
+                                    items = events.items,
+                                    next = events.next,
+                                    totalCount = events.total
+                                )
+                            }
+                        ),
+                        went = LazyList(
+                            coroutineScope = viewModelScope,
+                            load = { pageNumber ->
+                                val events = eventRepo.getUserEvents(id, UserEventType.Went, pageNumber)
+                                LazyList.Chunk(
+                                    items = events.items,
+                                    next = events.next,
+                                    totalCount = events.total
+                                )
+                            }
+                        )
+                    ),
+                    follows = Follows(
+                        followers = followers.asStateFlow(),
+                        following = followees.asStateFlow(),
+                        onFollowUserClick = { userId ->
+                            viewModelScope.launch { userRepo.followUser(userId) }.join()
+                            refreshStateAfterFollowOperation(userId, user, followers, followees)
+                        },
+                        onUnfollowUserClick = { userId ->
+                            viewModelScope.launch { userRepo.unfollowUser(userId) }.join()
+                            refreshStateAfterFollowOperation(userId, user, followers, followees)
+                        }
+                    )
+                )
+            }
+        } catch (e: Exception) {
+            logger.error(e) {  }
+            UserState.Error
+        }
+    }
+
+    private suspend fun refreshStateAfterFollowOperation(
+        userId: String,
+        user: MutableStateFlow<User>,
+        followers: MutableStateFlow<LazyList<User>>,
+        followees: MutableStateFlow<LazyList<User>>
+    ) {
+        if (userId == id) {
+            val temp = userRepo.getUser(id)
+            if (temp == null) {
+                _state.value = UserState.Error
+            } else {
+                user.value = temp
+            }
+        } else {
+            // TODO: we're reloading the entire list just to reflect the follow state of one item. find a better way
+            followers.value = getFollowers()
+            followees.value = getFollowees()
+        }
+    }
+
+    private fun getFollowers(): LazyList<User> {
+        return LazyList(
+            coroutineScope = viewModelScope,
+            load = { pageNumber ->
+                val users = userRepo.getUserFollowers(id, pageNumber)
+                LazyList.Chunk(users.items, users.next, users.total)
+            }
+        )
+    }
+
+    private fun getFollowees(): LazyList<User> {
+        return LazyList(
+            coroutineScope = viewModelScope,
+            load = { pageNumber ->
+                val users = userRepo.getUserFollowees(id, pageNumber)
+                LazyList.Chunk(users.items, users.next, users.total)
+            }
+        )
     }
 }

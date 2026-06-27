@@ -18,16 +18,12 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.commonground.client.multiplatform.ui.AdaptiveUi
 import com.commonground.client.multiplatform.ui.LazyList
+import com.commonground.client.multiplatform.ui.formatted
 import com.commonground.client.multiplatform.ui.widgets.Badge
 import com.commonground.client.multiplatform.ui.widgets.Person
 import com.commonground.core.models.Event
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.map
-import kotlinx.datetime.TimeZone
-import kotlinx.datetime.format.MonthNames
-import kotlinx.datetime.format.char
-import kotlinx.datetime.toLocalDateTime
-import kotlin.time.Instant
 import com.commonground.client.multiplatform.ui.widgets.Image as EventImage
 
 @Composable
@@ -194,7 +190,7 @@ private fun WideEventCard(
                 Badges(event)
                 Person(event.creator.displayName ?: event.creator.username)
                 Location(event.locationName)
-                Date(event.date)
+                Date(event.startDate.formatted())
             }
         }
     }
@@ -334,24 +330,6 @@ private fun Date(datetime: String) {
             overflow = TextOverflow.Ellipsis
         )
     }
-}
-
-fun Instant.formatted(
-    timeZone: TimeZone = TimeZone.currentSystemDefault()
-): String {
-    val localDateTime = this.toLocalDateTime(timeZone)
-    val eventCardFormat = kotlinx.datetime.LocalDateTime.Format {
-        day()
-        char(' ')
-        monthName(MonthNames.ENGLISH_ABBREVIATED)
-        char(' ')
-        year()
-        chars(", ")
-        hour()
-        char(':')
-        minute()
-    }
-    return eventCardFormat.format(localDateTime)
 }
 
 @Composable

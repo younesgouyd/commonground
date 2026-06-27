@@ -1,36 +1,28 @@
 package com.commonground.client.multiplatform.ui.destinations.profile
 
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.filled.AccountCircle
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Clear
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.commonground.client.multiplatform.ui.AdaptiveUi
-import com.commonground.client.multiplatform.ui.widgets.EventCard
-import com.commonground.core.models.Event
-
-interface ProfileNavActions {
-    fun toFollowers(id: String)
-    fun toFollowing(id: String)
-    fun toEvent(id: String)
-    fun toUser(id: String)
-}
-
-private enum class ProfileTabs { Events, Friends }
+import com.commonground.client.multiplatform.ui.toBackendUrl
+import com.commonground.client.multiplatform.ui.widgets.*
+import com.commonground.core.models.User
+import kotlinx.coroutines.launch
 
 @Composable
 fun Profile(
@@ -74,414 +66,187 @@ private fun Wide(
         modifier = Modifier.fillMaxSize(),
         horizontalArrangement = Arrangement.spacedBy(0.dp)
     ) {
-        Surface(
-            modifier = Modifier.width(320.dp).fillMaxHeight(),
-            color = MaterialTheme.colorScheme.surfaceContainerLow,
-            tonalElevation = 2.dp
-        ) {
-            ProfileSidebar(state)
-        }
-
-        Surface(
+        ProfileSidebar(state, navActions)
+        ProfileContent(
             modifier = Modifier.weight(1f).fillMaxHeight(),
-            color = MaterialTheme.colorScheme.background
-        ) {
-            ProfileContent(state, navActions)
-        }
+            events = state.events,
+            follows = state.follows,
+            navActions = navActions
+        )
     }
 }
 
 @Composable
 private fun ProfileSidebar(
-    state: ProfileState.Loaded
+    state: ProfileState.Loaded,
+    navActions: ProfileNavActions
 ) {
     val scrollState = rememberScrollState()
+    val user by state.user.collectAsState()
+    val followers by state.follows.followers.collectAsState()
+    val following by state.follows.following.collectAsState()
+    val followersCount by followers.totalCount.collectAsState()
+    val followingCount by following.totalCount.collectAsState()
+    var showEditDialog by remember { mutableStateOf(false) }
+    var showSystemFilePicker by remember { mutableStateOf(false) }
+    var showExpandedImage by remember { mutableStateOf(false) }
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .verticalScroll(scrollState)
-            .padding(24.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(16.dp)
+    if (showEditDialog) {
+        val user by state.user.collectAsState()
+        EditProfileDialog(
+            user = user,
+            onDismiss = { showEditDialog = false },
+            onSave = state.onUpdateProfile
+        )
+    }
+
+    if (showSystemFilePicker) {
+        SystemFilePicker(
+            onFileChosen = {
+                showSystemFilePicker = false
+                state.onUpdateProfilePic(it)
+            },
+            dismiss = { showSystemFilePicker = false }
+        )
+    }
+
+    user.profilePic?.let {
+        if (showExpandedImage) {
+            ImagePreviewDialog(
+                imageUrl = it,
+                onDismiss = { showExpandedImage = false }
+            )
+        }
+    }
+
+    Surface(
+        modifier = Modifier.width(320.dp).fillMaxHeight(),
+        color = MaterialTheme.colorScheme.surfaceContainerLow,
+        tonalElevation = 2.dp
     ) {
-        Surface(
-            modifier = Modifier.size(140.dp),
-            shape = CircleShape,
-            color = MaterialTheme.colorScheme.primaryContainer
-        ) {
-            Box(contentAlignment = Alignment.Center) {
-                Icon(
-                    modifier = Modifier.size(80.dp),
-                    imageVector = Icons.Default.AccountCircle,
-                    contentDescription = "Profile picture",
-                    tint = MaterialTheme.colorScheme.onPrimaryContainer
-                )
-            }
-        }
-
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(4.dp)
-        ) {
-            Text(
-                text = state.user.displayName ?: state.user.username,
-                style = MaterialTheme.typography.headlineMedium,
-                textAlign = TextAlign.Center
-            )
-            Text(
-                text = "@${state.user.username}",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-        }
-
-        val bio = state.user.bio
-        if (!bio.isNullOrBlank()) {
-            Text(
-                text = bio,
-                style = MaterialTheme.typography.bodyMedium,
-                textAlign = TextAlign.Center,
-                color = MaterialTheme.colorScheme.onSurface
-            )
-        }
-
-        HorizontalDivider()
-
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceEvenly
-        ) {
-            StatItem(count = state.eventCount, label = "Events")
-            StatItem(count = state.friendCount, label = "Friends")
-        }
-
-        HorizontalDivider()
-
-        Button(
-            modifier = Modifier.fillMaxWidth(),
-            onClick = state.onEditProfile
-        ) {
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Icon(Icons.Default.Edit, contentDescription = null, modifier = Modifier.size(18.dp))
-                Text("Edit Profile")
-            }
-        }
-
-        OutlinedButton(
-            modifier = Modifier.fillMaxWidth(),
-            onClick = state.onToSettings
-        ) {
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Icon(Icons.Default.Settings, contentDescription = null, modifier = Modifier.size(18.dp))
-                Text("Settings")
-            }
-        }
-    }
-}
-
-@Composable
-private fun StatItem(count: Int, label: String) {
-    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        Text(
-            text = count.toString(),
-            style = MaterialTheme.typography.titleLarge,
-            color = MaterialTheme.colorScheme.primary
-        )
-        Text(
-            text = label,
-            style = MaterialTheme.typography.labelMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-    }
-}
-@Composable
-private fun ProfileContent(
-    state: ProfileState.Loaded,
-    navActions: ProfileNavActions
-) {
-    val tabs = remember { ProfileTabs.entries }
-    var selectedTab by remember { mutableStateOf(ProfileTabs.Events) }
-
-    Column(modifier = Modifier.fillMaxSize()) {
-        PrimaryTabRow(selectedTabIndex = selectedTab.ordinal) {
-            tabs.forEachIndexed { index, tab ->
-                Tab(
-                    text = { Text(tab.name) },
-                    selected = selectedTab == tab,
-                    onClick = { selectedTab = tab }
-                )
-            }
-        }
-
-        when (selectedTab) {
-            ProfileTabs.Events -> EventsTab(state, navActions)
-            ProfileTabs.Friends -> FriendsTab(state, navActions)
-        }
-    }
-}
-
-private data class ExpandedSection(
-    val title: String,
-    val events: List<Event>,
-)
-
-@Composable
-private fun EventsTab(
-    state: ProfileState.Loaded,
-    navActions: ProfileNavActions
-) {
-    if (state.events.created.isEmpty() && state.events.going.isEmpty() && state.events.went.isEmpty()) {
-        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Icon(
-                    Icons.Default.EventBusy,
-                    contentDescription = null,
-                    modifier = Modifier.size(48.dp),
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                Spacer(Modifier.height(8.dp))
-                Text("No events yet", style = MaterialTheme.typography.bodyLarge)
-            }
-        }
-        return
-    }
-
-    var expandedSection by remember { mutableStateOf<ExpandedSection?>(null) }
-
-    if (expandedSection != null) {
-
-        ShowAllEventsGrid(
-            title = expandedSection!!.title,
-            events = expandedSection!!.events,
-            onBack = { expandedSection = null },
-            onEventClick = { eventId -> navActions.toEvent(eventId) }
-        )
-    } else {
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .verticalScroll(rememberScrollState())
-                .padding(vertical = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(24.dp)
+                .verticalScroll(scrollState)
+                .padding(24.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            if (state.events.created.isNotEmpty()) {
-                EventSection(
-                    title = "Created",
-                    count = state.events.created.size,
-                    events = state.events.created,
-                    onShowAll = { expandedSection = ExpandedSection("Created", state.events.created) },
-                    onEventClick = { navActions.toEvent(it.id) }
-                )
-            }
-
-            if (state.events.going.isNotEmpty()) {
-                EventSection(
-                    title = "Going",
-                    count = state.events.going.size,
-                    events = state.events.going,
-                    onShowAll = { expandedSection = ExpandedSection("Going", state.events.going) },
-                    onEventClick = { navActions.toEvent(it.id) }
-                )
-            }
-
-            if (state.events.went.isNotEmpty()) {
-                EventSection(
-                    title = "Went",
-                    count = state.events.went.size,
-                    events = state.events.went,
-                    onShowAll = { expandedSection = ExpandedSection("Went", state.events.went) },
-                    onEventClick = { navActions.toEvent(it.id) }
-                )
-            }
-        }
-    }
-}
-
-@Composable
-private fun ShowAllEventsGrid(
-    title: String,
-    events: List<Event>,
-    onBack: () -> Unit,
-    onEventClick: (String) -> Unit
-) {
-    Column(modifier = Modifier.fillMaxSize()) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 4.dp, vertical = 8.dp),
-            horizontalArrangement = Arrangement.spacedBy(4.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            IconButton(onClick = onBack) {
-                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
-            }
-            Text(
-                text = title,
-                style = MaterialTheme.typography.titleLarge
-            )
-        }
-
-        HorizontalDivider()
-
-        LazyVerticalGrid(
-            modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(16.dp),
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-            columns = GridCells.Adaptive(200.dp)
-        ) {
-            items(events, key = { it.id }) { event ->
-                EventCard(
-                    event = event,
-                    onClick = { onEventClick(event.id) },
-                    onUserClick = {}
-                )
-            }
-        }
-    }
-}
-
-@Composable
-private fun EventSection(
-    title: String,
-    count: Int,
-    events: List<Event>,
-    onShowAll: () -> Unit,
-    onEventClick: (Event) -> Unit
-) {
-    Column {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = title,
-                    style = MaterialTheme.typography.titleMedium
-                )
-                Surface(
-                    shape = MaterialTheme.shapes.small,
-                    color = MaterialTheme.colorScheme.secondaryContainer
+            Box(contentAlignment = Alignment.BottomCenter) {
+                user.profilePic?.let { profilePic ->
+                    Surface(
+                        modifier = Modifier.size(140.dp),
+                        shape = CircleShape,
+                        color = Color.Transparent,
+                        onClick = { showExpandedImage = true }
+                    ) {
+                        Image(
+                            modifier = Modifier.fillMaxSize(),
+                            url = profilePic.toBackendUrl(),
+                            contentScale = ContentScale.FillWidth
+                        )
+                    }
+                } ?: run {
+                    Surface(
+                        modifier = Modifier.size(140.dp),
+                        shape = CircleShape,
+                        color = MaterialTheme.colorScheme.primaryContainer
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Icon(
+                                modifier = Modifier.size(80.dp),
+                                imageVector = Icons.Default.AccountCircle,
+                                contentDescription = "Profile picture",
+                                tint = MaterialTheme.colorScheme.onPrimaryContainer
+                            )
+                        }
+                    }
+                }
+                Row(
+                    modifier = Modifier.offset(y = 14.dp),
+                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text(
-                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
-                        text = count.toString(),
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSecondaryContainer
-                    )
-                }
-            }
-
-            TextButton(onClick = onShowAll) {
-                Text("Show all")
-            }
-        }
-
-        LazyRow(
-            contentPadding = PaddingValues(start = 16.dp, end = 16.dp),
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            items(events, key = { it.id }) { event ->
-                EventCard(
-                    event = event,
-                    onClick = { onEventClick(event) },
-                    onUserClick = {}
-                )
-            }
-        }
-    }
-}
-
-
-
-@Composable
-private fun FriendsTab(
-    state: ProfileState.Loaded,
-    navActions: ProfileNavActions
-) {
-    if (state.friends.isEmpty()) {
-        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Icon(
-                    Icons.Default.People,
-                    contentDescription = null,
-                    modifier = Modifier.size(48.dp),
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                Spacer(Modifier.height(8.dp))
-                Text("No friends yet", style = MaterialTheme.typography.bodyLarge)
-            }
-        }
-        return
-    }
-
-    LazyVerticalGrid(
-        modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(16.dp),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp),
-        columns = GridCells.Adaptive(160.dp)
-    ) {
-        items(state.friends) { friend ->
-            FriendCard(
-                friend = friend,
-                onClick = { navActions.toUser(friend.id) }
-            )
-        }
-    }
-}
-
-@Composable
-private fun FriendCard(
-    friend: ProfileState.Loaded.Friend,
-    onClick: () -> Unit
-) {
-    Card(onClick = onClick) {
-        Row(
-            modifier = Modifier.fillMaxWidth().padding(12.dp),
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Surface(
-                modifier = Modifier.size(44.dp),
-                shape = CircleShape,
-                color = MaterialTheme.colorScheme.primaryContainer
-            ) {
-                Box(contentAlignment = Alignment.Center) {
-                    Icon(
-                        Icons.Default.Person,
-                        contentDescription = null,
+                    FilledIconButton(
+                        onClick = { showSystemFilePicker = true },
                         modifier = Modifier.size(28.dp),
-                        tint = MaterialTheme.colorScheme.onPrimaryContainer
+                        colors = IconButtonDefaults.filledIconButtonColors(
+                            containerColor = MaterialTheme.colorScheme.primary
+                        )
+                    ) {
+                        Icon(Icons.Default.Edit, contentDescription = "Edit Profile Picture", modifier = Modifier.size(14.dp))
+                    }
+                    FilledIconButton(
+                        onClick = state.onClearProfilePic,
+                        modifier = Modifier.size(28.dp),
+                        colors = IconButtonDefaults.filledIconButtonColors(
+                            containerColor = MaterialTheme.colorScheme.primary
+                        )
+                    ) {
+                        Icon(Icons.Default.Clear, contentDescription = "Clear Profile Picture", modifier = Modifier.size(14.dp))
+                    }
+                }
+            }
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                Text(
+                    text = user.displayName ?: user.username,
+                    style = MaterialTheme.typography.headlineMedium,
+                    textAlign = TextAlign.Center
+                )
+                Text(
+                    text = "@${user.username}",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+            user.bio.let { bio ->
+                if (!bio.isNullOrBlank()) {
+                    Text(
+                        text = bio,
+                        style = MaterialTheme.typography.bodyMedium,
+                        textAlign = TextAlign.Center,
+                        color = MaterialTheme.colorScheme.onSurface
                     )
                 }
             }
-            Column {
-                Text(
-                    text = friend.displayName ?: friend.username,
-                    style = MaterialTheme.typography.bodyMedium,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-                if (friend.displayName != null) {
-                    Text(
-                        text = "@${friend.username}",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
+            HorizontalDivider()
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceEvenly
+            ) {
+                followersCount?.let {
+                    StatItem(count = it, label = "Followers")
+                }
+                followingCount?.let {
+                    StatItem(count = it, label = "Following")
+                }
+            }
+            HorizontalDivider()
+            Button(
+                modifier = Modifier.fillMaxWidth(),
+                onClick = { showEditDialog = true }
+            ) {
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(Icons.Default.Edit, contentDescription = null, modifier = Modifier.size(18.dp))
+                    Text("Edit Profile")
+                }
+            }
+            Button(
+                modifier = Modifier.fillMaxWidth(),
+                onClick = navActions::toCreateEvent
+            ) {
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(18.dp))
+                    Text("Create Event")
                 }
             }
         }
@@ -513,6 +278,41 @@ private fun Compact(
     state: ProfileState.Loaded,
     navActions: ProfileNavActions
 ) {
+    val user by state.user.collectAsState()
+    val followers by state.follows.followers.collectAsState()
+    val following by state.follows.following.collectAsState()
+    val followersCount by followers.totalCount.collectAsState()
+    val followingCount by following.totalCount.collectAsState()
+    var showEditDialog by remember { mutableStateOf(false) }
+    var showSystemFilePicker by remember { mutableStateOf(false) }
+    var showExpandedImage by remember { mutableStateOf(false) }
+
+    if (showEditDialog) {
+        EditProfileDialog(
+            user = user,
+            onDismiss = { showEditDialog = false },
+            onSave = state.onUpdateProfile
+        )
+    }
+    if (showSystemFilePicker) {
+        SystemFilePicker(
+            onFileChosen = {
+                showSystemFilePicker = false
+                state.onUpdateProfilePic(it)
+            },
+            dismiss = { showSystemFilePicker = false }
+        )
+    }
+
+    user.profilePic?.let {
+        if (showExpandedImage) {
+            ImagePreviewDialog(
+                imageUrl = it,
+                onDismiss = { showExpandedImage = false }
+            )
+        }
+    }
+
     Column(modifier = Modifier.fillMaxSize()) {
         Surface(
             modifier = Modifier.fillMaxWidth(),
@@ -524,89 +324,191 @@ private fun Compact(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                Surface(
-                    modifier = Modifier.size(100.dp),
-                    shape = CircleShape,
-                    color = MaterialTheme.colorScheme.primaryContainer
-                ) {
-                    Box(contentAlignment = Alignment.Center) {
-                        Icon(
-                            modifier = Modifier.size(56.dp),
-                            imageVector = Icons.Default.AccountCircle,
-                            contentDescription = "Profile picture",
-                            tint = MaterialTheme.colorScheme.onPrimaryContainer
+                Box(contentAlignment = Alignment.BottomEnd) {
+                    user.profilePic?.let { profilePic ->
+                        Surface(
+                            modifier = Modifier.size(140.dp),
+                            shape = CircleShape,
+                            color = Color.Transparent,
+                            onClick = { showExpandedImage = true }
+                        ) {
+                            Image(
+                                modifier = Modifier.fillMaxSize(),
+                                url = profilePic.toBackendUrl(),
+                                contentScale = ContentScale.FillWidth
+                            )
+                        }
+                    } ?: run {
+                        Surface(
+                            modifier = Modifier.size(140.dp),
+                            shape = CircleShape,
+                            color = MaterialTheme.colorScheme.primaryContainer
+                        ) {
+                            Box(contentAlignment = Alignment.Center) {
+                                Icon(
+                                    modifier = Modifier.size(80.dp),
+                                    imageVector = Icons.Default.AccountCircle,
+                                    contentDescription = "Profile picture",
+                                    tint = MaterialTheme.colorScheme.onPrimaryContainer
+                                )
+                            }
+                        }
+                    }
+                    FilledIconButton(
+                        onClick = { showSystemFilePicker = true },
+                        modifier = Modifier.size(28.dp),
+                        colors = IconButtonDefaults.filledIconButtonColors(
+                            containerColor = MaterialTheme.colorScheme.primary
                         )
+                    ) {
+                        Icon(Icons.Default.Edit, contentDescription = "Edit Profile Picture", modifier = Modifier.size(14.dp))
                     }
                 }
-
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.spacedBy(2.dp)
                 ) {
                     Text(
-                        text = state.user.displayName ?: state.user.username,
+                        text = user.displayName ?: user.username,
                         style = MaterialTheme.typography.headlineSmall,
                         textAlign = TextAlign.Center
                     )
                     Text(
-                        text = "@${state.user.username}",
+                        text = "@${user.username}",
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
-
-                val bio = state.user.bio
-                if (!bio.isNullOrBlank()) {
-                    Text(
-                        text = bio,
-                        style = MaterialTheme.typography.bodySmall,
-                        textAlign = TextAlign.Center,
-                        color = MaterialTheme.colorScheme.onSurface,
-                        maxLines = 3,
-                        overflow = TextOverflow.Ellipsis
-                    )
+                user.bio.let { bio ->
+                    if (!bio.isNullOrBlank()) {
+                        Text(
+                            text = bio,
+                            style = MaterialTheme.typography.bodySmall,
+                            textAlign = TextAlign.Center,
+                            color = MaterialTheme.colorScheme.onSurface,
+                            maxLines = 3,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
                 }
-
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceEvenly
                 ) {
-                    StatItem(count = state.eventCount, label = "Events")
-                    StatItem(count = state.friendCount, label = "Friends")
-                }
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    Button(
-                        modifier = Modifier.weight(1f),
-                        onClick = state.onEditProfile
-                    ) {
-                        Row(
-                            horizontalArrangement = Arrangement.spacedBy(4.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Icon(Icons.Default.Edit, contentDescription = null, modifier = Modifier.size(16.dp))
-                            Text("Edit", style = MaterialTheme.typography.labelMedium)
-                        }
+                    followersCount?.let {
+                        StatItem(count = it, label = "Followers")
                     }
-                    OutlinedButton(
-                        modifier = Modifier.weight(1f),
-                        onClick = state.onToSettings
+                    followingCount?.let {
+                        StatItem(count = it, label = "Following")
+                    }
+                }
+                Button(
+                    modifier = Modifier.fillMaxWidth(),
+                    onClick = { showEditDialog = true }
+                ) {
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Row(
-                            horizontalArrangement = Arrangement.spacedBy(4.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Icon(Icons.Default.Settings, contentDescription = null, modifier = Modifier.size(16.dp))
-                            Text("Settings", style = MaterialTheme.typography.labelMedium)
-                        }
+                        Icon(Icons.Default.Edit, contentDescription = null, modifier = Modifier.size(18.dp))
+                        Text("Edit Profile")
                     }
                 }
             }
         }
-
-        ProfileContent(state, navActions)
+        ProfileContent(
+            events = state.events,
+            follows = state.follows,
+            navActions = navActions
+        )
     }
+}
+
+@Composable
+private fun EditProfileDialog(
+    user: User,
+    onDismiss: () -> Unit,
+    onSave: suspend (username: String, displayName: String?, bio: String?) -> Unit
+) {
+    var username by remember { mutableStateOf(user.username) }
+    var displayName by remember { mutableStateOf(user.displayName ?: "") }
+    var bio by remember { mutableStateOf(user.bio ?: "") }
+
+    val scope = rememberCoroutineScope()
+    var isSaving by remember { mutableStateOf(false) }
+
+    AlertDialog(
+        onDismissRequest = { if (!isSaving) onDismiss() },
+        title = { Text("Edit Profile") },
+        text = {
+            Column(
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                OutlinedTextField(
+                    value = displayName,
+                    onValueChange = { displayName = it },
+                    label = { Text("Display Name") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                    enabled = !isSaving
+                )
+                OutlinedTextField(
+                    value = username,
+                    onValueChange = { username = it },
+                    label = { Text("Username") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                    isError = username.isBlank(),
+                    enabled = !isSaving
+                )
+                OutlinedTextField(
+                    value = bio,
+                    onValueChange = { bio = it },
+                    label = { Text("Bio") },
+                    maxLines = 3,
+                    modifier = Modifier.fillMaxWidth(),
+                    enabled = !isSaving
+                )
+            }
+        },
+        confirmButton = {
+            Button(
+                enabled = username.isNotBlank() && !isSaving,
+                onClick = {
+                    scope.launch {
+                        isSaving = true
+                        try {
+                            onSave(
+                                username.trim(),
+                                displayName.trim().takeIf { it.isNotBlank() },
+                                bio.trim().takeIf { it.isNotBlank() }
+                            )
+                            onDismiss()
+                        } finally {
+                            isSaving = false
+                        }
+                    }
+                }
+            ) {
+                if (isSaving) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(16.dp),
+                        strokeWidth = 2.dp,
+                        color = MaterialTheme.colorScheme.onPrimary
+                    )
+                } else {
+                    Text("Save")
+                }
+            }
+        },
+        dismissButton = {
+            TextButton(
+                enabled = !isSaving,
+                onClick = onDismiss
+            ) {
+                Text("Cancel")
+            }
+        }
+    )
 }

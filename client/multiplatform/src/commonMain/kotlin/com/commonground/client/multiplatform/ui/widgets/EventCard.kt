@@ -12,6 +12,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.commonground.client.multiplatform.ui.formatted
 import com.commonground.core.models.Event
 
 @Composable
@@ -112,25 +113,27 @@ fun EventCard(
                     horizontalArrangement = Arrangement.spacedBy(6.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Surface(
-                        shape = RoundedCornerShape(6.dp),
-                        color = MaterialTheme.colorScheme.secondaryContainer
-                    ) {
-                        Text(
-                            text = event.duration.toComponents { hours, minutes ->
-                                when {
-                                    hours > 0 -> "${hours}h ${minutes}m"
-                                    else -> "${minutes}m"
-                                }
-                            },
-                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onSecondaryContainer
-                        )
+                    event.duration?.let { duration ->
+                        Surface(
+                            shape = RoundedCornerShape(6.dp),
+                            color = MaterialTheme.colorScheme.secondaryContainer
+                        ) {
+                            Text(
+                                text = duration.toComponents { hours, minutes ->
+                                    when {
+                                        hours > 0 -> "${hours}h ${minutes}m"
+                                        else -> "${minutes}m"
+                                    }
+                                },
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSecondaryContainer
+                            )
+                        }
                     }
                     Spacer(Modifier.weight(1f))
                     Text(
-                        text = event.date,
+                        text = event.startDate.formatted(),
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )

@@ -1,8 +1,7 @@
 package com.commonground.core.models
 
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.Transient
-import kotlin.time.Duration.Companion.minutes
+import kotlin.time.Instant
 
 @Serializable
 data class Event(
@@ -10,17 +9,14 @@ data class Event(
     val title: String,
     val description: String?,
     val locationName: String,
-    val coordinates: Coordinates?,
-    val date: String,
+    val coordinates: Coordinates,
+    val startDate: Instant,
+    val endDate: Instant?,
     val isPrivate: Boolean,
-    val durationMinutes: Long,
+    val isPrivatePlace: Boolean,
     val isPaid: Boolean,
     val image: ImageUrl? = null,
     val creator: User
 ) {
-    @Transient
-    val duration = durationMinutes.minutes
-
-    @Serializable
-    data class Coordinates(val latitude: Double, val longitude: Double)
+    val duration by lazy { endDate?.let { it - startDate } }
 }

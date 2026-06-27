@@ -57,7 +57,7 @@ class AuthRepo(
 
     suspend fun refreshToken(): TokenPair? {
         try {
-            val refresh = loadTokens()?.refreshToken // TODO: check null
+            val refresh = loadTokens()?.refreshToken ?: return null
             val token = client.post("auth/refresh") {
                 setBody(refresh)
             }.body<TokenPair?>()

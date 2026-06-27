@@ -1,6 +1,6 @@
 package com.commonground.client.multiplatform.data
 
-import io.github.oshai.kotlinlogging.KotlinLogging
+import com.commonground.core.models.Coordinates
 import io.ktor.client.*
 import io.ktor.client.call.*
 import io.ktor.client.engine.cio.*
@@ -14,7 +14,6 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 
 object LocationManager {
-    private val logger = KotlinLogging.logger {  }
     private val client = HttpClient(CIO) {
         install(Logging) { level = LogLevel.ALL }
         install(ContentNegotiation) { json(Json { ignoreUnknownKeys = true }) }
@@ -27,7 +26,6 @@ object LocationManager {
     @Serializable
     private data class IpInfoResponse(val loc: String)
 
-    data class Coordinates(val latitude: Double, val longitude: Double)
     suspend fun getCurrentLocation(): Coordinates? {
         try {
             val response = client.get {}.body<IpInfoResponse>()
@@ -36,12 +34,11 @@ object LocationManager {
                 val lat = parts[0].toDoubleOrNull()
                 val lon = parts[1].toDoubleOrNull()
                 if (lat != null && lon != null) {
-                    return Coordinates(lat, lon).also { logger.debug { "current location: $it" } }
+                    return Coordinates(lat, lon)
                 }
             }
             return null
-        } catch (e: Exception) {
-            logger.error(e) {}
+        } catch (_: Exception) {
             return null
         }
     }

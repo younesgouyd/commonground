@@ -3,10 +3,11 @@ package com.commonground.server.services
 import com.commonground.core.models.LoginResult
 import com.commonground.core.models.SignUpResult
 import com.commonground.core.models.TokenPair
-import com.commonground.server.data.RefreshTokenRepository
-import com.commonground.server.data.UserRepository
 import com.commonground.server.data.entities.RefreshToken
 import com.commonground.server.data.entities.User
+import com.commonground.server.data.repositories.RefreshTokenRepository
+import com.commonground.server.data.repositories.UserRepository
+import com.commonground.server.util.toUuid
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -99,10 +100,9 @@ class AuthService(
     }
 
     @Transactional
-    fun logout(refreshToken: String) {
-        val userId = UUID.fromString(jwtService.getUserIdFromRefreshToken(refreshToken)!!)
+    fun logout(userId: String, refreshToken: String) {
         val hashed = hashToken(refreshToken)
-        refreshTokenRepository.deleteByUserIdAndToken(userId, hashed)
+        refreshTokenRepository.deleteByUserIdAndToken(userId.toUuid(), hashed)
     }
 
     private fun saveRefreshToken(token: String, userId: UUID) {
