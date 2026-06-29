@@ -57,6 +57,7 @@ interface EventRepository : JpaRepository<Event, UUID> {
         image: ImageUrl?
     )
 
+    // TODO: add date condition
     @Query(
         value = """
             SELECT *

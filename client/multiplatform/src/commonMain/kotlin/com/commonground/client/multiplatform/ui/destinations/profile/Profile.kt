@@ -77,6 +77,190 @@ private fun Wide(
 }
 
 @Composable
+private fun Compact(
+    state: ProfileState,
+    navActions: ProfileNavActions
+) {
+    when (state) {
+        is ProfileState.Loading -> {
+            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                CircularProgressIndicator()
+            }
+        }
+        is ProfileState.Loaded -> Compact(state, navActions)
+        is ProfileState.Error -> {
+            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                Text(text = "Something went wrong", color = MaterialTheme.colorScheme.error)
+            }
+        }
+    }
+}
+
+@Composable
+private fun Compact(
+    state: ProfileState.Loaded,
+    navActions: ProfileNavActions
+) {
+    val user by state.user.collectAsState()
+    val followers by state.follows.followers.collectAsState()
+    val following by state.follows.following.collectAsState()
+    val followersCount by followers.totalCount.collectAsState()
+    val followingCount by following.totalCount.collectAsState()
+    var showEditDialog by remember { mutableStateOf(false) }
+    var showSystemFilePicker by remember { mutableStateOf(false) }
+    var showExpandedImage by remember { mutableStateOf(false) }
+
+    if (showEditDialog) {
+        EditProfileDialog(
+            user = user,
+            onDismiss = { showEditDialog = false },
+            onSave = state.onUpdateProfile
+        )
+    }
+    if (showSystemFilePicker) {
+        SystemFilePicker(
+            onFileChosen = {
+                showSystemFilePicker = false
+                state.onUpdateProfilePic(it)
+            },
+            dismiss = { showSystemFilePicker = false }
+        )
+    }
+
+    user.profilePic?.let {
+        if (showExpandedImage) {
+            ImagePreviewDialog(
+                imageUrl = it,
+                onDismiss = { showExpandedImage = false }
+            )
+        }
+    }
+
+    Column(modifier = Modifier.fillMaxSize()) {
+        Surface(
+            modifier = Modifier.fillMaxWidth(),
+            color = MaterialTheme.colorScheme.surfaceContainerLow,
+            tonalElevation = 2.dp
+        ) {
+            Column(
+                modifier = Modifier.fillMaxWidth().padding(16.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Box(contentAlignment = Alignment.BottomEnd) {
+                    user.profilePic?.let { profilePic ->
+                        Surface(
+                            modifier = Modifier.size(140.dp),
+                            shape = CircleShape,
+                            color = Color.Transparent,
+                            onClick = { showExpandedImage = true }
+                        ) {
+                            Image(
+                                modifier = Modifier.fillMaxSize(),
+                                url = profilePic.toBackendUrl(),
+                                contentScale = ContentScale.FillWidth
+                            )
+                        }
+                    } ?: run {
+                        Surface(
+                            modifier = Modifier.size(140.dp),
+                            shape = CircleShape,
+                            color = MaterialTheme.colorScheme.primaryContainer
+                        ) {
+                            Box(contentAlignment = Alignment.Center) {
+                                Icon(
+                                    modifier = Modifier.size(80.dp),
+                                    imageVector = Icons.Default.AccountCircle,
+                                    contentDescription = "Profile picture",
+                                    tint = MaterialTheme.colorScheme.onPrimaryContainer
+                                )
+                            }
+                        }
+                    }
+                    FilledIconButton(
+                        onClick = { showSystemFilePicker = true },
+                        modifier = Modifier.size(28.dp),
+                        colors = IconButtonDefaults.filledIconButtonColors(
+                            containerColor = MaterialTheme.colorScheme.primary
+                        )
+                    ) {
+                        Icon(Icons.Default.Edit, contentDescription = "Edit Profile Picture", modifier = Modifier.size(14.dp))
+                    }
+                }
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(2.dp)
+                ) {
+                    Text(
+                        text = user.displayName ?: user.username,
+                        style = MaterialTheme.typography.headlineSmall,
+                        textAlign = TextAlign.Center
+                    )
+                    Text(
+                        text = "@${user.username}",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                user.bio.let { bio ->
+                    if (!bio.isNullOrBlank()) {
+                        Text(
+                            text = bio,
+                            style = MaterialTheme.typography.bodySmall,
+                            textAlign = TextAlign.Center,
+                            color = MaterialTheme.colorScheme.onSurface,
+                            maxLines = 3,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
+                }
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceEvenly
+                ) {
+                    followersCount?.let {
+                        StatItem(count = it, label = "Followers")
+                    }
+                    followingCount?.let {
+                        StatItem(count = it, label = "Following")
+                    }
+                }
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    OutlinedButton(
+                        onClick = { showEditDialog = true }
+                    ) {
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(Icons.Default.Edit, contentDescription = null, modifier = Modifier.size(18.dp))
+                            Text("Edit Profile")
+                        }
+                    }
+                    OutlinedButton(navActions::toCreateEvent) {
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(Icons.Default.Edit, contentDescription = null, modifier = Modifier.size(18.dp))
+                            Text("Create Event")
+                        }
+                    }
+                }
+            }
+        }
+        ProfileContent(
+            events = state.events,
+            follows = state.follows,
+            navActions = navActions
+        )
+    }
+}
+
+@Composable
 private fun ProfileSidebar(
     state: ProfileState.Loaded,
     navActions: ProfileNavActions
@@ -250,177 +434,6 @@ private fun ProfileSidebar(
                 }
             }
         }
-    }
-}
-
-@Composable
-private fun Compact(
-    state: ProfileState,
-    navActions: ProfileNavActions
-) {
-    when (state) {
-        is ProfileState.Loading -> {
-            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator()
-            }
-        }
-        is ProfileState.Loaded -> Compact(state, navActions)
-        is ProfileState.Error -> {
-            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                Text(text = "Something went wrong", color = MaterialTheme.colorScheme.error)
-            }
-        }
-    }
-}
-
-@Composable
-private fun Compact(
-    state: ProfileState.Loaded,
-    navActions: ProfileNavActions
-) {
-    val user by state.user.collectAsState()
-    val followers by state.follows.followers.collectAsState()
-    val following by state.follows.following.collectAsState()
-    val followersCount by followers.totalCount.collectAsState()
-    val followingCount by following.totalCount.collectAsState()
-    var showEditDialog by remember { mutableStateOf(false) }
-    var showSystemFilePicker by remember { mutableStateOf(false) }
-    var showExpandedImage by remember { mutableStateOf(false) }
-
-    if (showEditDialog) {
-        EditProfileDialog(
-            user = user,
-            onDismiss = { showEditDialog = false },
-            onSave = state.onUpdateProfile
-        )
-    }
-    if (showSystemFilePicker) {
-        SystemFilePicker(
-            onFileChosen = {
-                showSystemFilePicker = false
-                state.onUpdateProfilePic(it)
-            },
-            dismiss = { showSystemFilePicker = false }
-        )
-    }
-
-    user.profilePic?.let {
-        if (showExpandedImage) {
-            ImagePreviewDialog(
-                imageUrl = it,
-                onDismiss = { showExpandedImage = false }
-            )
-        }
-    }
-
-    Column(modifier = Modifier.fillMaxSize()) {
-        Surface(
-            modifier = Modifier.fillMaxWidth(),
-            color = MaterialTheme.colorScheme.surfaceContainerLow,
-            tonalElevation = 2.dp
-        ) {
-            Column(
-                modifier = Modifier.fillMaxWidth().padding(16.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                Box(contentAlignment = Alignment.BottomEnd) {
-                    user.profilePic?.let { profilePic ->
-                        Surface(
-                            modifier = Modifier.size(140.dp),
-                            shape = CircleShape,
-                            color = Color.Transparent,
-                            onClick = { showExpandedImage = true }
-                        ) {
-                            Image(
-                                modifier = Modifier.fillMaxSize(),
-                                url = profilePic.toBackendUrl(),
-                                contentScale = ContentScale.FillWidth
-                            )
-                        }
-                    } ?: run {
-                        Surface(
-                            modifier = Modifier.size(140.dp),
-                            shape = CircleShape,
-                            color = MaterialTheme.colorScheme.primaryContainer
-                        ) {
-                            Box(contentAlignment = Alignment.Center) {
-                                Icon(
-                                    modifier = Modifier.size(80.dp),
-                                    imageVector = Icons.Default.AccountCircle,
-                                    contentDescription = "Profile picture",
-                                    tint = MaterialTheme.colorScheme.onPrimaryContainer
-                                )
-                            }
-                        }
-                    }
-                    FilledIconButton(
-                        onClick = { showSystemFilePicker = true },
-                        modifier = Modifier.size(28.dp),
-                        colors = IconButtonDefaults.filledIconButtonColors(
-                            containerColor = MaterialTheme.colorScheme.primary
-                        )
-                    ) {
-                        Icon(Icons.Default.Edit, contentDescription = "Edit Profile Picture", modifier = Modifier.size(14.dp))
-                    }
-                }
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(2.dp)
-                ) {
-                    Text(
-                        text = user.displayName ?: user.username,
-                        style = MaterialTheme.typography.headlineSmall,
-                        textAlign = TextAlign.Center
-                    )
-                    Text(
-                        text = "@${user.username}",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-                user.bio.let { bio ->
-                    if (!bio.isNullOrBlank()) {
-                        Text(
-                            text = bio,
-                            style = MaterialTheme.typography.bodySmall,
-                            textAlign = TextAlign.Center,
-                            color = MaterialTheme.colorScheme.onSurface,
-                            maxLines = 3,
-                            overflow = TextOverflow.Ellipsis
-                        )
-                    }
-                }
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceEvenly
-                ) {
-                    followersCount?.let {
-                        StatItem(count = it, label = "Followers")
-                    }
-                    followingCount?.let {
-                        StatItem(count = it, label = "Following")
-                    }
-                }
-                Button(
-                    modifier = Modifier.fillMaxWidth(),
-                    onClick = { showEditDialog = true }
-                ) {
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(Icons.Default.Edit, contentDescription = null, modifier = Modifier.size(18.dp))
-                        Text("Edit Profile")
-                    }
-                }
-            }
-        }
-        ProfileContent(
-            events = state.events,
-            follows = state.follows,
-            navActions = navActions
-        )
     }
 }
 

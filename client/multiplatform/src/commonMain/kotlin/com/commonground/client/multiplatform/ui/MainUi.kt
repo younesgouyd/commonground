@@ -300,7 +300,6 @@ private fun NavGraph(navController: NavHostController, repoStore: RepoStore, sta
                 viewModel = viewModel { HomeViewModel(repoStore.eventRepo) },
                 navActions = object : HomeNavActions {
                     override fun toEventDetails(id: String) { navController.navigate(Route.Event(id)) }
-                    override fun toUser(id: String) { navController.navigate(Route.User(id)) }
                     override fun toCreateEvent() { navController.navigate(Route.CreateEvent) }
                 }
             )

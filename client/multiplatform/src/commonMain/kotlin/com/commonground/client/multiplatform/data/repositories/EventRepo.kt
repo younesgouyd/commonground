@@ -1,9 +1,6 @@
 package com.commonground.client.multiplatform.data.repositories
 
-import com.commonground.core.models.Event
-import com.commonground.core.models.Events
-import com.commonground.core.models.SaveEventRequest
-import com.commonground.core.models.UserEventType
+import com.commonground.core.models.*
 import io.ktor.client.*
 import io.ktor.client.call.*
 import io.ktor.client.request.*
@@ -31,7 +28,7 @@ class EventRepo(
         return client.get("events/$id").body<Event?>()
     }
 
-    suspend fun createEvent(request: SaveEventRequest): Event {
+    suspend fun createEvent(request: CreateEventRequest): Event {
         return client.post("events") {
             setBody(request)
         }.body<Event>()

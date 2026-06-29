@@ -207,10 +207,9 @@ private fun ShowAllEventsGrid(
             columns = GridCells.Adaptive(200.dp)
         ) {
             items(items, key = { it.id }) { event ->
-                EventCard(
+                WideEventCard(
                     event = event,
-                    onClick = { onEventClick(event.id) },
-                    onUserClick = {}
+                    onClick = { onEventClick(event.id) }
                 )
             }
             if (loading) {
@@ -287,10 +286,9 @@ private fun EventSection(
             horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             items(items, key = { it.id }) { event ->
-                EventCard(
+                WideEventCard(
                     event = event,
-                    onClick = { onEventClick(event.id) },
-                    onUserClick = {} // TODO
+                    onClick = { onEventClick(event.id) }
                 )
             }
             if (loading) {

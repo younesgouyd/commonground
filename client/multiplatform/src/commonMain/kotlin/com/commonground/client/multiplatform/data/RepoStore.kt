@@ -24,7 +24,7 @@ class RepoStore(
     companion object {
         const val SERVER_PORT = 8080 // TODO
         val serverHost = when (platform) {
-            com.commonground.client.multiplatform.Platform.ANDROID ->  "10.0.2.2"
+            com.commonground.client.multiplatform.Platform.ANDROID -> "10.0.2.2"
             com.commonground.client.multiplatform.Platform.JVM -> "localhost"
         }
     }

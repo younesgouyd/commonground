@@ -8,10 +8,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import com.commonground.client.multiplatform.Platform
 import com.commonground.client.multiplatform.platform
+import com.commonground.client.multiplatform.ui.LazyList
 import com.commonground.client.multiplatform.ui.MapViewport
 import com.commonground.client.multiplatform.ui.queryEventViewport
 import com.commonground.core.models.Coordinates
 import com.commonground.core.models.Event
+import kotlinx.coroutines.FlowPreview
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filter
@@ -35,13 +38,15 @@ import org.maplibre.spatialk.geojson.*
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
 
+@OptIn(FlowPreview::class)
 @Composable
 fun Map(
     modifier: Modifier,
-    items: List<Event>,
+    events: LazyList<Event>,
     currentLocation: Coordinates?,
     onViewportChanged: (MapViewport) -> Unit
 ) {
+    val items by events.items.collectAsState()
     val cameraState = rememberCameraState()
     var selectedFeature by remember { mutableStateOf<Feature<Geometry, JsonObject?>?>(null) }
     var mapLoaded by remember { mutableStateOf(false) }
@@ -49,9 +54,9 @@ fun Map(
     val geoJsonData = remember(items) {
         GeoJsonData.Features(
             FeatureCollection(
-                features = items.filter { it.coordinates != null }.map { event ->
+                features = items.map { event ->
                     Feature(
-                        geometry = Point(Position(longitude = event.coordinates!!.longitude, latitude = event.coordinates!!.latitude)),
+                        geometry = Point(Position(longitude = event.coordinates.longitude, latitude = event.coordinates.latitude)),
                         properties = buildJsonObject {
                             put("id", event.id)
                             put("title", event.title)
@@ -73,7 +78,7 @@ fun Map(
                 target = Position(longitude = currentLocation.longitude, latitude = currentLocation.latitude),
                 zoom = 6.0
             ),
-            duration = 3.seconds
+            duration = 2.seconds
         )
     }
 
@@ -89,26 +94,32 @@ fun Map(
             .collect { onViewportChanged(it) }
     }
 
-    MaplibreMap(
-        modifier =  modifier,
-        baseStyle = BaseStyle.Uri("https://tiles.openfreemap.org/styles/${if (isSystemInDarkTheme()) "fiord" else "liberty"}"),
-        cameraState = cameraState,
-        options = MapOptions(
-            ornamentOptions = OrnamentOptions.AllEnabled
-        ),
-        onMapLoadFinished = { mapLoaded = true }
-    ) {
-        if (platform != Platform.JVM) { // TODO
-            SymbolLayer(
-                id = "events-layer",
-                source = rememberGeoJsonSource(geoJsonData),
-                iconImage = image(markerIcon),
-                onClick = { features ->
-                    selectedFeature = features.firstOrNull()
-                    ClickResult.Consume
-                }
-            )
+    var visible by remember { mutableStateOf(false) }
+    LaunchedEffect(Unit) {
+        delay(2.seconds)
+        visible = true
+    }
+    if (platform != Platform.JVM || visible) {
+        MaplibreMap(
+            modifier = modifier,
+            baseStyle = BaseStyle.Uri("https://tiles.openfreemap.org/styles/${if (isSystemInDarkTheme()) "fiord" else "liberty"}"),
+            cameraState = cameraState,
+            options = MapOptions(
+                ornamentOptions = OrnamentOptions.AllEnabled
+            ),
+            onMapLoadFinished = { mapLoaded = true }
+        ) {
+            if (platform != Platform.JVM) { // TODO
+                SymbolLayer(
+                    id = "events-layer",
+                    source = rememberGeoJsonSource(geoJsonData),
+                    iconImage = image(markerIcon),
+                    onClick = { features ->
+                        selectedFeature = features.firstOrNull()
+                        ClickResult.Consume
+                    }
+                )
+            }
         }
     }
-
 }

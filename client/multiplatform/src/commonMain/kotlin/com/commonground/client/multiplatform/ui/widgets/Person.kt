@@ -15,7 +15,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 
 @Composable
-fun Person(
+fun Creator(
     name: String,
     onClick: () -> Unit
 ) {

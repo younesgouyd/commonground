@@ -1,7 +1,5 @@
 package com.commonground.client.multiplatform.ui.destinations.createevent
 
-import androidx.compose.animation.*
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -12,10 +10,20 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.commonground.client.multiplatform.Platform
+import com.commonground.client.multiplatform.platform
 import com.commonground.client.multiplatform.ui.AdaptiveUi
-import com.commonground.client.multiplatform.ui.widgets.DropdownOption
+import com.commonground.client.multiplatform.ui.widgets.*
+import com.commonground.core.models.Coordinates
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.StateFlow
+import kotlin.time.Clock
+import kotlin.time.Duration.Companion.hours
+import kotlin.time.Duration.Companion.seconds
+import kotlin.time.Instant
 
 interface CreateEventNavActions {
     fun onBack()
@@ -30,8 +38,8 @@ fun CreateEvent(
     val state by viewModel.state.collectAsState()
 
     AdaptiveUi(
-        wide = { Wide(state, viewModel, navActions) },
-        compact = { Compact(state, viewModel, navActions) }
+        wide = { Wide(state, navActions) },
+        compact = { Compact(state, navActions) }
     )
 }
 
@@ -39,58 +47,25 @@ fun CreateEvent(
 @Composable
 private fun Wide(
     state: CreateEventState,
-    viewModel: CreateEventViewModel,
     navActions: CreateEventNavActions
 ) {
     Row(modifier = Modifier.fillMaxSize()) {
-        Surface(
-            modifier = Modifier.width(320.dp).fillMaxHeight(),
-            color = MaterialTheme.colorScheme.primaryContainer,
-            tonalElevation = 2.dp
-        ) {
-            Column(
-                modifier = Modifier.fillMaxSize().padding(40.dp),
-                verticalArrangement = Arrangement.Center,
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                Icon(
-                    Icons.Default.AddCircle,
-                    contentDescription = null,
-                    modifier = Modifier.size(72.dp),
-                    tint = MaterialTheme.colorScheme.onPrimaryContainer
-                )
-                Spacer(Modifier.height(24.dp))
-                Text(
-                    text = "Create an Event",
-                    style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold),
-                    color = MaterialTheme.colorScheme.onPrimaryContainer
-                )
-                Spacer(Modifier.height(8.dp))
-                Text(
-                    text = "Fill in the details to share your event with the community.",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f)
-                )
-            }
-        }
-
+        ScreenHeroHeader()
         VerticalDivider()
-
         Column(
             modifier = Modifier.weight(1f).fillMaxHeight()
         ) {
             CenterAlignedTopAppBar(
-                title = { Text("New Event") },
+                title = { Text("Create Event") },
                 navigationIcon = {
                     IconButton(onClick = navActions::onBack) {
                         Icon(Icons.Default.Close, contentDescription = "Cancel")
                     }
                 },
-                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
+                colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.surface
                 )
             )
-
             Column(
                 modifier = Modifier
                     .weight(1f)
@@ -98,7 +73,10 @@ private fun Wide(
                     .padding(horizontal = 40.dp, vertical = 24.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                CreateEventForm(state, viewModel, isWide = true)
+                CreateEventForm(
+                    isSubmitting = state.isSubmitting,
+                    onSubmitClick = state.onSubmit
+                )
             }
         }
     }
@@ -108,7 +86,6 @@ private fun Wide(
 @Composable
 private fun Compact(
     state: CreateEventState,
-    viewModel: CreateEventViewModel,
     navActions: CreateEventNavActions
 ) {
     Scaffold(
@@ -131,127 +108,129 @@ private fun Compact(
                 .padding(horizontal = 20.dp, vertical = 16.dp),
             verticalArrangement = Arrangement.spacedBy(14.dp)
         ) {
-            CreateEventForm(state, viewModel, isWide = false)
+            CreateEventForm(
+                isSubmitting = state.isSubmitting,
+                onSubmitClick = state.onSubmit
+            )
         }
     }
 }
 
+@Composable
+private fun ScreenHeroHeader() {
+    Surface(
+        modifier = Modifier.width(320.dp).fillMaxHeight(),
+        color = MaterialTheme.colorScheme.primaryContainer,
+        tonalElevation = 2.dp
+    ) {
+        Column(
+            modifier = Modifier.fillMaxSize().padding(40.dp),
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Icon(
+                Icons.Default.AddCircle,
+                contentDescription = null,
+                modifier = Modifier.size(72.dp),
+                tint = MaterialTheme.colorScheme.onPrimaryContainer
+            )
+            Spacer(Modifier.height(24.dp))
+            Text(
+                text = "Create Event",
+                style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold),
+                color = MaterialTheme.colorScheme.onPrimaryContainer
+            )
+            Spacer(Modifier.height(8.dp))
+            Text(
+                text = "Fill in the details to share your event with the community.",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f)
+            )
+        }
+    }
+}
 
 @Composable
 private fun CreateEventForm(
-    state: CreateEventState,
-    viewModel: CreateEventViewModel,
-    isWide: Boolean
+    isSubmitting: StateFlow<Boolean>,
+    onSubmitClick: (
+        title: String,
+        description: String,
+        locationName: String,
+        coordinates: Coordinates,
+        startDate: Instant,
+        endDate: Instant?,
+        isPrivate: Boolean,
+        isPrivatePlace: Boolean,
+        isPaid: Boolean,
+        image: ByteArray?
+    ) -> Unit
 ) {
-    AnimatedVisibility(
-        visible = state.generalError != null,
-        enter = fadeIn() + expandVertically(),
-        exit = fadeOut() + shrinkVertically()
-    ) {
-        state.generalError?.let { error ->
-            Surface(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(12.dp),
-                color = MaterialTheme.colorScheme.errorContainer
-            ) {
-                Row(
-                    modifier = Modifier.padding(12.dp),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Icon(
-                        Icons.Default.Error,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.onErrorContainer,
-                        modifier = Modifier.size(20.dp)
-                    )
-                    Text(
-                        text = error,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onErrorContainer
-                    )
-                }
-            }
+    val isSubmitting by isSubmitting.collectAsState()
+
+    var title by remember { mutableStateOf("") }
+    var description by remember { mutableStateOf("") }
+    var locationName by remember { mutableStateOf("") }
+    var coordinates by remember { mutableStateOf<Coordinates?>(null) }
+    var startDate by remember { mutableStateOf<Instant?>(Clock.System.now() + 1.hours) }
+    var endDate by remember { mutableStateOf<Instant?>(null) }
+    var isPrivate by remember { mutableStateOf(false) }
+    var isPrivatePlace by remember { mutableStateOf(false) }
+    var isPaid by remember { mutableStateOf(false) }
+    var image by remember { mutableStateOf<ByteArray?>(null) }
+
+    var titleError by remember { mutableStateOf<String?>(null) }
+    var locationNameError by remember { mutableStateOf<String?>(null) }
+    var coordinatesError by remember { mutableStateOf<String?>(null) }
+
+    val canSubmit = !isSubmitting
+            && title.isNotBlank()
+            && locationName.isNotBlank()
+            && coordinates != null
+            && startDate != null
+
+    ImageField(
+        modifier = Modifier.fillMaxWidth(),
+        value = image,
+        onValueChange = { image = it }
+    )
+    TitleField(
+        modifier = Modifier.fillMaxWidth(),
+        value = title,
+        error = titleError,
+        onValueChange = {
+            title = it
+            titleError = if (title.isBlank()) "Title is required" else null
         }
-    }
-
-    OutlinedTextField(
-        value = state.title,
-        onValueChange = viewModel::onTitleChange,
-        label = { Text("Event title") },
-        placeholder = { Text("Give your event a name") },
-        leadingIcon = { Icon(Icons.Default.Edit, null) },
-        isError = state.titleError != null,
-        supportingText = state.titleError?.let { { Text(it) } },
-        singleLine = true,
-        shape = RoundedCornerShape(12.dp),
-        modifier = Modifier.fillMaxWidth(),
-        colors = OutlinedTextFieldDefaults.colors(
-            unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant
-        )
     )
-
-    OutlinedTextField(
-        value = state.description,
-        onValueChange = viewModel::onDescriptionChange,
-        label = { Text("Description") },
-        placeholder = { Text("What's this event about?") },
-        minLines = 3,
-        maxLines = 5,
-        shape = RoundedCornerShape(12.dp),
+    DescriptionField(
         modifier = Modifier.fillMaxWidth(),
-        colors = OutlinedTextFieldDefaults.colors(
-            unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant
-        )
+        value = description,
+        onValueChange = { description = it }
     )
-
-    OutlinedTextField(
-        value = state.locationName,
-        onValueChange = viewModel::onLocationNameChange,
-        label = { Text("Location") },
-        placeholder = { Text("Where will this event take place?") },
-        leadingIcon = { Icon(Icons.Default.Place, null) },
-        isError = state.locationError != null,
-        supportingText = state.locationError?.let { { Text(it) } },
-        singleLine = true,
-        shape = RoundedCornerShape(12.dp),
+    LocationNameField(
         modifier = Modifier.fillMaxWidth(),
-        colors = OutlinedTextFieldDefaults.colors(
-            unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant
-        )
-    )
-
-    if (isWide) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            DateField(
-                value = state.date,
-                error = state.dateError,
-                onValueChange = viewModel::onDateChange,
-                modifier = Modifier.weight(1f)
-            )
-            TimeField(
-                value = state.time,
-                onValueChange = viewModel::onTimeChange,
-                modifier = Modifier.weight(1f)
-            )
+        value = locationName,
+        error = locationNameError,
+        onValueChange = {
+            locationName = it
+            locationNameError = if (locationName.isBlank()) "Location is required" else null
         }
-    } else {
-        DateField(
-            value = state.date,
-            error = state.dateError,
-            onValueChange = viewModel::onDateChange,
-            modifier = Modifier.fillMaxWidth()
-        )
-        TimeField(
-            value = state.time,
-            onValueChange = viewModel::onTimeChange,
-            modifier = Modifier.fillMaxWidth()
-        )
-    }
-
+    )
+    DateTimeField(
+        modifier = Modifier.fillMaxWidth(),
+        label = "Start date",
+        value = startDate,
+        error = if (startDate == null) "You must specify a start date." else null,
+        onValueChange = { startDate = it }
+    )
+    DateTimeField(
+        modifier = Modifier.fillMaxWidth(),
+        label = "End date",
+        value = endDate,
+        error = null,
+        onValueChange = { endDate = it }
+    )
     Surface(
         modifier = Modifier.fillMaxWidth(),
         shape = MaterialTheme.shapes.medium,
@@ -262,163 +241,313 @@ private fun CreateEventForm(
                 icon = Icons.Default.Lock,
                 label = "Privacy",
                 description = "Only followers can see this event",
-                checked = state.isPrivate,
-                onCheckedChange = viewModel::onPrivateChange
+                checked = isPrivate,
+                onCheckedChange = { isPrivate = it }
             )
             HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
             SwitchRow(
                 icon = Icons.Default.Home,
                 label = "Private place",
                 description = "The event takes place inside a private or restricted venue like a home, hotel, restaurant, or school",
-                checked = state.isPrivatePlace,
-                onCheckedChange = viewModel::onPrivatePlaceChange
+                checked = isPrivatePlace,
+                onCheckedChange = { isPrivatePlace = it }
             )
             HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
             SwitchRow(
                 icon = Icons.Default.AttachMoney,
                 label = "Paid event",
                 description = "Attendees need to purchase a ticket",
-                checked = state.isPaid,
-                onCheckedChange = viewModel::onPaidChange
+                checked = isPaid,
+                onCheckedChange = { isPaid = it }
             )
         }
     }
-
-    CoordinatesSection(
-        latitude = state.latitude,
-        longitude = state.longitude,
-        onLatitudeChange = viewModel::onLatitudeChange,
-        onLongitudeChange = viewModel::onLongitudeChange,
-        modifier = Modifier.fillMaxWidth()
+    AdaptiveUi(
+        wide = {
+            var visible by remember { mutableStateOf(false) }
+            LaunchedEffect(Unit) {
+                delay(2.seconds)
+                visible = true
+            }
+            if (platform != Platform.JVM || visible) {
+                CoordinatesForm(
+                    modifier = Modifier.fillMaxWidth(),
+                    value = coordinates,
+                    error = coordinatesError,
+                    onValueChange = {
+                        coordinates = it
+                        coordinatesError = if (it == null) "You must set valid coordinates." else null
+                    }
+                )
+            }
+        },
+        compact = {
+            CoordinatesSection(
+                modifier = Modifier.fillMaxWidth(),
+                value = coordinates,
+                onValueChange = { coordinates = it }
+            )
+        }
     )
-
     Spacer(Modifier.height(8.dp))
-
     Button(
-        onClick = viewModel::submit,
         modifier = Modifier.fillMaxWidth().height(52.dp),
-        enabled = state.isValid && !state.isSubmitting,
+        onClick = {
+            onSubmitClick(
+                title,
+                description,
+                locationName,
+                coordinates!!,
+                startDate!!,
+                endDate,
+                isPrivate,
+                isPrivatePlace,
+                isPaid,
+                image
+            )
+        },
+        enabled = canSubmit,
         shape = RoundedCornerShape(14.dp)
     ) {
-        if (state.isSubmitting) {
+        if (isSubmitting) {
             CircularProgressIndicator(
                 modifier = Modifier.size(20.dp),
                 strokeWidth = 2.dp,
                 color = MaterialTheme.colorScheme.onPrimary
             )
         } else {
-            Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(18.dp))
+            Icon(Icons.Default.Edit, contentDescription = null, modifier = Modifier.size(18.dp))
             Spacer(Modifier.width(8.dp))
             Text("Create Event", style = MaterialTheme.typography.titleMedium)
         }
     }
-
     Spacer(Modifier.height(24.dp))
 }
 
-
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun DateField(
-    value: String,
-    error: String?,
-    onValueChange: (String) -> Unit,
-    modifier: Modifier = Modifier
+private fun ImageField(
+    modifier: Modifier,
+    value: ByteArray?,
+    onValueChange: (ByteArray?) -> Unit
 ) {
-    var showPicker by remember { mutableStateOf(false) }
-    val datePickerState = rememberDatePickerState()
+    var showSystemFilePicker by remember { mutableStateOf(false) }
 
-    Box(modifier = modifier.clickable { showPicker = true }) {
-        OutlinedTextField(
-            value = value,
-            onValueChange = {},
-            readOnly = true,
-            enabled = false,
-            label = { Text("Date") },
-            placeholder = { Text("YYYY-MM-DD") },
-            leadingIcon = { Icon(Icons.Default.CalendarMonth, null) },
-            isError = error != null,
-            supportingText = error?.let { { Text(it) } },
-            singleLine = true,
-            shape = RoundedCornerShape(12.dp),
-            modifier = Modifier.fillMaxWidth(),
-            colors = OutlinedTextFieldDefaults.colors(
-                unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant,
-                disabledBorderColor = MaterialTheme.colorScheme.outlineVariant,
-                disabledTextColor = MaterialTheme.colorScheme.onSurface,
-                disabledLabelColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                disabledLeadingIconColor = MaterialTheme.colorScheme.onSurfaceVariant
+    if (value == null) {
+        TextButton(
+            modifier = modifier,
+            onClick = { showSystemFilePicker = true }
+        ) {
+            Icon(Icons.Default.Add, contentDescription = null)
+            Spacer(Modifier.width(8.dp))
+            Text("Set an image")
+        }
+    } else {
+        Column(
+            modifier = modifier.fillMaxWidth(),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Image(
+                modifier = Modifier.fillMaxWidth().height(300.dp),
+                data = value
             )
-        )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(space = 8.dp, alignment = Alignment.CenterHorizontally),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Button(
+                    onClick = { showSystemFilePicker = true }
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Default.Edit, null)
+                        Text("Change")
+                    }
+                }
+                Button(
+                    onClick = { onValueChange(null) }
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Default.Clear, null)
+                        Text("Clear")
+                    }
+                }
+            }
+        }
     }
 
-    if (showPicker) {
-        DatePickerDialog(
-            onDismissRequest = { showPicker = false },
-            confirmButton = {
-                TextButton(onClick = {
-                    datePickerState.selectedDateMillis?.let { millis ->
-                        // epochMillis -> YYYY-MM-DD (UTC)
-                        val totalDays = millis / 86_400_000
-                        var year = 1970
-                        var remaining = totalDays.toInt()
-                        while (true) {
-                            val daysInYear = if (isLeapYear(year)) 366 else 365
-                            if (remaining < daysInYear) break
-                            remaining -= daysInYear
-                            year++
-                        }
-                        val monthDays = if (isLeapYear(year))
-                            intArrayOf(31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31)
-                        else
-                            intArrayOf(31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31)
-                        var month = 0
-                        while (month < 12 && remaining >= monthDays[month]) {
-                            remaining -= monthDays[month]
-                            month++
-                        }
-                        val day = remaining + 1
-                        onValueChange("${year.toString().padStart(4, '0')}-${(month + 1).toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}")
-                    }
-                    showPicker = false
-                }) { Text("OK") }
+    if (showSystemFilePicker) {
+        SystemFilePicker(
+            onFileChosen = {
+                showSystemFilePicker = false
+                onValueChange(it)
             },
-            dismissButton = {
-                TextButton(onClick = { showPicker = false }) { Text("Cancel") }
-            }
-        ) {
-            DatePicker(state = datePickerState)
-        }
+            dismiss = { showSystemFilePicker = false }
+        )
     }
 }
 
 @Composable
-private fun TimeField(
+private fun TitleField(
+    modifier: Modifier = Modifier,
     value: String,
-    onValueChange: (String) -> Unit,
-    modifier: Modifier = Modifier
+    error: String?,
+    onValueChange: (String) -> Unit
 ) {
     OutlinedTextField(
+        modifier = modifier,
         value = value,
         onValueChange = onValueChange,
-        label = { Text("Time") },
-        placeholder = { Text("HH:MM") },
-        leadingIcon = { Icon(Icons.Default.Schedule, null) },
+        label = { Text("Event title") },
+        placeholder = { Text("Give your event a name") },
+        leadingIcon = { Icon(Icons.Default.Edit, null) },
+        isError = error != null,
+        supportingText = if (error != null) { @Composable { Text(error) } } else null,
         singleLine = true,
         shape = RoundedCornerShape(12.dp),
-        modifier = modifier,
         colors = OutlinedTextFieldDefaults.colors(
             unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant
         )
     )
 }
 
+@Composable
+private fun DescriptionField(
+    modifier: Modifier = Modifier,
+    value: String,
+    onValueChange: (String) -> Unit
+) {
+    OutlinedTextField(
+        modifier = modifier.fillMaxWidth(),
+        value = value,
+        onValueChange = onValueChange,
+        label = { Text("Description") },
+        placeholder = { Text("What's this event about?") },
+        minLines = 3,
+        maxLines = 5,
+        shape = RoundedCornerShape(12.dp),
+        colors = OutlinedTextFieldDefaults.colors(
+            unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant
+        )
+    )
+}
+
+@Composable
+private fun LocationNameField(
+    modifier: Modifier = Modifier,
+    value: String,
+    error: String?,
+    onValueChange: (String) -> Unit
+) {
+    OutlinedTextField(
+        modifier = modifier,
+        value = value,
+        onValueChange = onValueChange,
+        label = { Text("Location") },
+        placeholder = { Text("Where will this event take place?") },
+        leadingIcon = { Icon(Icons.Default.Place, null) },
+        isError = error != null,
+        supportingText = if (error != null) { @Composable { Text(error) } } else null,
+        singleLine = true,
+        shape = RoundedCornerShape(12.dp),
+        colors = OutlinedTextFieldDefaults.colors(
+            unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant
+        )
+    )
+}
+
+@Composable
+private fun CoordinatesSection(
+    modifier: Modifier = Modifier,
+    value: Coordinates?,
+    onValueChange: (Coordinates?) -> Unit
+) {
+    var showForm by remember { mutableStateOf(false) }
+    var error by remember { mutableStateOf<String?>(null) }
+
+    Surface(
+        modifier = modifier,
+        shape = MaterialTheme.shapes.medium,
+        color = MaterialTheme.colorScheme.surfaceContainer,
+        onClick = { showForm = true }
+    ) {
+        Column {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 12.dp),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(
+                    Icons.Default.Map,
+                    contentDescription = null,
+                    modifier = Modifier.size(22.dp),
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Text(
+                    text = "Coordinates",
+                    style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
+                    modifier = Modifier.weight(1f)
+                )
+            }
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(start = 16.dp, end = 16.dp, bottom = 16.dp),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                OutlinedTextField(
+                    modifier = Modifier.weight(1f),
+                    value = value?.latitude?.toString() ?: "",
+                    onValueChange = {},
+                    label = { Text("Latitude") },
+                    placeholder = { Text("e.g. 40.7128") },
+                    singleLine = true,
+                    shape = RoundedCornerShape(12.dp),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant
+                    ),
+                    readOnly = true
+                )
+                OutlinedTextField(
+                    modifier = Modifier.weight(1f),
+                    value = value?.longitude?.toString() ?: "",
+                    onValueChange = {},
+                    label = { Text("Longitude") },
+                    placeholder = { Text("e.g. -74.0060") },
+                    singleLine = true,
+                    shape = RoundedCornerShape(12.dp),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant
+                    ),
+                    minLines = 1,
+                    maxLines = 1,
+                    readOnly = true
+                )
+            }
+        }
+    }
+
+    if (showForm) {
+        CoordinatesFormDialog(
+            value = value,
+            error = error,
+            onValueChange = {
+                onValueChange(it)
+                error = if (it == null) "You must set valid coordinates." else null
+            },
+            onDismissRequest = { showForm = false }
+        )
+    }
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun DurationDropdown(
+    modifier: Modifier = Modifier,
     selected: Long,
-    onChange: (Long) -> Unit,
-    modifier: Modifier = Modifier
+    onChange: (Long) -> Unit
 ) {
     val options = listOf(
         DropdownOption("15 minutes", 15L),
@@ -469,7 +598,7 @@ private fun DurationDropdown(
 
 @Composable
 private fun SwitchRow(
-    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    icon: ImageVector,
     label: String,
     description: String,
     checked: Boolean,
@@ -501,91 +630,4 @@ private fun SwitchRow(
         }
         Switch(checked = checked, onCheckedChange = onCheckedChange)
     }
-}
-
-@Composable
-private fun CoordinatesSection(
-    latitude: String,
-    longitude: String,
-    onLatitudeChange: (String) -> Unit,
-    onLongitudeChange: (String) -> Unit,
-    modifier: Modifier = Modifier
-) {
-    var expanded by remember { mutableStateOf(false) }
-
-    Surface(
-        modifier = modifier,
-        shape = MaterialTheme.shapes.medium,
-        color = MaterialTheme.colorScheme.surfaceContainer
-    ) {
-        Column {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 12.dp),
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Icon(
-                    Icons.Default.Map,
-                    contentDescription = null,
-                    modifier = Modifier.size(22.dp),
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                Text(
-                    text = "Coordinates (optional)",
-                    style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
-                    modifier = Modifier.weight(1f)
-                )
-                IconButton(onClick = { expanded = !expanded }) {
-                    Icon(
-                        if (expanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
-                        contentDescription = if (expanded) "Collapse" else "Expand"
-                    )
-                }
-            }
-
-            AnimatedVisibility(
-                visible = expanded,
-                enter = fadeIn() + expandVertically(),
-                exit = fadeOut() + shrinkVertically()
-            ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(start = 16.dp, end = 16.dp, bottom = 16.dp),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    OutlinedTextField(
-                        value = latitude,
-                        onValueChange = onLatitudeChange,
-                        label = { Text("Latitude") },
-                        placeholder = { Text("e.g. 40.7128") },
-                        singleLine = true,
-                        shape = RoundedCornerShape(12.dp),
-                        modifier = Modifier.weight(1f),
-                        colors = OutlinedTextFieldDefaults.colors(
-                            unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant
-                        )
-                    )
-                    OutlinedTextField(
-                        value = longitude,
-                        onValueChange = onLongitudeChange,
-                        label = { Text("Longitude") },
-                        placeholder = { Text("e.g. -74.0060") },
-                        singleLine = true,
-                        shape = RoundedCornerShape(12.dp),
-                        modifier = Modifier.weight(1f),
-                        colors = OutlinedTextFieldDefaults.colors(
-                            unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant
-                        )
-                    )
-                }
-            }
-        }
-    }
-}
-
-private fun isLeapYear(year: Int): Boolean {
-    return (year % 4 == 0 && year % 100 != 0) || (year % 400 == 0)
 }

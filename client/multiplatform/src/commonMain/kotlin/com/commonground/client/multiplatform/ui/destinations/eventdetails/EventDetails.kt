@@ -22,8 +22,8 @@ import androidx.compose.ui.unit.sp
 import com.commonground.client.multiplatform.ui.AdaptiveUi
 import com.commonground.client.multiplatform.ui.formatted
 import com.commonground.client.multiplatform.ui.toBackendUrl
+import com.commonground.client.multiplatform.ui.widgets.Creator
 import com.commonground.client.multiplatform.ui.widgets.Image
-import com.commonground.client.multiplatform.ui.widgets.Person
 import com.commonground.client.multiplatform.ui.widgets.SystemFilePicker
 import com.commonground.core.models.ImageUrl
 import kotlinx.coroutines.launch
@@ -160,7 +160,7 @@ private fun WideLoaded(
                             }
                         }
                         Column {
-                            Person(
+                            Creator(
                                 name = event.creator.displayName ?: event.creator.username,
                                 onClick = { navActions.toUser(event.creator.id) }
                             )
@@ -380,7 +380,7 @@ private fun CompactLoaded(
                                 Icon(Icons.Default.Person, null, Modifier.size(18.dp), tint = MaterialTheme.colorScheme.onPrimaryContainer)
                             }
                         }
-                        Person(
+                        Creator(
                             name = event.creator.displayName ?: event.creator.username,
                             onClick = { navActions.toUser(event.creator.id) }
                         )

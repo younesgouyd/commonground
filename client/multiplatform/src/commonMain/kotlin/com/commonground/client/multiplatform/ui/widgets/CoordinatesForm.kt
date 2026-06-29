@@ -117,12 +117,11 @@ private fun Content(
     onValueChange: (Coordinates?) -> Unit
 ) {
     val scope = rememberCoroutineScope()
-    var currentLocation by remember { mutableStateOf<Coordinates?>(null) }
 
     var mapLoadFinished by remember { mutableStateOf(false) }
     val cameraState = rememberCameraState()
 
-    // note: cameraState.isCameraMoving doesn't work in jvm
+    // note: cameraState.isCameraMoving doesn't work in jvm when the user is dragging the map
     val isDragging = cameraState.isCameraMoving && cameraState.moveReason == CameraMoveReason.GESTURE
 
     val pinLiftOffset by animateDpAsState(
@@ -210,9 +209,13 @@ private fun Content(
                     ornamentOptions = OrnamentOptions.AllEnabled
                 ),
                 onMapLoadFinished = {
-                    scope.launch {
-                        val startPos = value ?: currentLocation ?: return@launch
-                        animateToLocation(startPos)
+                    if (value == null) {
+                        scope.launch {
+                            val currentLocation = LocationManager.getCurrentLocation()
+                            if (currentLocation != null) {
+                                onValueChange(currentLocation)
+                            }
+                        }
                     }
                     mapLoadFinished = true
                 }

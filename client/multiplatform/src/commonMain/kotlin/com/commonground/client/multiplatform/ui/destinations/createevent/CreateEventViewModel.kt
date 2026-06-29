@@ -4,100 +4,75 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.commonground.client.multiplatform.data.repositories.EventRepo
 import com.commonground.core.models.Coordinates
-import com.commonground.core.models.SaveEventRequest
+import com.commonground.core.models.CreateEventRequest
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import java.time.LocalDateTime
-import java.time.ZoneOffset
-import kotlin.random.Random
-import kotlin.time.toKotlinInstant
+import kotlin.io.encoding.Base64
+import kotlin.time.Instant
 
 data class CreateEventState(
-    val title: String = "",
-    val description: String = "",
-    val locationName: String = "",
-    val date: String = "",
-    val time: String = "18:00",
-    val isPrivate: Boolean = false,
-    val isPrivatePlace: Boolean = false,
-    val isPaid: Boolean = false,
-    val latitude: String = "",
-    val longitude: String = "",
-    val isSubmitting: Boolean = false,
-    val titleError: String? = null,
-    val locationError: String? = null,
-    val dateError: String? = null,
-    val generalError: String? = null
-) {
-    val isValid: Boolean
-        get() = title.isNotBlank() && locationName.isNotBlank() && date.isNotBlank()
-}
+    val isSubmitting: StateFlow<Boolean>,
+    val onSubmit: (
+        title: String,
+        description: String,
+        locationName: String,
+        coordinates: Coordinates,
+        startDate: Instant,
+        endDate: Instant?,
+        isPrivate: Boolean,
+        isPrivatePlace: Boolean,
+        isPaid: Boolean,
+        image: ByteArray?
+    ) -> Unit
+)
 
 class CreateEventViewModel(
     private val eventRepo: EventRepo,
-    private val onEventCreated: (String) -> Unit
+    private val onEventCreated: (id: String) -> Unit
 ) : ViewModel() {
-    private val _state = MutableStateFlow(CreateEventState())
+    private val isSubmitting: MutableStateFlow<Boolean> = MutableStateFlow(false)
+    private val _state: MutableStateFlow<CreateEventState> = MutableStateFlow(
+        CreateEventState(
+            isSubmitting = isSubmitting.asStateFlow(),
+            onSubmit = ::submit
+        )
+    )
     val state = _state.asStateFlow()
 
-    fun onTitleChange(v: String) = _state.update { it.copy(title = v, titleError = null, generalError = null) }
-    fun onDescriptionChange(v: String) = _state.update { it.copy(description = v, generalError = null) }
-    fun onLocationNameChange(v: String) = _state.update { it.copy(locationName = v, locationError = null, generalError = null) }
-    fun onDateChange(v: String) = _state.update { it.copy(date = v, dateError = null, generalError = null) }
-    fun onTimeChange(v: String) = _state.update { it.copy(time = v, generalError = null) }
-    fun onPrivateChange(v: Boolean) = _state.update { it.copy(isPrivate = v, generalError = null) }
-    fun onPrivatePlaceChange(v: Boolean) = _state.update { it.copy(isPrivatePlace = v, generalError = null) }
-    fun onPaidChange(v: Boolean) = _state.update { it.copy(isPaid = v, generalError = null) }
-    fun onLatitudeChange(v: String) = _state.update { it.copy(latitude = v, generalError = null) }
-    fun onLongitudeChange(v: String) = _state.update { it.copy(longitude = v, generalError = null) }
-
-    fun submit() {
-        val s = _state.value
-        if (s.isSubmitting) return
-
-        var titleErr: String? = null
-        var locationErr: String? = null
-        var dateErr: String? = null
-
-        if (s.title.isBlank()) titleErr = "Title is required"
-        if (s.locationName.isBlank()) locationErr = "Location is required"
-        if (s.date.isBlank()) dateErr = "Date is required"
-
-        if (titleErr != null || locationErr != null || dateErr != null) {
-            _state.update { it.copy(titleError = titleErr, locationError = locationErr, dateError = dateErr) }
-            return
-        }
-
-        _state.update { it.copy(isSubmitting = true, generalError = null) }
+    private fun submit(
+        title: String,
+        description: String,
+        locationName: String,
+        coordinates: Coordinates,
+        startDate: Instant,
+        endDate: Instant?,
+        isPrivate: Boolean,
+        isPrivatePlace: Boolean,
+        isPaid: Boolean,
+        image: ByteArray?
+    ) {
         viewModelScope.launch {
+            isSubmitting.value = true
             try {
-                val request = SaveEventRequest(
-                    title = s.title.trim(),
-                    description = s.description.trim().ifBlank { null },
-                    locationName = s.locationName.trim(),
-                    coordinates = run {
-                        val latitude = s.latitude.toDoubleOrNull()
-                        val longitude = s.longitude.toDoubleOrNull()
-                        if (latitude != null && longitude != null) {
-                            Coordinates(latitude = latitude, longitude = longitude)
-                        } else null
-                    },
-                    // TODO
-                    startDate = LocalDateTime.of(2026, 7, Random.nextInt(1, 29), Random.nextInt(10, 22), 0, 0)
-                        .toInstant(ZoneOffset.UTC)
-                        .toKotlinInstant(), // "${s.date.trim()}T${s.time.trim()}:00",
-                    endDate = null,
-                    isPrivate = s.isPrivate,
-                    isPrivatePlace = s.isPrivatePlace,
-                    isPaid = s.isPaid
+                val event = eventRepo.createEvent(
+                    request = CreateEventRequest(
+                        title = title.trim(),
+                        description = description.trim().ifBlank { null },
+                        locationName = locationName.trim(),
+                        coordinates = coordinates,
+                        startDate = startDate,
+                        endDate = endDate,
+                        isPrivate = isPrivate,
+                        isPrivatePlace = isPrivatePlace,
+                        isPaid = isPaid,
+                        image = image?.let { Base64.encode(it) }
+                    )
                 )
-                val created = eventRepo.createEvent(request)
-                _state.update { it.copy(isSubmitting = false) }
-                onEventCreated(created.id)
-            } catch (e: Exception) {
-                _state.update { it.copy(isSubmitting = false, generalError = e.message ?: "Something went wrong.") }
+                onEventCreated(event.id)
+            } finally {
+                isSubmitting.value = false
             }
         }
     }

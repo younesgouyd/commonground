@@ -1,5 +1,6 @@
 package com.commonground.server.controllers
 
+import com.commonground.core.models.CreateEventRequest
 import com.commonground.core.models.Event
 import com.commonground.core.models.Events
 import com.commonground.core.models.SaveEventRequest
@@ -37,7 +38,7 @@ class EventController(
 
     @PostMapping
     fun post(
-        @RequestBody request: SaveEventRequest,
+        @RequestBody request: CreateEventRequest,
         @AuthenticationPrincipal userId: String
     ): Event {
         return eventService.createEvent(request, userId)

@@ -26,7 +26,7 @@ class EventService(
     private val imageService: ImageService
 ) {
     @Transactional
-    fun createEvent(request: SaveEventRequest, creatorId: String): Event {
+    fun createEvent(request: CreateEventRequest, creatorId: String): Event {
         val user = userRepository.getReferenceById(creatorId.toUuid())
 
         validateInput(
@@ -37,17 +37,21 @@ class EventService(
             endDate = request.endDate
         )
 
+        val imgUrl = request.image?.let { img ->
+            imageService.store(img, "event")
+        }
+
         val entity = com.commonground.server.data.entities.Event(
             title = request.title.trim(),
             description = request.description?.trim()?.ifBlank { null },
             locationName = request.locationName.trim(),
-            coordinates = request.coordinates?.toPoint() ?: GeometryUtils.createPoint(0.0, 0.0),
+            coordinates = request.coordinates.toPoint(),
             startDate = request.startDate.toJavaInstant(),
             endDate = request.endDate?.toJavaInstant(),
             isPrivate = request.isPrivate,
             isPrivatePlace = request.isPrivatePlace,
             isPaid = request.isPaid,
-            image = null,
+            image = imgUrl,
             creator = user
         )
 

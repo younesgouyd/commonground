@@ -120,7 +120,7 @@ private fun Compact(
     Scaffold(
         topBar = {
             CenterAlignedTopAppBar(
-                title = { Text("New Event") },
+                title = { Text("Update Event") },
                 navigationIcon = {
                     IconButton(onClick = navActions::onBack) {
                         Icon(Icons.Default.Close, contentDescription = "Cancel")
@@ -192,7 +192,7 @@ private fun UpdateEventForm(
         title: String,
         description: String,
         locationName: String,
-        coordinates: Coordinates?,
+        coordinates: Coordinates,
         startDate: Instant,
         endDate: Instant?,
         isPrivate: Boolean,
@@ -319,7 +319,7 @@ private fun UpdateEventForm(
                 title,
                 description,
                 locationName,
-                coordinates,
+                coordinates!!,
                 startDate!!,
                 endDate,
                 isPrivate,
@@ -346,7 +346,7 @@ private fun UpdateEventForm(
 }
 
 @Composable
-fun ImageField(
+private fun ImageField(
     modifier: Modifier,
     value: ImageUrl?,
     updateImage: (ByteArray) -> Unit,

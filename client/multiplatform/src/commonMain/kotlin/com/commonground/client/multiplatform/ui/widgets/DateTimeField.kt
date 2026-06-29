@@ -131,12 +131,12 @@ private fun DateField(
     )
 
     ClickableTextField(
+        modifier = modifier,
         value = value.formatted(),
         label = "Date",
         placeholder = "YYYY-MM-DD",
         leadingIcon = { Icon(Icons.Default.CalendarMonth, null) },
-        onClick = { showPicker = true },
-        modifier = modifier
+        onClick = { showPicker = true }
     )
 
     if (showPicker) {
@@ -176,12 +176,12 @@ private fun TimeField(
     )
 
     ClickableTextField(
+        modifier = modifier,
         value = value.formatted(),
         label = "Time",
         placeholder = "HH:MM",
         leadingIcon = { Icon(Icons.Default.Schedule, null) },
-        onClick = { showPicker = true },
-        modifier = modifier
+        onClick = { showPicker = true }
     )
 
     if (showPicker) {
@@ -228,7 +228,7 @@ private fun ClickableTextField(
             placeholder = { Text(placeholder) },
             leadingIcon = leadingIcon,
             singleLine = true,
-            shape = fieldShape,
+            shape = fieldShape
         )
         Box(
             modifier = Modifier

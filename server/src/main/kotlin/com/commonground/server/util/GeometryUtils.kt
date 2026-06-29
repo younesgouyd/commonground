@@ -16,8 +16,4 @@ object GeometryUtils {
     fun Coordinates.toPoint(): Point {
         return geometryFactory.createPoint(Coordinate(this.longitude, this.latitude))
     }
-
-    fun fromCoordinates(coordinates: Coordinates): Point {
-        return geometryFactory.createPoint(Coordinate(coordinates.longitude, coordinates.latitude))
-    }
 }
