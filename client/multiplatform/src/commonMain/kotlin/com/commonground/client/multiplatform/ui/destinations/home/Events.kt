@@ -2,14 +2,13 @@ package com.commonground.client.multiplatform.ui.destinations.home
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.grid.*
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Image
-import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -28,20 +27,24 @@ import kotlinx.coroutines.flow.map
 @Composable
 fun Events(
     modifier: Modifier,
+    searchRequest: HomeState.Loaded.SearchRequest,
     events: LazyList<Event>,
-    navActions: HomeNavActions
+    navActions: HomeNavActions,
+    onSearchChange: (HomeState.Loaded.SearchRequest) -> Unit
 ) {
     AdaptiveUi(
-        wide = { Wide(modifier, events, navActions) },
-        compact = { Compact(modifier, events, navActions) }
+        wide = { Wide(modifier, searchRequest, events, navActions, onSearchChange) },
+        compact = { Compact(modifier, searchRequest, events, navActions, onSearchChange) }
     )
 }
 
 @Composable
 fun Wide(
     modifier: Modifier = Modifier,
+    searchRequest: HomeState.Loaded.SearchRequest,
     events: LazyList<Event>,
-    navActions: HomeNavActions
+    navActions: HomeNavActions,
+    onSearchChange: (HomeState.Loaded.SearchRequest) -> Unit
 ) {
     val items by events.items.collectAsState()
     val loadingItems by events.loading.collectAsState()
@@ -58,7 +61,7 @@ fun Wide(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                "Events",
+                text = "Events",
                 style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)
             )
             FilledTonalButton(onClick = navActions::toCreateEvent) {
@@ -67,32 +70,31 @@ fun Wide(
                 Text("Create")
             }
         }
-        SearchBar(
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)
+        Search(
+            modifier = Modifier.fillMaxWidth(),
+            searchRequest = searchRequest,
+            onSearchChange = onSearchChange
         )
-        Surface(
-            modifier = Modifier.weight(1f),
-            color = MaterialTheme.colorScheme.background
+        LazyVerticalGrid(
+            modifier = Modifier.fillMaxWidth()
+                .weight(1f)
+                .padding(horizontal = 16.dp),
+            state = scrollState,
+            horizontalArrangement = Arrangement.spacedBy(14.dp),
+            verticalArrangement = Arrangement.spacedBy(14.dp),
+            contentPadding = PaddingValues(vertical = 8.dp),
+            columns = GridCells.Adaptive(200.dp)
         ) {
-            LazyVerticalGrid(
-                modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp),
-                state = scrollState,
-                horizontalArrangement = Arrangement.spacedBy(14.dp),
-                verticalArrangement = Arrangement.spacedBy(14.dp),
-                contentPadding = PaddingValues(vertical = 8.dp),
-                columns = GridCells.Adaptive(200.dp)
-            ) {
-                items(items) { event ->
-                    WideEventCard(
-                        modifier = Modifier.aspectRatio(.75f),
-                        event = event,
-                        onClick = { navActions.toEventDetails(event.id) }
-                    )
-                }
-                if (loadingItems) {
-                    item(span = { GridItemSpan(maxLineSpan) }) {
-                        ProgressIndicator()
-                    }
+            items(items) { event ->
+                WideEventCard(
+                    modifier = Modifier.aspectRatio(.75f),
+                    event = event,
+                    onClick = { navActions.toEventDetails(event.id) }
+                )
+            }
+            if (loadingItems) {
+                item(span = { GridItemSpan(maxLineSpan) }) {
+                    ProgressIndicator()
                 }
             }
         }
@@ -110,28 +112,42 @@ fun Wide(
 @Composable
 private fun Compact(
     modifier: Modifier,
+    searchRequest: HomeState.Loaded.SearchRequest,
     events: LazyList<Event>,
-    navActions: HomeNavActions
+    navActions: HomeNavActions,
+    onSearchChange: (HomeState.Loaded.SearchRequest) -> Unit
 ) {
     val listState = rememberLazyListState()
     val items by events.items.collectAsState()
     val loading by events.loading.collectAsState()
 
-    LazyColumn(
+    Column(
         modifier = modifier,
-        state = listState,
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(12.dp),
-        contentPadding = PaddingValues(vertical = 12.dp)
+        verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        items(items, key = { it.id }) { event ->
-            CompactEventCard(
-                event = event,
-                onClick = { navActions.toEventDetails(event.id) }
-            )
-        }
-        if (loading) {
-            item { ProgressIndicator() }
+        LazyColumn(
+            modifier = modifier,
+            state = listState,
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            item {
+                Search(
+                    modifier = Modifier.fillMaxWidth(),
+                    searchRequest = searchRequest,
+                    onSearchChange = onSearchChange
+                )
+            }
+            items(items, key = { it.id }) { event ->
+                CompactEventCard(
+                    event = event,
+                    onClick = { navActions.toEventDetails(event.id) }
+                )
+            }
+            if (loading) {
+                item { ProgressIndicator() }
+            }
         }
     }
 
@@ -143,17 +159,96 @@ private fun Compact(
             .collect { events.loadMore() }
     }
 }
-
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun SearchBar(modifier: Modifier = Modifier) {
-    var value by remember { mutableStateOf("") }
-
+private fun Search(
+    modifier: Modifier = Modifier,
+    searchRequest: HomeState.Loaded.SearchRequest,
+    onSearchChange: (HomeState.Loaded.SearchRequest) -> Unit
+) {
+    Column(
+        modifier = modifier,
+        verticalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        SearchBar(
+            modifier = Modifier.fillMaxWidth(),
+            value = searchRequest.title,
+            onValueChange = {
+                onSearchChange(searchRequest.copy(title = it))
+            }
+        )
+        LazyRow(
+            modifier = Modifier.fillMaxWidth(),
+            contentPadding = PaddingValues(horizontal = 4.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp, alignment = Alignment.Start),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            item {
+                val isPrivate = searchRequest.isPrivate == true
+                FilterChip(
+                    label = { Text("Followers only") },
+                    leadingIcon = {
+                        Icon(
+                            imageVector = if (isPrivate) Icons.Default.Done else Icons.Default.Lock,
+                            contentDescription = null,
+                            modifier = Modifier.size(FilterChipDefaults.IconSize)
+                        )
+                    },
+                    selected = isPrivate,
+                    onClick = {
+                        onSearchChange(searchRequest.copy(isPrivate = if (isPrivate) null else true))
+                    }
+                )
+            }
+            item {
+                val isPrivatePlace = searchRequest.isPrivatePlace == true
+                FilterChip(
+                    label = { Text("Indoor") },
+                    leadingIcon = {
+                        Icon(
+                            imageVector = if (isPrivatePlace) Icons.Default.Done else Icons.Default.Home,
+                            contentDescription = null,
+                            modifier = Modifier.size(FilterChipDefaults.IconSize)
+                        )
+                    },
+                    selected = isPrivatePlace,
+                    onClick = {
+                        onSearchChange(searchRequest.copy(isPrivatePlace = if (isPrivatePlace) null else true))
+                    }
+                )
+            }
+            item {
+                val isPaid = searchRequest.isPaid == true
+                FilterChip(
+                    label = { Text("Paid") },
+                    leadingIcon = {
+                        Icon(
+                            imageVector = if (isPaid) Icons.Default.Done else Icons.Default.Paid,
+                            contentDescription = null,
+                            modifier = Modifier.size(FilterChipDefaults.IconSize)
+                        )
+                    },
+                    selected = isPaid,
+                    onClick = {
+                        onSearchChange(searchRequest.copy(isPaid = if (isPaid) null else true))
+                    }
+                )
+            }
+        }
+    }
+}
+@Composable
+private fun SearchBar(
+    modifier: Modifier = Modifier,
+    value: String,
+    onValueChange: (String) -> Unit
+) {
     OutlinedTextField(
         modifier = modifier,
         leadingIcon = { Icon(Icons.Default.Search, null) },
         placeholder = { Text("Search events…") },
         value = value,
-        onValueChange = { value = it },
+        onValueChange = onValueChange,
         singleLine = true,
         shape = RoundedCornerShape(12.dp),
         colors = OutlinedTextFieldDefaults.colors(

@@ -7,11 +7,11 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import com.commonground.client.multiplatform.Platform
+import com.commonground.client.multiplatform.data.LocationManager
 import com.commonground.client.multiplatform.platform
 import com.commonground.client.multiplatform.ui.LazyList
 import com.commonground.client.multiplatform.ui.MapViewport
 import com.commonground.client.multiplatform.ui.queryEventViewport
-import com.commonground.core.models.Coordinates
 import com.commonground.core.models.Event
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.delay
@@ -43,7 +43,6 @@ import kotlin.time.Duration.Companion.seconds
 fun Map(
     modifier: Modifier,
     events: LazyList<Event>,
-    currentLocation: Coordinates?,
     onViewportChanged: (MapViewport) -> Unit
 ) {
     val items by events.items.collectAsState()
@@ -51,6 +50,7 @@ fun Map(
     var selectedFeature by remember { mutableStateOf<Feature<Geometry, JsonObject?>?>(null) }
     var mapLoaded by remember { mutableStateOf(false) }
     val markerIcon = rememberVectorPainter(Icons.Default.Place)
+
     val geoJsonData = remember(items) {
         GeoJsonData.Features(
             FeatureCollection(
@@ -71,15 +71,21 @@ fun Map(
         println(selectedFeature)
     }
 
-    LaunchedEffect(currentLocation, mapLoaded) {
-        if (!mapLoaded || currentLocation == null) return@LaunchedEffect
-        cameraState.animateTo(
-            finalPosition = CameraPosition(
-                target = Position(longitude = currentLocation.longitude, latitude = currentLocation.latitude),
-                zoom = 6.0
-            ),
-            duration = 2.seconds
-        )
+    LaunchedEffect(mapLoaded) {
+        if (mapLoaded) {
+            val currentLocation = LocationManager.getCurrentLocation()
+            if (currentLocation != null) {
+                val initialViewport = MapViewport(currentLocation.latitude, currentLocation.longitude, 500)
+                cameraState.animateTo(
+                    finalPosition = CameraPosition(
+                        target = Position(longitude = initialViewport.longitude, latitude = initialViewport.latitude),
+                        zoom = 6.0
+                    ),
+                    duration = 2.seconds
+                )
+                onViewportChanged(initialViewport)
+            }
+        }
     }
 
     LaunchedEffect(cameraState) {
@@ -99,6 +105,7 @@ fun Map(
         delay(2.seconds)
         visible = true
     }
+
     if (platform != Platform.JVM || visible) {
         MaplibreMap(
             modifier = modifier,
@@ -109,7 +116,7 @@ fun Map(
             ),
             onMapLoadFinished = { mapLoaded = true }
         ) {
-            if (platform != Platform.JVM) { // TODO
+            if (platform != Platform.JVM) {
                 SymbolLayer(
                     id = "events-layer",
                     source = rememberGeoJsonSource(geoJsonData),

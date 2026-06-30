@@ -57,7 +57,6 @@ interface EventRepository : JpaRepository<Event, UUID> {
         image: ImageUrl?
     )
 
-    // TODO: add date condition
     @Query(
         value = """
             SELECT *
@@ -68,6 +67,11 @@ interface EventRepository : JpaRepository<Event, UUID> {
                 OR CAST(:observerUserId AS uuid) = e.creator_id
                 OR e.creator_id IN (SELECT uf.followee_user_id FROM user_follow uf WHERE uf.follower_user_id = CAST(:observerUserId AS uuid))
             )
+            AND e.start_date > CURRENT_TIMESTAMP
+            AND (:isPrivate IS NULL OR e.is_private = :isPrivate)
+            AND (:isPrivatePlace IS NULL OR e.is_private_place = :isPrivatePlace)
+            AND (:isPaid IS NULL OR e.is_paid = :isPaid)
+            AND (:title IS NULL OR e.title ILIKE CONCAT('%', :title, '%'))
             ORDER BY e.coordinates <-> CAST(:location AS geography) ASC, e.id DESC
         """,
         nativeQuery = true
@@ -76,6 +80,10 @@ interface EventRepository : JpaRepository<Event, UUID> {
         location: Point,
         radiusMeters: Int,
         observerUserId: UUID,
+        isPrivate: Boolean?,
+        isPrivatePlace: Boolean?,
+        isPaid: Boolean?,
+        title: String?,
         pageable: Pageable
     ): Slice<Event>
 

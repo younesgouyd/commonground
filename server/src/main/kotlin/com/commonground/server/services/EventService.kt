@@ -119,12 +119,20 @@ class EventService(
         latitude: Double,
         longitude: Double,
         radiusKilometers: Int,
+        isPrivate: Boolean?,
+        isPrivatePlace: Boolean?,
+        isPaid: Boolean?,
+        title: String?,
         pageNumber: Int
     ): Events {
         return eventRepository.findEventsNearLocation(
             observerUserId = observerUserId.toUuid(),
             location = GeometryUtils.createPoint(latitude, longitude),
             radiusMeters = radiusKilometers * 1000,
+            isPrivate = isPrivate,
+            isPrivatePlace = isPrivatePlace,
+            isPaid = isPaid,
+            title = title?.trim()?.ifBlank { null },
             pageable = PageRequest.of(pageNumber, DEFAULT_PAGE_SIZE)
         ).map(com.commonground.server.data.entities.Event::toModel)
             .toModel()

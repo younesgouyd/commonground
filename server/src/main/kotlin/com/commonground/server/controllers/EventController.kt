@@ -19,6 +19,10 @@ class EventController(
         @RequestParam latitude: Double,
         @RequestParam longitude: Double,
         @RequestParam radiusKilometers: Int,
+        @RequestParam(required = false) isPrivate: Boolean?,
+        @RequestParam(required = false) isPrivatePlace: Boolean?,
+        @RequestParam(required = false) isPaid: Boolean?,
+        @RequestParam(required = false) title: String?,
         @RequestParam pageNumber: Int,
         @AuthenticationPrincipal observerUserId: String
     ): Events {
@@ -27,6 +31,10 @@ class EventController(
             latitude = latitude,
             longitude = longitude,
             radiusKilometers = radiusKilometers,
+            isPrivate = isPrivate,
+            isPrivatePlace = isPrivatePlace,
+            isPaid = isPaid,
+            title = title,
             pageNumber = pageNumber
         )
     }

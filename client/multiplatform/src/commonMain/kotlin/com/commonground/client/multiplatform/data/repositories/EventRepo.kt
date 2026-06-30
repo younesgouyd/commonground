@@ -14,12 +14,20 @@ class EventRepo(
         latitude: Double,
         longitude: Double,
         radiusKilometers: Int,
+        isPrivate: Boolean?,
+        isPrivatePlace: Boolean?,
+        isPaid: Boolean?,
+        title: String?,
         pageNumber: Int
     ): Events {
         return client.get("events") {
             parameter("latitude", latitude)
             parameter("longitude", longitude)
             parameter("radiusKilometers", radiusKilometers)
+            parameter("isPrivate", isPrivate)
+            parameter("isPrivatePlace", isPrivatePlace)
+            parameter("isPaid", isPaid)
+            parameter("title", title?.trim()?.ifBlank { null })
             parameter("pageNumber", pageNumber)
         }.body<Events>()
     }

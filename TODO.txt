@@ -1,15 +1,15 @@
 - show custom markers.
-- make all items the same height.
 - fix client crashing when navigating away from map screen while the map is in mid-animation.
 - add dark mode setting.
 - support displaying current events.
-- implement ui for searching/filtering and sorting events by search keywords, category, follows, date, location, distance from user... etc.
 - relationship with friends rules:
     - friend request.
     - event visibility/privacy options (public, friends, family... etc).
 - delete expired refresh tokens.
 
 done:
+- implement ui for searching/filtering and sorting events by search keywords, category, follows, date, location, distance from user... etc.
+- make all items the same height.
 - decide whether Event.coordinates may be optional.
 - fix android system top bar and navigation bar overlaying on the app.
 - show map on compact mode.
