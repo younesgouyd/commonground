@@ -56,7 +56,8 @@ private fun Wide(
         Map(
             modifier = Modifier.weight(.5f).fillMaxHeight(),
             events = events,
-            onViewportChanged = { state.onSearchChange(searchRequest.copy(mapViewport = it)) }
+            onViewportChanged = { state.onSearchChange(searchRequest.copy(mapViewport = it)) },
+            navActions = navActions
         )
         Events(
             modifier = Modifier.weight(.5f).fillMaxHeight(),
@@ -115,7 +116,8 @@ private fun Compact(
                             .fillMaxWidth()
                             .height(this@BoxWithConstraints.maxHeight * mapFraction),
                         events = events,
-                        onViewportChanged = { state.onSearchChange(searchRequest.copy(mapViewport = it)) }
+                        onViewportChanged = { state.onSearchChange(searchRequest.copy(mapViewport = it)) },
+                        navActions = navActions
                     )
                     Box(
                         modifier = Modifier

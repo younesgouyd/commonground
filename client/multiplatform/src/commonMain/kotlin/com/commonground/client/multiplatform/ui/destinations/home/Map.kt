@@ -5,7 +5,9 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Place
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
+import androidx.compose.ui.unit.em
 import com.commonground.client.multiplatform.Platform
 import com.commonground.client.multiplatform.data.LocationManager
 import com.commonground.client.multiplatform.platform
@@ -19,13 +21,17 @@ import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.mapNotNull
-import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 import org.maplibre.compose.camera.CameraMoveReason
 import org.maplibre.compose.camera.CameraPosition
 import org.maplibre.compose.camera.rememberCameraState
+import org.maplibre.compose.expressions.dsl.const
+import org.maplibre.compose.expressions.dsl.feature
 import org.maplibre.compose.expressions.dsl.image
+import org.maplibre.compose.expressions.dsl.offset
+import org.maplibre.compose.expressions.value.SymbolAnchor
 import org.maplibre.compose.layers.SymbolLayer
 import org.maplibre.compose.map.MapOptions
 import org.maplibre.compose.map.MaplibreMap
@@ -34,7 +40,10 @@ import org.maplibre.compose.sources.GeoJsonData
 import org.maplibre.compose.sources.rememberGeoJsonSource
 import org.maplibre.compose.style.BaseStyle
 import org.maplibre.compose.util.ClickResult
-import org.maplibre.spatialk.geojson.*
+import org.maplibre.spatialk.geojson.Feature
+import org.maplibre.spatialk.geojson.FeatureCollection
+import org.maplibre.spatialk.geojson.Point
+import org.maplibre.spatialk.geojson.Position
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
 
@@ -43,11 +52,11 @@ import kotlin.time.Duration.Companion.seconds
 fun Map(
     modifier: Modifier,
     events: LazyList<Event>,
-    onViewportChanged: (MapViewport) -> Unit
+    onViewportChanged: (MapViewport) -> Unit,
+    navActions: HomeNavActions
 ) {
     val items by events.items.collectAsState()
     val cameraState = rememberCameraState()
-    var selectedFeature by remember { mutableStateOf<Feature<Geometry, JsonObject?>?>(null) }
     var mapLoaded by remember { mutableStateOf(false) }
     val markerIcon = rememberVectorPainter(Icons.Default.Place)
 
@@ -57,18 +66,14 @@ fun Map(
                 features = items.map { event ->
                     Feature(
                         geometry = Point(Position(longitude = event.coordinates.longitude, latitude = event.coordinates.latitude)),
+                        id = JsonPrimitive(event.id),
                         properties = buildJsonObject {
-                            put("id", event.id)
                             put("title", event.title)
                         }
                     )
                 }
             )
         )
-    }
-
-    LaunchedEffect(selectedFeature) {
-        println(selectedFeature)
     }
 
     LaunchedEffect(mapLoaded) {
@@ -121,8 +126,17 @@ fun Map(
                     id = "events-layer",
                     source = rememberGeoJsonSource(geoJsonData),
                     iconImage = image(markerIcon),
+                    textField = feature["title"].cast(),
+                    textFont = const(listOf("Noto Sans Regular")),
+                    textAnchor = const(SymbolAnchor.Top),
+                    textSize = const(0.7.em),
+                    textOffset = offset(0f.em, 1.2f.em),
+                    textColor = const(if (isSystemInDarkTheme()) Color.White else Color.Black),
                     onClick = { features ->
-                        selectedFeature = features.firstOrNull()
+                        val selectedFeature = features.firstOrNull()
+                        selectedFeature?.id?.let {
+                            navActions.toEventDetails(it.content)
+                        }
                         ClickResult.Consume
                     }
                 )
