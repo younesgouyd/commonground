@@ -20,6 +20,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.commonground.client.multiplatform.ui.LazyList
+import com.commonground.client.multiplatform.ui.toBackendUrl
 import com.commonground.core.models.Event
 import com.commonground.core.models.User
 import kotlinx.coroutines.flow.StateFlow
@@ -429,7 +430,12 @@ private fun UserCard(
                 shape = CircleShape,
                 color = MaterialTheme.colorScheme.primaryContainer
             ) {
-                Box(contentAlignment = Alignment.Center) {
+                user.profilePic?.let {
+                    Image(
+                        modifier = Modifier.fillMaxWidth(),
+                        url = it.toBackendUrl()
+                    )
+                } ?: Box(contentAlignment = Alignment.Center) {
                     Icon(
                         Icons.Default.Person,
                         contentDescription = null,

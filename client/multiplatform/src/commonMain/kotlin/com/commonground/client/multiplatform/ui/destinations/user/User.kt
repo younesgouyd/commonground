@@ -10,13 +10,14 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.commonground.client.multiplatform.ui.AdaptiveUi
-import com.commonground.client.multiplatform.ui.widgets.ProfileContent
-import com.commonground.client.multiplatform.ui.widgets.ProfileNavActions
-import com.commonground.client.multiplatform.ui.widgets.StatItem
+import com.commonground.client.multiplatform.ui.toBackendUrl
+import com.commonground.client.multiplatform.ui.widgets.*
 import com.commonground.core.models.User
 import kotlinx.coroutines.launch
 
@@ -87,6 +88,7 @@ private fun ProfileSidebar(state: UserState.Loaded) {
     val following by state.follows.following.collectAsState()
     val followersCount by followers.totalCount.collectAsState()
     val followingCount by following.totalCount.collectAsState()
+    var showExpandedImage by remember { mutableStateOf(false) }
 
     Column(
         modifier = Modifier
@@ -96,19 +98,33 @@ private fun ProfileSidebar(state: UserState.Loaded) {
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        Surface(
-            modifier = Modifier.size(140.dp),
-            shape = CircleShape,
-            color = MaterialTheme.colorScheme.primaryContainer,
-            onClick = { TODO() }
-        ) {
-            Box(contentAlignment = Alignment.Center) {
-                Icon(
-                    modifier = Modifier.size(80.dp),
-                    imageVector = Icons.Default.AccountCircle,
-                    contentDescription = "Profile picture",
-                    tint = MaterialTheme.colorScheme.onPrimaryContainer
+        user.profilePic?.let { profilePic ->
+            Surface(
+                modifier = Modifier.size(140.dp),
+                shape = CircleShape,
+                color = Color.Transparent,
+                onClick = { showExpandedImage = true }
+            ) {
+                Image(
+                    modifier = Modifier.fillMaxSize(),
+                    url = profilePic.toBackendUrl(),
+                    contentScale = ContentScale.FillWidth
                 )
+            }
+        } ?: run {
+            Surface(
+                modifier = Modifier.size(140.dp),
+                shape = CircleShape,
+                color = MaterialTheme.colorScheme.primaryContainer
+            ) {
+                Box(contentAlignment = Alignment.Center) {
+                    Icon(
+                        modifier = Modifier.size(80.dp),
+                        imageVector = Icons.Default.AccountCircle,
+                        contentDescription = "Profile picture",
+                        tint = MaterialTheme.colorScheme.onPrimaryContainer
+                    )
+                }
             }
         }
         Column(
@@ -154,6 +170,15 @@ private fun ProfileSidebar(state: UserState.Loaded) {
             onUnfollowUserClick = state.follows.onUnfollowUserClick,
             onFollowUserClick = state.follows.onFollowUserClick
         )
+    }
+
+    user.profilePic?.let {
+        if (showExpandedImage) {
+            ImagePreviewDialog(
+                imageUrl = it,
+                onDismiss = { showExpandedImage = false }
+            )
+        }
     }
 }
 
