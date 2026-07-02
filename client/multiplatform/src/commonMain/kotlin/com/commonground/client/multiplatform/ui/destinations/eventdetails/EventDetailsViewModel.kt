@@ -2,8 +2,12 @@ package com.commonground.client.multiplatform.ui.destinations.eventdetails
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.commonground.client.multiplatform.data.repositories.AuthRepo
+import com.commonground.client.multiplatform.data.repositories.ChatRepo
 import com.commonground.client.multiplatform.data.repositories.EventRepo
 import com.commonground.client.multiplatform.data.repositories.UserRepo
+import com.commonground.client.multiplatform.ui.formatted
+import com.commonground.core.models.ChatWsMessage
 import com.commonground.core.models.Event
 import com.commonground.core.models.ImageUrl
 import com.commonground.core.models.User
@@ -42,12 +46,12 @@ sealed class EventDetailsState {
     data class Error(val message: String) : EventDetailsState()
 }
 
-// ── ViewModel ──────────────────────────────────────────────────────
-
 class EventDetailsViewModel(
     val id: String,
     private val eventRepo: EventRepo,
-    private val userRepo: UserRepo
+    private val userRepo: UserRepo,
+    private val authRepo: AuthRepo,
+    private val chatRepo: ChatRepo
 ) : ViewModel() {
     private val logger = KotlinLogging.logger {  }
     private val _state: MutableStateFlow<EventDetailsState> = MutableStateFlow(EventDetailsState.Loading)
@@ -65,14 +69,14 @@ class EventDetailsViewModel(
                         event = event,
                         creators = listOf(event.creator),
                         isLoggedInUserEvent = event.creator.id == loggedInUser.id,
-                        messages = generateMockMessages(),
+                        messages = emptyList(),
                         updateImage = {
                             viewModelScope.async {
                                 eventRepo.updateImage(id, it)
                                 eventRepo.getEvent(id)?.image
                             }.await()
                         }
-                    )
+                    ).also { connectChat(loggedInUser.id) }
                 } else EventDetailsState.NotFound
             } catch (e: Exception) {
                 logger.error(e) {}
@@ -81,14 +85,41 @@ class EventDetailsViewModel(
         }
     }
 
+    override fun onCleared() {
+        super.onCleared()
+        chatRepo.close()
+    }
+
+    private fun connectChat(loggedInUserId: String) {
+        viewModelScope.launch {
+            val token = authRepo.loadTokens()?.accessToken ?: run {
+                logger.warn { "No access token available for chat connection" }
+                return@launch
+            }
+
+            try {
+                chatRepo.connect(eventId = id, token = token)
+                    .collect { wsMessage ->
+                        when (wsMessage.type) {
+                            ChatWsMessage.TYPE_HISTORY -> {
+                                val msgs = wsMessage.messages?.map { it.toLocal(loggedInUserId) } ?: return@collect
+                                replaceMessages(msgs)
+                            }
+                            ChatWsMessage.TYPE_MESSAGE -> {
+                                wsMessage.message?.let { appendMessage(it.toLocal(loggedInUserId)) }
+                            }
+                        }
+                    }
+            } catch (e: Exception) {
+                logger.warn(e) { "Chat flow collection stopped" }
+            }
+        }
+    }
+
     fun toggleBooking() {
         val s = _state.value as? EventDetailsState.Loaded ?: return
         if (s.isBooking) return
-        _state.update {
-            s.copy(
-                isBooking = true
-            )
-        }
+        _state.update { s.copy(isBooking = true) }
         viewModelScope.launch {
             kotlinx.coroutines.delay(600)
             _state.update {
@@ -111,26 +142,27 @@ class EventDetailsViewModel(
         val text = s.newMessage.trim()
         if (text.isBlank()) return
 
-        val newMsg = ChatMessage(
-            id = "msg_${s.messages.size + 1}",
-            senderName = "You",
-            content = text,
-            timestamp = "Just now",
-            isOwn = true
-        )
-        _state.update {
-            s.copy(
-                messages = s.messages + newMsg,
-                newMessage = ""
-            )
+        _state.update { s.copy(newMessage = "") }
+        viewModelScope.launch {
+            chatRepo.send(text)
         }
     }
 
-    private fun generateMockMessages(): List<ChatMessage> = listOf(
-        ChatMessage("1", "Alice", "Hey everyone! Excited for this event 🎉", "10:30 AM", false),
-        ChatMessage("2", "Bob", "Same here! What time should we meet?", "10:32 AM", false),
-        ChatMessage("3", "Alice", "The event starts at 6 PM, let's meet 15 min early", "10:33 AM", false),
-        ChatMessage("4", "Charlie", "Sounds good! I'll bring snacks", "10:35 AM", false),
-        ChatMessage("5", "Bob", "Perfect, see you all there!", "10:36 AM", false)
+    private fun appendMessage(message: ChatMessage) {
+        val s = _state.value as? EventDetailsState.Loaded ?: return
+        _state.update { s.copy(messages = s.messages + message) }
+    }
+
+    private fun replaceMessages(messages: List<ChatMessage>) {
+        val s = _state.value as? EventDetailsState.Loaded ?: return
+        _state.update { s.copy(messages = messages) }
+    }
+
+    private fun com.commonground.core.models.ChatMessage.toLocal(loggedInUserId: String) = ChatMessage(
+        id = id,
+        senderName = sender.displayName ?: sender.username,
+        content = content,
+        timestamp = createdAt.formatted(),
+        isOwn = sender.id == loggedInUserId
     )
 }

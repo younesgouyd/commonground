@@ -3,6 +3,8 @@ package com.commonground.client.multiplatform.ui.destinations.eventdetails
 import androidx.compose.animation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -211,29 +213,32 @@ private fun WideLoaded(
         Column(
             modifier = Modifier.weight(1f).fillMaxHeight()
         ) {
-            LazyColumn(
-                modifier = Modifier.weight(1f),
-                contentPadding = PaddingValues(24.dp),
+            Column(
+                modifier = Modifier
+                    .verticalScroll(rememberScrollState())
+                    .padding(24.dp),
                 verticalArrangement = Arrangement.spacedBy(24.dp)
             ) {
                 val desc = event.description
                 if (!desc.isNullOrBlank()) {
-                    item {
-                        SectionCard(title = "About this event") {
-                            Text(
-                                desc,
-                                style = MaterialTheme.typography.bodyLarge,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                lineHeight = 24.sp
-                            )
-                        }
+                    SectionCard(title = "About this event") {
+                        Text(
+                            desc,
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            lineHeight = 24.sp
+                        )
                     }
                 }
 
-                item { BookingSection(state, viewModel) }
-
-                item { ChatSection(state, viewModel) }
+                BookingSection(state, viewModel)
             }
+
+            ChatSection(
+                state = state,
+                viewModel = viewModel,
+                modifier = Modifier.weight(1f).fillMaxWidth()
+            )
         }
     }
 }
@@ -433,7 +438,7 @@ private fun CompactLoaded(
 
             item { BookingSection(state, viewModel, modifier = Modifier.padding(horizontal = 16.dp)) }
 
-            item { ChatSection(state, viewModel, modifier = Modifier.padding(horizontal = 16.dp)) }
+            item { ChatSection(state, viewModel, modifier = Modifier.heightIn(min = 320.dp).padding(horizontal = 16.dp)) }
         }
     }
 }
@@ -677,13 +682,21 @@ private fun ChatSection(
     viewModel: EventDetailsViewModel,
     modifier: Modifier = Modifier
 ) {
+    val listState = rememberLazyListState()
+
+    LaunchedEffect(state.messages.size) {
+        if (state.messages.isNotEmpty()) {
+            listState.animateScrollToItem(state.messages.size - 1)
+        }
+    }
+
     Surface(
-        modifier = modifier.fillMaxWidth(),
+        modifier = modifier.fillMaxSize(),
         shape = RoundedCornerShape(16.dp),
         color = MaterialTheme.colorScheme.surface,
         tonalElevation = 1.dp
     ) {
-        Column(modifier = Modifier.padding(20.dp)) {
+        Column(modifier = Modifier.fillMaxSize().padding(20.dp)) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -706,18 +719,19 @@ private fun ChatSection(
                 }
             }
 
-            Spacer(Modifier.height(16.dp))
+            Spacer(Modifier.height(12.dp))
 
-            Column(
-                modifier = Modifier.heightIn(max = 240.dp).verticalScroll(rememberScrollState()),
+            LazyColumn(
+                modifier = Modifier.weight(1f).fillMaxWidth(),
+                state = listState,
                 verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
-                state.messages.forEach { msg ->
-                    ChatBubble(msg)
+                items(state.messages.size) { index ->
+                    ChatBubble(state.messages[index])
                 }
             }
 
-            Spacer(Modifier.height(16.dp))
+            Spacer(Modifier.height(12.dp))
             HorizontalDivider()
             Spacer(Modifier.height(12.dp))
 

@@ -348,7 +348,9 @@ private fun NavGraph(navController: NavHostController, repoStore: RepoStore, sta
                     EventDetailsViewModel(
                         id = eventRoute.id,
                         eventRepo = repoStore.eventRepo,
-                        userRepo = repoStore.userRepo
+                        userRepo = repoStore.userRepo,
+                        authRepo = repoStore.authRepo,
+                        chatRepo = repoStore.chatRepo
                     )
                 },
                 navActions = object : EventDetailsNavActions {

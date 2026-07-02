@@ -49,5 +49,6 @@ class JwtAuthFilter(
     override fun shouldNotFilter(request: HttpServletRequest): Boolean {
         return request.requestURI.startsWith("/api/v1/auth/")
                 || request.requestURI.startsWith("/images/")
+                || request.requestURI.startsWith("/api/v1/ws/")
     }
 }

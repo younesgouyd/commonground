@@ -27,6 +27,7 @@ dependencies {
     implementation(libs.spring.web)
     implementation(libs.spring.serialization)
     implementation(libs.spring.security)
+    implementation(libs.spring.websocket)
 
     // db stuff
     implementation(libs.spring.jpa)

@@ -109,6 +109,7 @@ dependencyResolutionManagement {
             library("ktor.client.contentNegotiation", "io.ktor", "ktor-client-content-negotiation").version(versions.ktor)
             library("ktor.serialization", "io.ktor", "ktor-serialization-kotlinx-json").version(versions.ktor)
             library("ktor.client.auth", "io.ktor", "ktor-client-auth").version(versions.ktor)
+            library("ktor.client.websockets", "io.ktor", "ktor-client-websockets").version(versions.ktor)
 
             library("android.coreKtx", "androidx.core", "core-ktx").version(versions.android.coreKtx)
             library("android.activityCompose", "androidx.activity", "activity-compose").version(versions.android.activity)
@@ -117,6 +118,7 @@ dependencyResolutionManagement {
             library("spring.serialization", "org.springframework.boot", "spring-boot-starter-kotlinx-serialization-json").withoutVersion()
             library("spring.jpa", "org.springframework.boot", "spring-boot-starter-data-jpa").withoutVersion()
             library("spring.security", "org.springframework.boot", "spring-boot-starter-security").withoutVersion()
+            library("spring.websocket", "org.springframework.boot", "spring-boot-starter-websocket").withoutVersion()
             library("postgresqlDriver", "org.postgresql", "postgresql").withoutVersion()
             library("hibernateSpacial", "org.hibernate.orm", "hibernate-spatial").withoutVersion()
             library("jjwt.api", "io.jsonwebtoken", "jjwt-api").version(versions.jjwt)

@@ -21,7 +21,7 @@ class SecurityConfig {
             .csrf { it.disable() }
             .sessionManagement { it.sessionCreationPolicy(SessionCreationPolicy.STATELESS) }
             .authorizeHttpRequests { auth ->
-                auth.requestMatchers("/api/v1/auth/**", "/images/**")
+                auth.requestMatchers("/api/v1/auth/**", "/images/**", "/api/v1/ws/**")
                     .permitAll()
                     .anyRequest()
                     .authenticated()

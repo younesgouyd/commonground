@@ -1,8 +1,10 @@
 package com.commonground.server.util
 
+import com.commonground.core.models.ChatMessage
 import com.commonground.core.models.Coordinates
 import com.commonground.core.models.Event
 import com.commonground.core.models.User
+import com.commonground.server.data.entities.ChatMessageEntity
 import kotlin.time.toKotlinInstant
 
 fun com.commonground.server.data.entities.Event.toModel() = Event(
@@ -28,3 +30,12 @@ fun com.commonground.server.data.entities.User.toModel() = User(
     emailAddress = emailAddress,
     profilePic = profilePic
 )
+
+fun ChatMessageEntity.toModel() = ChatMessage(
+    id = id.toString(),
+    eventId = event.id.toString(),
+    sender = sender.toModel(),
+    content = content,
+    createdAt = createdAt.toKotlinInstant()
+)
+

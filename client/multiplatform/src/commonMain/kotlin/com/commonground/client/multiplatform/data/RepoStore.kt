@@ -2,6 +2,7 @@ package com.commonground.client.multiplatform.data
 
 import com.commonground.client.multiplatform.data.repositories.AuthRepo
 import com.commonground.client.multiplatform.data.repositories.CategoryRepo
+import com.commonground.client.multiplatform.data.repositories.ChatRepo
 import com.commonground.client.multiplatform.data.repositories.EventRepo
 import com.commonground.client.multiplatform.data.repositories.UserRepo
 import com.commonground.client.multiplatform.platform
@@ -70,4 +71,5 @@ class RepoStore(
     val eventRepo = EventRepo(client)
     val userRepo = UserRepo(client)
     val categoryRepo = CategoryRepo(client)
+    val chatRepo = ChatRepo(serverHost, SERVER_PORT)
 }
