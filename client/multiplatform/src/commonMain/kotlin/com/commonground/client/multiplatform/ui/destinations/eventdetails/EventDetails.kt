@@ -1,6 +1,7 @@
 package com.commonground.client.multiplatform.ui.destinations.eventdetails
 
 import androidx.compose.animation.*
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -28,6 +29,7 @@ import com.commonground.client.multiplatform.ui.widgets.Creator
 import com.commonground.client.multiplatform.ui.widgets.Image
 import com.commonground.client.multiplatform.ui.widgets.SystemFilePicker
 import com.commonground.core.models.ImageUrl
+import com.commonground.core.models.User
 import kotlinx.coroutines.launch
 
 interface EventDetailsNavActions {
@@ -231,7 +233,7 @@ private fun WideLoaded(
                     }
                 }
 
-                BookingSection(state, viewModel)
+                BookingSection(state, viewModel, onUserClick = { navActions.toUser(it) })
             }
 
             ChatSection(
@@ -436,7 +438,7 @@ private fun CompactLoaded(
                 }
             }
 
-            item { BookingSection(state, viewModel, modifier = Modifier.padding(horizontal = 16.dp)) }
+            item { BookingSection(state, viewModel, onUserClick = { navActions.toUser(it) }, modifier = Modifier.padding(horizontal = 16.dp)) }
 
             item { ChatSection(state, viewModel, modifier = Modifier.heightIn(min = 320.dp).padding(horizontal = 16.dp)) }
         }
@@ -568,8 +570,24 @@ private fun BookingButton(
 private fun BookingSection(
     state: EventDetailsState.Loaded,
     viewModel: EventDetailsViewModel,
+    onUserClick: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    var showAttendees by remember { mutableStateOf(false) }
+    val displayedAttendees = state.attendees.take(5)
+    val overflowCount = (state.bookingCount - displayedAttendees.size).coerceAtLeast(0)
+
+    if (showAttendees) {
+        AttendeesDialog(
+            attendees = state.attendees,
+            totalCount = state.bookingCount,
+            onUserClick = onUserClick,
+            onFollow = { viewModel.followUser(it) },
+            onUnfollow = { viewModel.unfollowUser(it) },
+            onDismiss = { showAttendees = false }
+        )
+    }
+
     Surface(
         modifier = modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
@@ -599,36 +617,31 @@ private fun BookingSection(
                 }
             }
 
-            Spacer(Modifier.height(16.dp))
+            Spacer(Modifier.height(12.dp))
 
+            // Stacked avatar circles
             Row(
+                modifier = Modifier.clickable { showAttendees = true },
                 horizontalArrangement = Arrangement.spacedBy((-8).dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                val colors = listOf(
-                    MaterialTheme.colorScheme.primary,
-                    MaterialTheme.colorScheme.tertiary,
-                    MaterialTheme.colorScheme.secondary,
-                    MaterialTheme.colorScheme.primaryContainer,
-                    MaterialTheme.colorScheme.tertiaryContainer
-                )
-                repeat(5) { i ->
+                displayedAttendees.forEach { user ->
+                    val initial = (user.displayName?.firstOrNull() ?: user.username.firstOrNull())?.uppercase() ?: "?"
                     Surface(
                         modifier = Modifier.size(36.dp),
                         shape = CircleShape,
-                        color = colors[i].copy(alpha = 0.7f - i * 0.1f),
-                        tonalElevation = 1.dp
+                        color = MaterialTheme.colorScheme.primaryContainer
                     ) {
                         Box(contentAlignment = Alignment.Center) {
                             Text(
-                                ('A' + i).toString(),
+                                initial,
                                 style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
-                                color = MaterialTheme.colorScheme.onPrimary
+                                color = MaterialTheme.colorScheme.onPrimaryContainer
                             )
                         }
                     }
                 }
-                if (state.bookingCount > 5) {
+                if (overflowCount > 0) {
                     Surface(
                         modifier = Modifier.size(36.dp),
                         shape = CircleShape,
@@ -636,7 +649,7 @@ private fun BookingSection(
                     ) {
                         Box(contentAlignment = Alignment.Center) {
                             Text(
-                                "+${state.bookingCount - 5}",
+                                "+$overflowCount",
                                 style = MaterialTheme.typography.labelSmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -645,7 +658,16 @@ private fun BookingSection(
                 }
             }
 
-            Spacer(Modifier.height(20.dp))
+            Spacer(Modifier.height(12.dp))
+
+            TextButton(
+                onClick = { showAttendees = true },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("View all attendees")
+            }
+
+            Spacer(Modifier.height(8.dp))
 
             AnimatedVisibility(visible = state.isBooked) {
                 Surface(
@@ -674,6 +696,90 @@ private fun BookingSection(
             }
         }
     }
+}
+
+@Composable
+private fun AttendeesDialog(
+    attendees: List<User>,
+    totalCount: Int,
+    onUserClick: (String) -> Unit,
+    onFollow: (String) -> Unit,
+    onUnfollow: (String) -> Unit,
+    onDismiss: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("$totalCount attendees") },
+        text = {
+            if (attendees.isEmpty()) {
+                Text("No attendees yet.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+            } else {
+                LazyColumn(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    items(attendees.size) { index ->
+                        val user = attendees[index]
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(10.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Row(
+                                modifier = Modifier.weight(1f).clickable {
+                                    onDismiss()
+                                    onUserClick(user.id)
+                                },
+                                horizontalArrangement = Arrangement.spacedBy(10.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                val initial = (user.displayName?.firstOrNull() ?: user.username.firstOrNull())?.uppercase() ?: "?"
+                                Surface(
+                                    modifier = Modifier.size(36.dp),
+                                    shape = CircleShape,
+                                    color = MaterialTheme.colorScheme.primaryContainer
+                                ) {
+                                    Box(contentAlignment = Alignment.Center) {
+                                        Text(
+                                            initial,
+                                            style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                                            color = MaterialTheme.colorScheme.onPrimaryContainer
+                                        )
+                                    }
+                                }
+                                Column {
+                                    Text(
+                                        user.displayName ?: user.username,
+                                        style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium)
+                                    )
+                                    Text(
+                                        "@${user.username}",
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                            }
+
+                            if (user.isFollowed == true) {
+                                TextButton(onClick = { onUnfollow(user.id) }) {
+                                    Text("Unfollow", style = MaterialTheme.typography.labelMedium)
+                                }
+                            } else if (user.isFollowed == false) {
+                                TextButton(onClick = { onFollow(user.id) }) {
+                                    Text("Follow", style = MaterialTheme.typography.labelMedium)
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Close")
+            }
+        }
+    )
 }
 
 @Composable

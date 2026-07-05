@@ -35,9 +35,10 @@ sealed class EventDetailsState {
         val isLoggedInUserEvent: Boolean,
         val isBooked: Boolean = false,
         val bookingCount: Int = 12,
+        val attendees: List<User> = emptyList(),
+        val isBooking: Boolean = false,
         val messages: List<ChatMessage> = emptyList(),
         val newMessage: String = "",
-        val isBooking: Boolean = false,
         val updateImage: suspend (ByteArray) -> ImageUrl?
     ) : EventDetailsState()
 
@@ -65,10 +66,14 @@ class EventDetailsViewModel(
                 if (loggedInUser == null) {
                     EventDetailsState.Error("Something went wrong.")
                 } else if (event != null) {
+                    val attendeesResult = eventRepo.getEventAttendees(id, 0)
                     EventDetailsState.Loaded(
                         event = event,
                         creators = listOf(event.creator),
                         isLoggedInUserEvent = event.creator.id == loggedInUser.id,
+                        isBooked = attendeesResult.items.any { it.id == loggedInUser.id },
+                        bookingCount = attendeesResult.total?.toInt() ?: attendeesResult.items.size,
+                        attendees = attendeesResult.items,
                         messages = emptyList(),
                         updateImage = {
                             viewModelScope.async {
@@ -121,13 +126,26 @@ class EventDetailsViewModel(
         if (s.isBooking) return
         _state.update { s.copy(isBooking = true) }
         viewModelScope.launch {
-            kotlinx.coroutines.delay(600)
-            _state.update {
-                s.copy(
-                    isBooked = !s.isBooked,
-                    bookingCount = if (s.isBooked) s.bookingCount - 1 else s.bookingCount + 1,
-                    isBooking = false
-                )
+            try {
+                if (s.isBooked) {
+                    eventRepo.unbookEvent(id)
+                } else {
+                    eventRepo.bookEvent(id)
+                }
+                // Reload attendees to get accurate count and updated list
+                val attendees = eventRepo.getEventAttendees(id, 0)
+                _state.update {
+                    (it as? EventDetailsState.Loaded)?.copy(
+                        isBooked = !s.isBooked,
+                        bookingCount = attendees.total?.toInt() ?: attendees.items.size,
+                        attendees = attendees.items,
+                        isBooking = false
+                    ) ?: it
+                }
+            } catch (_: Exception) {
+                _state.update {
+                    (it as? EventDetailsState.Loaded)?.copy(isBooking = false) ?: it
+                }
             }
         }
     }
@@ -151,6 +169,33 @@ class EventDetailsViewModel(
     private fun appendMessage(message: ChatMessage) {
         val s = _state.value as? EventDetailsState.Loaded ?: return
         _state.update { s.copy(messages = s.messages + message) }
+    }
+
+    fun followUser(userId: String) {
+        viewModelScope.launch {
+            try {
+                userRepo.followUser(userId)
+                updateAttendeeFollowState(userId, true)
+            } catch (_: Exception) {}
+        }
+    }
+
+    fun unfollowUser(userId: String) {
+        viewModelScope.launch {
+            try {
+                userRepo.unfollowUser(userId)
+                updateAttendeeFollowState(userId, false)
+            } catch (_: Exception) {}
+        }
+    }
+
+    private fun updateAttendeeFollowState(userId: String, isFollowed: Boolean) {
+        val s = _state.value as? EventDetailsState.Loaded ?: return
+        _state.update {
+            s.copy(attendees = s.attendees.map { u ->
+                if (u.id == userId) u.copy(isFollowed = isFollowed) else u
+            })
+        }
     }
 
     private fun replaceMessages(messages: List<ChatMessage>) {

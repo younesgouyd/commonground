@@ -4,6 +4,7 @@ import com.commonground.core.models.CreateEventRequest
 import com.commonground.core.models.Event
 import com.commonground.core.models.Events
 import com.commonground.core.models.SaveEventRequest
+import com.commonground.core.models.Users
 import com.commonground.server.services.EventService
 import org.springframework.security.core.annotation.AuthenticationPrincipal
 import org.springframework.web.bind.annotation.*
@@ -76,6 +77,31 @@ class EventController(
         @AuthenticationPrincipal userId: String
     ) {
         eventService.clearImage(id, userId)
+    }
+
+    @GetMapping("/{id}/attendees")
+    fun attendees(
+        @PathVariable id: String,
+        @RequestParam pageNumber: Int,
+        @AuthenticationPrincipal observerUserId: String
+    ): Users {
+        return eventService.getAttendees(id, observerUserId, pageNumber)
+    }
+
+    @PostMapping("/{id}/book")
+    fun book(
+        @PathVariable id: String,
+        @AuthenticationPrincipal userId: String
+    ) {
+        eventService.bookEvent(id, userId)
+    }
+
+    @DeleteMapping("/{id}/book")
+    fun unbook(
+        @PathVariable id: String,
+        @AuthenticationPrincipal userId: String
+    ) {
+        eventService.unbookEvent(id, userId)
     }
 
     @DeleteMapping("/{id}")

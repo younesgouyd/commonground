@@ -2,6 +2,7 @@ package com.commonground.server.services
 
 import com.commonground.core.models.*
 import com.commonground.server.data.repositories.EventRepository
+import com.commonground.server.data.repositories.UserEventRepository
 import com.commonground.server.data.repositories.UserRepository
 import com.commonground.server.util.GeometryUtils
 import com.commonground.server.util.GeometryUtils.toPoint
@@ -23,6 +24,7 @@ import kotlin.time.toJavaInstant
 class EventService(
     private val eventRepository: EventRepository,
     private val userRepository: UserRepository,
+    private val userEventRepository: UserEventRepository,
     private val imageService: ImageService
 ) {
     @Transactional
@@ -146,6 +148,20 @@ class EventService(
     }
 
     @Transactional
+    fun getAttendees(eventId: String, observerUserId: String, pageNumber: Int): Users {
+        val page = userEventRepository.findAttendeesWithFollowState(
+            eventId = eventId.toUuid(),
+            observerUserId = observerUserId.toUuid(),
+            pageable = PageRequest.of(pageNumber, 20)
+        )
+        return Users(
+            items = page.content,
+            next = if (page.hasNext()) page.nextPageable().pageNumber else null,
+            total = page.totalElements
+        )
+    }
+
+    @Transactional
     fun getUserEvents(
         userId: String,
         type: UserEventType,
@@ -189,6 +205,23 @@ class EventService(
                     .toModel()
             }
         }
+    }
+
+    @Transactional
+    fun bookEvent(eventId: String, userId: String) {
+        val existing = userEventRepository.findByEventIdAndUserId(eventId.toUuid(), userId.toUuid())
+        if (existing == null) {
+            val userEvent = com.commonground.server.data.entities.UserEvent(
+                event = eventRepository.getReferenceById(eventId.toUuid()),
+                user = userRepository.getReferenceById(userId.toUuid())
+            )
+            userEventRepository.save(userEvent)
+        }
+    }
+
+    @Transactional
+    fun unbookEvent(eventId: String, userId: String) {
+        userEventRepository.deleteByEventIdAndUserId(eventId.toUuid(), userId.toUuid())
     }
 
     @Transactional
