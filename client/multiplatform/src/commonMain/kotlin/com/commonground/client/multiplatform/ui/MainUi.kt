@@ -67,15 +67,15 @@ fun MainUi(
     fileStorage: PlatformFileStorage
 ) {
     val navController = rememberNavController()
-    val viewModel = viewModel {
+    val appViewModel = viewModel {
         MainUiViewModel(
             fileStorage = fileStorage,
             onLogout = { navController.navigate(Route.Login) { popUpTo(0) { inclusive = true } } }
         )
     }
-    val repoStore = viewModel.repoStore
+    val repoStore = appViewModel.repoStore
 
-    val startDestination by viewModel.startDestination
+    val startDestination by appViewModel.startDestination
     if (startDestination == null) {
         Box(
             modifier = modifier.fillMaxSize(),
@@ -105,7 +105,7 @@ fun MainUi(
                         modifier = modifier,
                         currentDestination = currentDestination,
                         navController = navController,
-                        viewModel = viewModel,
+                        viewModel = appViewModel,
                         inHome = inHome,
                         repoStore = repoStore,
                         startDestination = startDestination
@@ -237,6 +237,7 @@ private fun NavGraph(navController: NavHostController, repoStore: RepoStore, sta
                     LoginViewModel(
                         authRepo = repoStore.authRepo,
                         onLoginSuccess = {
+                            repoStore.resetClient()
                             navController.navigate(Route.Home) {
                                 popUpTo(Route.Login) { inclusive = true }
                             }
@@ -254,6 +255,7 @@ private fun NavGraph(navController: NavHostController, repoStore: RepoStore, sta
                     SignUpViewModel(
                         authRepo = repoStore.authRepo,
                         onSignUpSuccess = {
+                            repoStore.resetClient()
                             navController.navigate(Route.Onboarding) {
                                 popUpTo(Route.SignUp) { inclusive = true }
                             }

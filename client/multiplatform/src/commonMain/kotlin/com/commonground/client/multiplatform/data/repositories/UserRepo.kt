@@ -1,5 +1,6 @@
 package com.commonground.client.multiplatform.data.repositories
 
+import com.commonground.client.multiplatform.data.HttpClientHolder
 import com.commonground.core.models.UpdateProfileRequest
 import com.commonground.core.models.User
 import com.commonground.core.models.Users
@@ -10,8 +11,9 @@ import io.ktor.client.request.forms.*
 import io.ktor.http.*
 
 class UserRepo(
-    private val client: HttpClient
+    private val holder: HttpClientHolder
 ) {
+    private val client get() = holder.client
     suspend fun getLoggedInUser(): User? {
         return client.get("me").body<User?>()
     }

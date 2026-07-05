@@ -16,28 +16,49 @@ import io.ktor.client.plugins.logging.*
 import io.ktor.client.plugins.sse.*
 import io.ktor.http.*
 import io.ktor.serialization.kotlinx.json.*
+import kotlinx.coroutines.*
 import kotlinx.serialization.json.Json
+
+/** Mutable holder so repos always use the current HttpClient after client resets. */
+class HttpClientHolder(var client: HttpClient)
 
 class RepoStore(
     platformFileStorage: PlatformFileStorage,
-    onRefreshTokenExpired: () -> Unit
+    private val onRefreshTokenExpired: () -> Unit
 ) {
     companion object {
         const val SERVER_PORT = 8080 // TODO
         val serverHost = when (platform) {
-            com.commonground.client.multiplatform.Platform.ANDROID -> "10.0.2.2"
+            com.commonground.client.multiplatform.Platform.ANDROID -> "192.168.100.109"
             com.commonground.client.multiplatform.Platform.JVM -> "localhost"
         }
     }
 
     val authRepo = AuthRepo(platformFileStorage, serverHost, SERVER_PORT)
 
-    private val client = HttpClient(CIO) {
+    private val holder = HttpClientHolder(buildClient())
+
+    val eventRepo = EventRepo(holder)
+    val userRepo = UserRepo(holder)
+    val categoryRepo = CategoryRepo(holder)
+    val chatRepo = ChatRepo(serverHost, SERVER_PORT)
+
+    /**
+     * Recreates the shared HttpClient. Called after login/logout so the Ktor Auth
+     * plugin starts with a fresh token cache (the plugin caches currentToken internally
+     * and never calls loadTokens again after the first load).
+     */
+    fun resetClient() {
+        holder.client.close()
+        holder.client = buildClient()
+    }
+
+    private fun buildClient(): HttpClient = HttpClient(CIO) {
         install(Logging) { level = LogLevel.ALL }
         install(ContentNegotiation) { json(Json) }
-        install(SSE) // for notifications
+        install(SSE)
         install(HttpTimeout) {
-            this.requestTimeoutMillis = 30*60*1000 // TODO
+            this.requestTimeoutMillis = 30 * 60 * 1000
         }
         defaultRequest {
             contentType(ContentType.Application.Json)
@@ -63,13 +84,7 @@ class RepoStore(
                         null
                     }
                 }
-                sendWithoutRequest { request -> request.url.host == serverHost }
             }
         }
     }
-
-    val eventRepo = EventRepo(client)
-    val userRepo = UserRepo(client)
-    val categoryRepo = CategoryRepo(client)
-    val chatRepo = ChatRepo(serverHost, SERVER_PORT)
 }

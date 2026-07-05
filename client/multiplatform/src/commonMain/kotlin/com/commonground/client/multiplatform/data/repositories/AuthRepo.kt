@@ -12,6 +12,8 @@ import io.ktor.client.plugins.logging.*
 import io.ktor.client.request.*
 import io.ktor.http.*
 import io.ktor.serialization.kotlinx.json.*
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.serialization.json.Json
 
 class AuthRepo(
@@ -35,12 +37,29 @@ class AuthRepo(
         }
     }
 
+    // In-memory cache. On login/signup/refresh it's updated immediately.
+    // Must call loadFromDisk() on startup to restore persisted tokens.
+    @Volatile
+    private var cachedTokens: TokenPair? = null
+    private val mutex = Mutex()
+
+    /** Call once at app startup to restore persisted tokens from disk. */
+    suspend fun loadFromDisk() {
+        val json = storage.readText() ?: return
+        val tokens = try {
+            Json.decodeFromString<TokenPair>(json)
+        } catch (_: Exception) { null }
+        if (tokens != null) {
+            mutex.withLock { cachedTokens = tokens }
+        }
+    }
+
     suspend fun signUp(email: String, username: String, password: String): SignUpResult {
         val result = client.post("auth/signup") {
             setBody(SignUpRequest(email.trim(), username.trim(), password))
         }.body<SignUpResult>()
         if (result is SignUpResult.Success) {
-            saveTokens(result.tokens)
+            setTokens(result.tokens)
         }
         return result
     }
@@ -50,44 +69,41 @@ class AuthRepo(
             setBody(LoginRequest(login, password))
         }.body<LoginResult>()
         if (result is LoginResult.Success) {
-            saveTokens(result.tokens)
+            setTokens(result.tokens)
         }
         return result
     }
 
     suspend fun refreshToken(): TokenPair? {
-        try {
-            val refresh = loadTokens()?.refreshToken ?: return null
+        val refresh = cachedTokens?.refreshToken ?: return null
+        return try {
             val token = client.post("auth/refresh") {
                 setBody(refresh)
             }.body<TokenPair?>()
             if (token != null) {
-                clearTokens()
-                saveTokens(token)
+                setTokens(token)
             }
-            return token
+            token
         } catch (_: Exception) {
             clearTokens()
-            return null
-        }
-    }
-
-    suspend fun loadTokens(): TokenPair? {
-        val json = storage.readText() ?: return null
-        return try {
-            Json.decodeFromString<TokenPair>(json)
-        } catch (e: Exception) {
-            logger.error(e) { }
             null
         }
     }
 
+    fun loadTokens(): TokenPair? = cachedTokens
+
     suspend fun clearTokens() {
-        storage.clear()
+        mutex.withLock {
+            cachedTokens = null
+            storage.clear()
+        }
     }
 
-    private suspend fun saveTokens(tokens: TokenPair) {
-        val json = Json.encodeToString(tokens)
-        storage.writeText(json)
+    private suspend fun setTokens(tokens: TokenPair) {
+        mutex.withLock {
+            cachedTokens = tokens
+            val json = Json.encodeToString(tokens)
+            storage.writeText(json)
+        }
     }
 }

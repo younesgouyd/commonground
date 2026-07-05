@@ -1,5 +1,6 @@
 package com.commonground.client.multiplatform.data.repositories
 
+import com.commonground.client.multiplatform.data.HttpClientHolder
 import com.commonground.core.models.*
 import io.ktor.client.*
 import io.ktor.client.call.*
@@ -8,8 +9,9 @@ import io.ktor.client.request.forms.*
 import io.ktor.http.*
 
 class EventRepo(
-    private val client: HttpClient
+    private val holder: HttpClientHolder
 ) {
+    private val client get() = holder.client
     suspend fun getNearbyEvents(
         latitude: Double,
         longitude: Double,
@@ -79,6 +81,23 @@ class EventRepo(
             parameter("type", type)
             parameter("pageNumber", pageNumber)
         }.body<Events>()
+    }
+
+    suspend fun getEventAttendees(
+        eventId: String,
+        pageNumber: Int
+    ): Users {
+        return client.get("events/$eventId/attendees") {
+            parameter("pageNumber", pageNumber)
+        }.body<Users>()
+    }
+
+    suspend fun bookEvent(eventId: String) {
+        client.post("events/$eventId/book")
+    }
+
+    suspend fun unbookEvent(eventId: String) {
+        client.delete("events/$eventId/book")
     }
 
     suspend fun getUserEvents(

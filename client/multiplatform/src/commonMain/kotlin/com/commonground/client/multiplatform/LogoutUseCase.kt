@@ -8,10 +8,15 @@ class LogoutUseCase(
     private val userRepo: UserRepo
 ) {
     suspend fun execute() {
-        val refreshTokens = authRepo.loadTokens()?.refreshToken
-        if (refreshTokens != null) {
-            userRepo.logout(refreshTokens)
-            authRepo.clearTokens()
+        // Clear local tokens FIRST — this prevents the server call from
+        // triggering a 401→refresh cycle that could re-save tokens.
+        val refreshToken = authRepo.loadTokens()?.refreshToken
+        authRepo.clearTokens()
+        // Best-effort: notify server to invalidate the refresh token
+        if (refreshToken != null) {
+            try {
+                userRepo.logout(refreshToken)
+            } catch (_: Exception) { }
         }
     }
 }

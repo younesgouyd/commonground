@@ -23,6 +23,7 @@ class MainUiViewModel(
 
     init {
         viewModelScope.launch {
+            authRepo.loadFromDisk()
             val tokens = authRepo.loadTokens()
             if (tokens != null) {
                 _startDestination.value = Route.Home
@@ -32,9 +33,15 @@ class MainUiViewModel(
         }
     }
 
+    /** Must be called after every login so the Ktor Auth plugin loads fresh tokens. */
+    fun onLogin() {
+        repoStore.resetClient()
+    }
+
     fun logout() {
         viewModelScope.launch {
             LogoutUseCase(repoStore.authRepo, repoStore.userRepo).execute()
+            repoStore.resetClient()
             onLogout()
         }
     }
