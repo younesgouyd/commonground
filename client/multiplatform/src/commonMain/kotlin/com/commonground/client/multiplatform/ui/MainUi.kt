@@ -95,7 +95,8 @@ fun MainUi(
     } ?: false
     val inHome = currentDestination?.hasRoute<Route.Home>() == true
 
-    MaterialTheme(colorScheme = if (isSystemInDarkTheme()) darkColorScheme() else lightColorScheme()) {
+    val themeMode by ThemeState.current
+    CommonGroundTheme(themeMode = themeMode) {
         if (isAuthFlow) {
             NavGraph(navController, repoStore, startDestination!!)
         } else {
@@ -140,6 +141,7 @@ private fun Wide(
     Row(modifier = modifier.fillMaxSize()) {
         AppSidebar(
             currentDestination = currentDestination,
+            currentUser = viewModel.currentUser.value,
             onNavigate = { route ->
                 navController.navigate(route) {
                     popUpTo(navController.graph.startDestinationId)
@@ -384,6 +386,7 @@ private fun NavGraph(navController: NavHostController, repoStore: RepoStore, sta
 @Composable
 private fun AppSidebar(
     currentDestination: NavDestination?,
+    currentUser: com.commonground.core.models.User?,
     onNavigate: (Route) -> Unit,
     onLogout: () -> Unit
 ) {
@@ -393,8 +396,8 @@ private fun AppSidebar(
 
     Surface(
         modifier = Modifier.width(260.dp).fillMaxHeight(),
-        color = MaterialTheme.colorScheme.surfaceContainerLow,
-        tonalElevation = 2.dp
+        color = MaterialTheme.colorScheme.surface,
+        tonalElevation = 3.dp
     ) {
         Column(
             modifier = Modifier.fillMaxSize().padding(16.dp),
@@ -426,13 +429,6 @@ private fun AppSidebar(
 
                 HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
 
-                Text(
-                    "Navigation",
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp)
-                )
-
                 SidebarNavItem(
                     icon = Icons.Default.Home,
                     label = "Home",
@@ -455,12 +451,32 @@ private fun AppSidebar(
 
             Column {
                 HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
-                SidebarNavItem(
-                    icon = Icons.AutoMirrored.Filled.Logout,
-                    label = "Logout",
-                    selected = false,
-                    onClick = onLogout
-                )
+                if (currentUser != null) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 12.dp, vertical = 10.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            currentUser.displayName ?: currentUser.username,
+                            style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                        IconButton(
+                            onClick = onLogout,
+                            modifier = Modifier.size(36.dp)
+                        ) {
+                            Icon(
+                                Icons.AutoMirrored.Filled.Logout,
+                                contentDescription = "Logout",
+                                modifier = Modifier.size(20.dp),
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+                }
             }
         }
     }

@@ -7,13 +7,13 @@ import androidx.lifecycle.viewModelScope
 import com.commonground.client.multiplatform.LogoutUseCase
 import com.commonground.client.multiplatform.data.PlatformFileStorage
 import com.commonground.client.multiplatform.data.RepoStore
+import com.commonground.core.models.User
 import kotlinx.coroutines.launch
 
 class MainUiViewModel(
     fileStorage: PlatformFileStorage,
     private val onLogout: () -> Unit
 ) : ViewModel() {
-    // I'm using this viewmodel as a dependency container to maintain this RepoStore instance for the lifecycle of the app
     val repoStore = RepoStore(fileStorage, onLogout)
 
     private val authRepo get() = repoStore.authRepo
@@ -21,27 +21,34 @@ class MainUiViewModel(
     private val _startDestination = mutableStateOf<Route?>(null)
     val startDestination: State<Route?> = _startDestination
 
+    private val _currentUser = mutableStateOf<User?>(null)
+    val currentUser: State<User?> = _currentUser
+
     init {
         viewModelScope.launch {
             authRepo.loadFromDisk()
             val tokens = authRepo.loadTokens()
             if (tokens != null) {
                 _startDestination.value = Route.Home
+                _currentUser.value = repoStore.userRepo.getLoggedInUser()
             } else {
                 _startDestination.value = Route.Login
             }
         }
     }
 
-    /** Must be called after every login so the Ktor Auth plugin loads fresh tokens. */
     fun onLogin() {
         repoStore.resetClient()
+        viewModelScope.launch {
+            _currentUser.value = repoStore.userRepo.getLoggedInUser()
+        }
     }
 
     fun logout() {
         viewModelScope.launch {
             LogoutUseCase(repoStore.authRepo, repoStore.userRepo).execute()
             repoStore.resetClient()
+            _currentUser.value = null
             onLogout()
         }
     }
