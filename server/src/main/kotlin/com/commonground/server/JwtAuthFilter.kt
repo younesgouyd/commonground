@@ -18,31 +18,18 @@ class JwtAuthFilter(
         response: HttpServletResponse,
         filterChain: FilterChain
     ) {
-        if (SecurityContextHolder.getContext().authentication != null) {
-            SecurityContextHolder.clearContext()
-            response.status = HttpServletResponse.SC_INTERNAL_SERVER_ERROR
-            return
-        }
         val authHeader = request.getHeader("Authorization")
-        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-            response.status = HttpServletResponse.SC_UNAUTHORIZED
-            response.writer.write("No token provided")
-            return
+        if (authHeader != null && authHeader.startsWith("Bearer ")) {
+            val token = authHeader.removePrefix("Bearer ")
+            if (jwtService.validateAccessToken(token)) {
+                val userId = jwtService.getUserIdFromAccessToken(token)
+                if (userId != null) {
+                    val authToken = UsernamePasswordAuthenticationToken(userId, null, emptyList())
+                    SecurityContextHolder.getContext().authentication = authToken
+                }
+            }
         }
-        val token = authHeader.removePrefix("Bearer ")
-        if (!jwtService.validateAccessToken(token)) {
-            response.status = HttpServletResponse.SC_UNAUTHORIZED
-            response.writer.write("Token expired or invalid")
-            return
-        }
-        val userId = jwtService.getUserIdFromAccessToken(token)
-        if (userId == null) {
-            response.status = HttpServletResponse.SC_INTERNAL_SERVER_ERROR
-            return
-        }
-        val authToken = UsernamePasswordAuthenticationToken(userId, null, emptyList())
-        SecurityContextHolder.getContext().authentication = authToken
-
+        // Always continue the chain — Spring Security decides auth via the AuthenticationEntryPoint
         filterChain.doFilter(request, response)
     }
 
