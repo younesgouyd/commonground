@@ -3,6 +3,7 @@ package com.commonground.client.multiplatform.ui.destinations.eventdetails
 import androidx.compose.animation.*
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.ui.draw.clip
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -627,11 +628,19 @@ private fun BookingSection(
             ) {
                 displayedAttendees.forEach { user ->
                     val initial = (user.displayName?.firstOrNull() ?: user.username.firstOrNull())?.uppercase() ?: "?"
-                    Surface(
-                        modifier = Modifier.size(36.dp),
-                        shape = CircleShape,
-                        color = MaterialTheme.colorScheme.primaryContainer
-                    ) {
+                    val picUrl = user.profilePic
+                    if (picUrl != null) {
+                        Image(
+                            modifier = Modifier.size(36.dp).clip(CircleShape),
+                            url = picUrl.toBackendUrl(),
+                            contentScale = ContentScale.Crop
+                        )
+                    } else {
+                        Surface(
+                            modifier = Modifier.size(36.dp),
+                            shape = CircleShape,
+                            color = MaterialTheme.colorScheme.primaryContainer
+                        ) {
                         Box(contentAlignment = Alignment.Center) {
                             Text(
                                 initial,
@@ -639,6 +648,7 @@ private fun BookingSection(
                                 color = MaterialTheme.colorScheme.onPrimaryContainer
                             )
                         }
+                    }
                     }
                 }
                 if (overflowCount > 0) {
@@ -734,17 +744,26 @@ private fun AttendeesDialog(
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 val initial = (user.displayName?.firstOrNull() ?: user.username.firstOrNull())?.uppercase() ?: "?"
-                                Surface(
-                                    modifier = Modifier.size(36.dp),
-                                    shape = CircleShape,
-                                    color = MaterialTheme.colorScheme.primaryContainer
-                                ) {
-                                    Box(contentAlignment = Alignment.Center) {
-                                        Text(
-                                            initial,
-                                            style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
-                                            color = MaterialTheme.colorScheme.onPrimaryContainer
-                                        )
+                                val picUrl = user.profilePic
+                                if (picUrl != null) {
+                                    Image(
+                                        modifier = Modifier.size(36.dp).clip(CircleShape),
+                                        url = picUrl.toBackendUrl(),
+                                        contentScale = ContentScale.Crop
+                                    )
+                                } else {
+                                    Surface(
+                                        modifier = Modifier.size(36.dp),
+                                        shape = CircleShape,
+                                        color = MaterialTheme.colorScheme.primaryContainer
+                                    ) {
+                                        Box(contentAlignment = Alignment.Center) {
+                                            Text(
+                                                initial,
+                                                style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                                                color = MaterialTheme.colorScheme.onPrimaryContainer
+                                            )
+                                        }
                                     }
                                 }
                                 Column {
