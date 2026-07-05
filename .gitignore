@@ -44,7 +44,12 @@ bin/
 
 
 /local.properties
+
+# JVM crash logs
+client/desktop/hs_err_pid*.log
+client/desktop/maplibre-cache
 /keystore.properties
 /captures
 .externalNativeBuild
 /benchmark
+CLAUDE.md
