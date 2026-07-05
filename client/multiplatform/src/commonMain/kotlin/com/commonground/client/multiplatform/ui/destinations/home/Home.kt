@@ -1,15 +1,21 @@
 package com.commonground.client.multiplatform.ui.destinations.home
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Place
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.commonground.client.multiplatform.ui.AdaptiveUi
 
@@ -38,9 +44,9 @@ private fun Wide(
     navActions: HomeNavActions
 ) {
     when (state) {
-        is HomeState.Loading -> Text("Loading...")
+        is HomeState.Loading -> WideLoading()
         is HomeState.Loaded -> Wide(state, navActions)
-        is HomeState.Error -> Text(text = "Something went wrong", color = MaterialTheme.colorScheme.error)
+        is HomeState.Error -> WideError()
     }
 }
 
@@ -53,22 +59,61 @@ private fun Wide(
     val searchRequest by state.searchRequest.collectAsState()
 
     Row(modifier = Modifier.fillMaxSize()) {
-        Map(
-            modifier = Modifier.weight(.5f).fillMaxHeight(),
-            events = events,
-            onViewportChanged = { state.onSearchChange(searchRequest.copy(mapViewport = it)) },
-            navActions = navActions
-        )
-        Events(
-            modifier = Modifier.weight(.5f).fillMaxHeight(),
-            searchRequest = searchRequest,
-            events = events,
-            navActions = navActions,
-            onSearchChange = state.onSearchChange
-        )
+        // Map — dominant side
+        Box(modifier = Modifier.weight(.55f).fillMaxHeight()) {
+            Map(
+                modifier = Modifier.fillMaxSize(),
+                events = events,
+                onViewportChanged = { state.onSearchChange(searchRequest.copy(mapViewport = it)) },
+                navActions = navActions
+            )
+            // Subtle gradient at bottom edge
+            Box(
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .fillMaxWidth()
+                    .height(32.dp)
+                    .background(
+                        Brush.verticalGradient(
+                            colors = listOf(
+                                MaterialTheme.colorScheme.surface.copy(alpha = 0f),
+                                MaterialTheme.colorScheme.surface.copy(alpha = 0.3f)
+                            )
+                        )
+                    )
+            )
+        }
+
+        // Events panel
+        Surface(
+            modifier = Modifier.weight(.45f).fillMaxHeight(),
+            color = MaterialTheme.colorScheme.surface,
+            tonalElevation = 2.dp
+        ) {
+            Events(
+                modifier = Modifier.fillMaxSize(),
+                searchRequest = searchRequest,
+                events = events,
+                navActions = navActions,
+                onSearchChange = state.onSearchChange
+            )
+        }
     }
 }
 
+@Composable
+private fun WideLoading() {
+    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+        CircularProgressIndicator()
+    }
+}
+
+@Composable
+private fun WideError() {
+    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+        Text("Something went wrong", color = MaterialTheme.colorScheme.error)
+    }
+}
 
 @Composable
 private fun Compact(
@@ -76,12 +121,9 @@ private fun Compact(
     navActions: HomeNavActions
 ) {
     when (state) {
-        is HomeState.Loading -> Text("Loading...")
+        is HomeState.Loading -> WideLoading()
         is HomeState.Loaded -> Compact(state, navActions)
-        is HomeState.Error -> Text(
-            text = "Something went wrong",
-            color = MaterialTheme.colorScheme.error
-        )
+        is HomeState.Error -> WideError()
     }
 }
 
@@ -98,6 +140,7 @@ private fun Compact(
     Scaffold(
         modifier = Modifier.fillMaxSize(),
         contentWindowInsets = WindowInsets(0, 0, 0, 0),
+        containerColor = MaterialTheme.colorScheme.background,
         content = { paddingValues ->
             BoxWithConstraints(
                 modifier = Modifier
@@ -106,42 +149,49 @@ private fun Compact(
             ) {
                 val totalHeightPx = with(LocalDensity.current) { maxHeight.toPx() }
 
-                Column(
-                    modifier = Modifier.fillMaxSize(),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Top
-                ) {
-                    Map(
+                Column(modifier = Modifier.fillMaxSize()) {
+                    // Map
+                    Surface(
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(this@BoxWithConstraints.maxHeight * mapFraction),
-                        events = events,
-                        onViewportChanged = { state.onSearchChange(searchRequest.copy(mapViewport = it)) },
-                        navActions = navActions
-                    )
+                        shape = RoundedCornerShape(bottomStart = 20.dp, bottomEnd = 20.dp),
+                        tonalElevation = 3.dp
+                    ) {
+                        Map(
+                            modifier = Modifier.fillMaxSize(),
+                            events = events,
+                            onViewportChanged = { state.onSearchChange(searchRequest.copy(mapViewport = it)) },
+                            navActions = navActions
+                        )
+                    }
+
+                    // Drag handle
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(16.dp)
+                            .height(24.dp)
                             .pointerInput(totalHeightPx) {
                                 detectDragGestures { change, dragAmount ->
                                     change.consume()
                                     val deltaFraction = dragAmount.y / totalHeightPx
-                                    // Bound the layout size between 15% and 85% of total screen real estate
                                     mapFraction = (mapFraction + deltaFraction).coerceIn(0.15f, 0.85f)
                                 }
-                            }
+                            },
+                        contentAlignment = Alignment.Center
                     ) {
-                        HorizontalDivider(
-                            modifier = Modifier.align(Alignment.Center),
-                            thickness = 4.dp,
+                        Surface(
+                            modifier = Modifier
+                                .width(40.dp)
+                                .height(4.dp)
+                                .clip(RoundedCornerShape(2.dp)),
                             color = MaterialTheme.colorScheme.outlineVariant
-                        )
+                        ) {}
                     }
+
+                    // Events list
                     Events(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .weight(1f),
+                        modifier = Modifier.fillMaxWidth().weight(1f),
                         searchRequest = searchRequest,
                         events = events,
                         navActions = navActions,
@@ -151,10 +201,13 @@ private fun Compact(
             }
         },
         floatingActionButton = {
-            SmallFloatingActionButton(
-                content = { Icon(Icons.Default.Add, null) },
-                onClick = navActions::toCreateEvent
-            )
+            FloatingActionButton(
+                onClick = navActions::toCreateEvent,
+                containerColor = MaterialTheme.colorScheme.primaryContainer,
+                contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+            ) {
+                Icon(Icons.Default.Add, contentDescription = "Create event")
+            }
         }
     )
 }

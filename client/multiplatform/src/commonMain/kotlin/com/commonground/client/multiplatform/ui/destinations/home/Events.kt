@@ -2,13 +2,14 @@ package com.commonground.client.multiplatform.ui.destinations.home
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.grid.*
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Image
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -50,51 +51,67 @@ fun Wide(
     val loadingItems by events.loading.collectAsState()
     val scrollState = rememberLazyGridState()
 
-    Column(
-        modifier = modifier,
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(12.dp)
-    ) {
-        Row(
+    Column(modifier = modifier) {
+        // Header
+        Surface(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
+            color = MaterialTheme.colorScheme.surface,
+            tonalElevation = 1.dp
         ) {
-            Text(
-                text = "Events",
-                style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)
-            )
-            FilledTonalButton(onClick = navActions::toCreateEvent) {
-                Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(18.dp))
-                Spacer(Modifier.width(4.dp))
-                Text("Create")
-            }
-        }
-        Search(
-            modifier = Modifier.fillMaxWidth(),
-            searchRequest = searchRequest,
-            onSearchChange = onSearchChange
-        )
-        LazyVerticalGrid(
-            modifier = Modifier.fillMaxWidth()
-                .weight(1f)
-                .padding(horizontal = 16.dp),
-            state = scrollState,
-            horizontalArrangement = Arrangement.spacedBy(14.dp),
-            verticalArrangement = Arrangement.spacedBy(14.dp),
-            contentPadding = PaddingValues(vertical = 8.dp),
-            columns = GridCells.Adaptive(200.dp)
-        ) {
-            items(items) { event ->
-                WideEventCard(
-                    modifier = Modifier.aspectRatio(.75f),
-                    event = event,
-                    onClick = { navActions.toEventDetails(event.id) }
+            Column(modifier = Modifier.padding(horizontal = 20.dp, vertical = 16.dp)) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "Discover",
+                        style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold)
+                    )
+                    FilledTonalButton(
+                        onClick = navActions::toCreateEvent,
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
+                        Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(18.dp))
+                        Spacer(Modifier.width(6.dp))
+                        Text("Create event")
+                    }
+                }
+                Spacer(Modifier.height(12.dp))
+                Search(
+                    modifier = Modifier.fillMaxWidth(),
+                    searchRequest = searchRequest,
+                    onSearchChange = onSearchChange
                 )
             }
-            if (loadingItems) {
-                item(span = { GridItemSpan(maxLineSpan) }) {
-                    ProgressIndicator()
+        }
+
+        // Grid
+        if (items.isEmpty() && !loadingItems) {
+            EmptyEvents(modifier = Modifier.fillMaxSize())
+        } else {
+            LazyVerticalGrid(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f)
+                    .padding(horizontal = 16.dp, vertical = 8.dp),
+                state = scrollState,
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+                contentPadding = PaddingValues(vertical = 8.dp),
+                columns = GridCells.Adaptive(180.dp)
+            ) {
+                items(items) { event ->
+                    WideEventCard(
+                        modifier = Modifier.animateItem(),
+                        event = event,
+                        onClick = { navActions.toEventDetails(event.id) }
+                    )
+                }
+                if (loadingItems) {
+                    item(span = { GridItemSpan(maxLineSpan) }) {
+                        ProgressIndicator()
+                    }
                 }
             }
         }
@@ -170,91 +187,43 @@ private fun Search(
         modifier = modifier,
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        SearchBar(
+        OutlinedTextField(
             modifier = Modifier.fillMaxWidth(),
+            leadingIcon = { Icon(Icons.Default.Search, null, tint = MaterialTheme.colorScheme.onSurfaceVariant) },
+            placeholder = { Text("Search by title…") },
             value = searchRequest.title,
-            onValueChange = {
-                onSearchChange(searchRequest.copy(title = it))
-            }
+            onValueChange = { onSearchChange(searchRequest.copy(title = it)) },
+            singleLine = true,
+            shape = RoundedCornerShape(14.dp),
+            colors = OutlinedTextFieldDefaults.colors(
+                unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f),
+                focusedBorderColor = MaterialTheme.colorScheme.primary
+            )
         )
-        LazyRow(
+        Row(
             modifier = Modifier.fillMaxWidth(),
-            contentPadding = PaddingValues(horizontal = 4.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp, alignment = Alignment.Start),
-            verticalAlignment = Alignment.CenterVertically
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            item {
-                val isPrivate = searchRequest.isPrivate == true
-                FilterChip(
-                    label = { Text("Followers only") },
-                    leadingIcon = {
-                        Icon(
-                            imageVector = if (isPrivate) Icons.Default.Done else Icons.Default.Lock,
-                            contentDescription = null,
-                            modifier = Modifier.size(FilterChipDefaults.IconSize)
-                        )
-                    },
-                    selected = isPrivate,
-                    onClick = {
-                        onSearchChange(searchRequest.copy(isPrivate = if (isPrivate) null else true))
-                    }
-                )
-            }
-            item {
-                val isPrivatePlace = searchRequest.isPrivatePlace == true
-                FilterChip(
-                    label = { Text("Indoor") },
-                    leadingIcon = {
-                        Icon(
-                            imageVector = if (isPrivatePlace) Icons.Default.Done else Icons.Default.Home,
-                            contentDescription = null,
-                            modifier = Modifier.size(FilterChipDefaults.IconSize)
-                        )
-                    },
-                    selected = isPrivatePlace,
-                    onClick = {
-                        onSearchChange(searchRequest.copy(isPrivatePlace = if (isPrivatePlace) null else true))
-                    }
-                )
-            }
-            item {
-                val isPaid = searchRequest.isPaid == true
-                FilterChip(
-                    label = { Text("Paid") },
-                    leadingIcon = {
-                        Icon(
-                            imageVector = if (isPaid) Icons.Default.Done else Icons.Default.Paid,
-                            contentDescription = null,
-                            modifier = Modifier.size(FilterChipDefaults.IconSize)
-                        )
-                    },
-                    selected = isPaid,
-                    onClick = {
-                        onSearchChange(searchRequest.copy(isPaid = if (isPaid) null else true))
-                    }
-                )
-            }
+            FilterChip(
+                selected = searchRequest.isPrivate == true,
+                onClick = { onSearchChange(searchRequest.copy(isPrivate = if (searchRequest.isPrivate == true) null else true)) },
+                label = { Text("Private") },
+                shape = RoundedCornerShape(8.dp)
+            )
+            FilterChip(
+                selected = searchRequest.isPrivatePlace == true,
+                onClick = { onSearchChange(searchRequest.copy(isPrivatePlace = if (searchRequest.isPrivatePlace == true) null else true)) },
+                label = { Text("Indoor") },
+                shape = RoundedCornerShape(8.dp)
+            )
+            FilterChip(
+                selected = searchRequest.isPaid == true,
+                onClick = { onSearchChange(searchRequest.copy(isPaid = if (searchRequest.isPaid == true) null else true)) },
+                label = { Text("Paid") },
+                shape = RoundedCornerShape(8.dp)
+            )
         }
     }
-}
-@Composable
-private fun SearchBar(
-    modifier: Modifier = Modifier,
-    value: String,
-    onValueChange: (String) -> Unit
-) {
-    OutlinedTextField(
-        modifier = modifier,
-        leadingIcon = { Icon(Icons.Default.Search, null) },
-        placeholder = { Text("Search events…") },
-        value = value,
-        onValueChange = onValueChange,
-        singleLine = true,
-        shape = RoundedCornerShape(12.dp),
-        colors = OutlinedTextFieldDefaults.colors(
-            unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant
-        )
-    )
 }
 
 @Composable
