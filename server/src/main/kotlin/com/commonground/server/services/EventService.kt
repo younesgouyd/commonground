@@ -225,8 +225,10 @@ class EventService(
     }
 
     @Transactional
-    fun delete(id: String) {
-        eventRepository.deleteById(id.toUuid())
+    fun delete(eventId: String, requestorId: String) {
+        val event = eventRepository.findById(eventId.toUuid()).getOrNull() ?: return
+        if (event.creator.id.toString() != requestorId) return
+        eventRepository.deleteById(eventId.toUuid())
     }
 
     private fun validateInput(

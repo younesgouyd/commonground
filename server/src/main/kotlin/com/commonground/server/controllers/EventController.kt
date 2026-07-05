@@ -105,7 +105,10 @@ class EventController(
     }
 
     @DeleteMapping("/{id}")
-    fun delete(@PathVariable id: String) {
-        eventService.delete(id)
+    fun delete(
+        @PathVariable id: String,
+        @AuthenticationPrincipal userId: String
+    ) {
+        eventService.delete(id, userId)
     }
 }
