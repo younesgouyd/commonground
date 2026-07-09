@@ -1,11 +1,10 @@
 package com.commonground.client.multiplatform.data.repositories
 
-import com.commonground.client.multiplatform.data.PlatformFileStorage
+import com.commonground.client.multiplatform.data.SettingsManager
 import com.commonground.core.models.*
-import io.github.oshai.kotlinlogging.KotlinLogging
+import com.russhwolf.settings.ExperimentalSettingsApi
 import io.ktor.client.*
 import io.ktor.client.call.*
-import io.ktor.client.engine.cio.*
 import io.ktor.client.plugins.*
 import io.ktor.client.plugins.contentnegotiation.*
 import io.ktor.client.plugins.logging.*
@@ -14,16 +13,16 @@ import io.ktor.http.*
 import io.ktor.serialization.kotlinx.json.*
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.json.Json
+import kotlin.concurrent.Volatile
 
 class AuthRepo(
-    private val storage: PlatformFileStorage,
+    private val settingsManager: SettingsManager,
     serverHost: String,
     serverPort: Int
 ) {
-    val logger = KotlinLogging.logger {  }
-
-    private val client = HttpClient(CIO) {
+    private val client = HttpClient {
         install(Logging) { level = LogLevel.ALL }
         install(ContentNegotiation) { json(Json) }
         defaultRequest {
@@ -44,14 +43,10 @@ class AuthRepo(
     private val mutex = Mutex()
 
     /** Call once at app startup to restore persisted tokens from disk. */
+    @OptIn(ExperimentalSerializationApi::class, ExperimentalSettingsApi::class)
     suspend fun loadFromDisk() {
-        val json = storage.readText() ?: return
-        val tokens = try {
-            Json.decodeFromString<TokenPair>(json)
-        } catch (_: Exception) { null }
-        if (tokens != null) {
-            mutex.withLock { cachedTokens = tokens }
-        }
+        val tokens = settingsManager.getTokens() ?: return
+        mutex.withLock { cachedTokens = tokens }
     }
 
     suspend fun signUp(email: String, username: String, password: String): SignUpResult {
@@ -92,18 +87,19 @@ class AuthRepo(
 
     fun loadTokens(): TokenPair? = cachedTokens
 
+    @OptIn(ExperimentalSerializationApi::class, ExperimentalSettingsApi::class)
     suspend fun clearTokens() {
         mutex.withLock {
             cachedTokens = null
-            storage.clear()
+            settingsManager.clearTokens()
         }
     }
 
+    @OptIn(ExperimentalSerializationApi::class, ExperimentalSettingsApi::class)
     private suspend fun setTokens(tokens: TokenPair) {
         mutex.withLock {
             cachedTokens = tokens
-            val json = Json.encodeToString(tokens)
-            storage.writeText(json)
+            settingsManager.setTokens(tokens)
         }
     }
 }

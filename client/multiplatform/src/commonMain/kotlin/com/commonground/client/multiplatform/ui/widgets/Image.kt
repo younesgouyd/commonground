@@ -10,37 +10,18 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.decodeToImageBitmap
 import androidx.compose.ui.layout.ContentScale
-import kotlinx.coroutines.*
+import io.ktor.client.*
+import io.ktor.client.request.*
+import io.ktor.client.statement.*
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
-import java.io.File
-import java.net.URI
-import java.net.URL
-import java.time.Instant
+import kotlin.time.Clock
 
-@Composable
-fun Image(
-    modifier: Modifier = Modifier,
-    file: File?,
-    contentScale: ContentScale = ContentScale.Fit,
-    alignment: Alignment = Alignment.Center
-) {
-    val image = produceState<Result<ImageBitmap>>(Result.Loading, file?.path) {
-        value = if (file?.path == null) Result.Error else Result.Success(Cache.get(Key.File(file.path)))
-    }
-
-    when (val img = image.value) {
-        is Result.Error -> BrokenImage(modifier)
-        is Result.Loading -> BrokenImage(modifier)
-        is Result.Success<ImageBitmap> -> Image(
-            modifier = modifier,
-            bitmap = img.value,
-            contentDescription = null,
-            contentScale = contentScale,
-            alignment = alignment
-        )
-    }
-}
+private typealias Key = String
 
 @Composable
 fun Image(
@@ -50,7 +31,7 @@ fun Image(
     alignment: Alignment = Alignment.Center
 ) {
     val image = produceState<Result<ImageBitmap>>(Result.Loading, url) {
-        value = if (url == null) Result.Error else Result.Success(Cache.get(Key.Url(url)))
+        value = if (url == null) Result.Error else Result.Success(Cache.get(url))
     }
 
     when (val img = image.value) {
@@ -123,48 +104,39 @@ sealed class Result<out T> {
     class Success<T>(val value: T) : Result<T>()
 }
 
-sealed class Key {
-    data class File(val path: String) : Key()
-    data class Url(val url: String) : Key()
-}
-
 private object Cache {
     private const val MAX_CACHE_SIZE = 100 * 1024 * 1024
+    private val client by lazy { HttpClient() }
 
     private val cache = mutableMapOf<Key, Image>()
     private val mutex = Mutex()
-    private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
+    private val scope = CoroutineScope(Dispatchers.Default + SupervisorJob())
     private var cacheSize = 0
 
     suspend fun get(key: Key): ImageBitmap {
-        return withContext(Dispatchers.IO) {
-            val fromCache = cache[key]
-            if (fromCache == null) {
-                mutex.withLock {
-                    val fromCache2 = cache[key]
-                    if (fromCache2 == null) {
-                        val imageBitmap = when (key) {
-                            is Key.File -> File(key.path).readBytes2().decodeToImageBitmap()
-                            is Key.Url -> URI(key.url).toURL().readBytes2().decodeToImageBitmap()
+        val fromCache = cache[key]
+        return if (fromCache == null) {
+            mutex.withLock {
+                val fromCache2 = cache[key]
+                if (fromCache2 == null) {
+                    val imageBitmap = client.get(key).bodyAsBytes().decodeToImageBitmap()
+                    val image = Image(imageBitmap)
+                    add(key to image)
+                    while (cacheSize > MAX_CACHE_SIZE) {
+                        val leastImportant = cache.minByOrNull { it.value.lastUsed }
+                        if (leastImportant != null) {
+                            remove(leastImportant.toPair())
                         }
-                        val image = Image(imageBitmap)
-                        add(key to image)
-                        while (cacheSize > MAX_CACHE_SIZE) {
-                            val leastImportant = cache.minByOrNull { it.value.lastUsed }
-                            if (leastImportant != null) {
-                                remove(leastImportant.toPair())
-                            }
-                        }
-                        image.bitmap
-                    } else {
-                        fromCache2.updateLastUsed()
-                        fromCache2.bitmap
                     }
+                    image.bitmap
+                } else {
+                    fromCache2.updateLastUsed()
+                    fromCache2.bitmap
                 }
-            } else {
-                fromCache.updateLastUsed()
-                fromCache.bitmap
             }
+        } else {
+            fromCache.updateLastUsed()
+            fromCache.bitmap
         }
     }
 
@@ -183,13 +155,9 @@ private object Cache {
     }
 
     private data class Image(val bitmap: ImageBitmap) {
-        var lastUsed = Instant.now().toEpochMilli()
+        var lastUsed = Clock.System.now()
         val byteSize = bitmap.width * bitmap.height * 4
 
-        fun updateLastUsed() { lastUsed = Instant.now().toEpochMilli() }
+        fun updateLastUsed() { lastUsed = Clock.System.now() }
     }
 }
-
-// TODO: use a multiplatform IO library. check https://github.com/Kotlin/kotlinx-io
-expect fun File.readBytes2(): ByteArray
-expect fun URL.readBytes2(): ByteArray

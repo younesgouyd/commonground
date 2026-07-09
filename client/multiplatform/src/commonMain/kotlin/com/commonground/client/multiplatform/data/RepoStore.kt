@@ -1,13 +1,9 @@
 package com.commonground.client.multiplatform.data
 
-import com.commonground.client.multiplatform.data.repositories.AuthRepo
-import com.commonground.client.multiplatform.data.repositories.CategoryRepo
-import com.commonground.client.multiplatform.data.repositories.ChatRepo
-import com.commonground.client.multiplatform.data.repositories.EventRepo
-import com.commonground.client.multiplatform.data.repositories.UserRepo
+import com.commonground.client.multiplatform.Platform
+import com.commonground.client.multiplatform.data.repositories.*
 import com.commonground.client.multiplatform.platform
 import io.ktor.client.*
-import io.ktor.client.engine.cio.*
 import io.ktor.client.plugins.*
 import io.ktor.client.plugins.auth.*
 import io.ktor.client.plugins.auth.providers.*
@@ -16,25 +12,25 @@ import io.ktor.client.plugins.logging.*
 import io.ktor.client.plugins.sse.*
 import io.ktor.http.*
 import io.ktor.serialization.kotlinx.json.*
-import kotlinx.coroutines.*
 import kotlinx.serialization.json.Json
 
 /** Mutable holder so repos always use the current HttpClient after client resets. */
 class HttpClientHolder(var client: HttpClient)
 
 class RepoStore(
-    platformFileStorage: PlatformFileStorage,
     private val onRefreshTokenExpired: () -> Unit
 ) {
     companion object {
         const val SERVER_PORT = 8080 // TODO
         val serverHost = when (platform) {
-            com.commonground.client.multiplatform.Platform.ANDROID -> "192.168.100.109"
-            com.commonground.client.multiplatform.Platform.JVM -> "localhost"
+            Platform.ANDROID -> "10.0.2.2"
+            else -> "localhost"
         }
     }
 
-    val authRepo = AuthRepo(platformFileStorage, serverHost, SERVER_PORT)
+    private val settingsManager = SettingsManager()
+
+    val authRepo = AuthRepo(settingsManager, serverHost, SERVER_PORT)
 
     private val holder = HttpClientHolder(buildClient())
 
@@ -53,7 +49,7 @@ class RepoStore(
         holder.client = buildClient()
     }
 
-    private fun buildClient(): HttpClient = HttpClient(CIO) {
+    private fun buildClient(): HttpClient = HttpClient {
         install(Logging) { level = LogLevel.ALL }
         install(ContentNegotiation) { json(Json) }
         install(SSE)

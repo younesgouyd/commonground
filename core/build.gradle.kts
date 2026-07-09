@@ -13,6 +13,14 @@ kotlin {
         androidResources.enable = true
     }
     jvm()
+    js {
+        binaries.executable()
+        browser {
+            commonWebpackConfig {
+                outputFileName = "commonground.js"
+            }
+        }
+    }
     sourceSets {
         commonMain.dependencies {
             implementation(libs.serialization.core)

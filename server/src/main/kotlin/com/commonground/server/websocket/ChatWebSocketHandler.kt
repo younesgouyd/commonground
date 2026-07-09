@@ -5,7 +5,9 @@ import com.commonground.server.services.ChatService
 import com.commonground.server.services.JwtService
 import kotlinx.serialization.json.Json
 import org.springframework.stereotype.Component
-import org.springframework.web.socket.*
+import org.springframework.web.socket.CloseStatus
+import org.springframework.web.socket.TextMessage
+import org.springframework.web.socket.WebSocketSession
 import org.springframework.web.socket.handler.TextWebSocketHandler
 import java.net.URI
 import java.util.*

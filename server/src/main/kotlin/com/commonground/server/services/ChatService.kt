@@ -8,7 +8,6 @@ import com.commonground.server.data.repositories.EventRepository
 import com.commonground.server.data.repositories.UserRepository
 import com.commonground.server.util.toModel
 import com.commonground.server.util.toUuid
-import kotlin.time.toKotlinInstant
 import kotlinx.serialization.json.Json
 import org.springframework.data.domain.PageRequest
 import org.springframework.stereotype.Service
@@ -17,6 +16,7 @@ import org.springframework.web.socket.TextMessage
 import org.springframework.web.socket.WebSocketSession
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
+import kotlin.time.toKotlinInstant
 
 @Service
 class ChatService(

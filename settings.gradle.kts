@@ -5,6 +5,7 @@ include(":server")
 include(":client:multiplatform")
 include(":client:android")
 include(":client:desktop")
+include(":client:web")
 
 include(":maptesting:multiplatform")
 include(":maptesting:android")
@@ -44,13 +45,14 @@ dependencyResolutionManagement {
                 }
                 val jjwt = "0.13.0"
                 val compose = object {
-                    val plugin = "1.11.1"
+                    val plugin = "1.10.1"
                     val material3 = "1.9.0"
                     val materialIconsExtended = "1.7.3"
                     val lifecycle = "2.10.0"
                     val navigation = "2.9.2"
                 }
                 val maplibre = "0.13.0"
+                val settings = "1.3.0"
                 val android = object {
                     val agp = "9.0.0"
                     val androidCompileSdk = version("androidCompileSdk", "36")
@@ -104,12 +106,17 @@ dependencyResolutionManagement {
             library("logback.android", "com.github.tony19", "logback-android").version(versions.logback.android)
 
             library("ktor.client.core", "io.ktor", "ktor-client-core").version(versions.ktor)
-            library("ktor.client.engine", "io.ktor", "ktor-client-cio").version(versions.ktor)
+            library("ktor.client.engine.cio", "io.ktor", "ktor-client-cio").version(versions.ktor)
+            library("ktor.client.engine.js", "io.ktor", "ktor-client-js").version(versions.ktor)
             library("ktor.client.logging", "io.ktor", "ktor-client-logging").version(versions.ktor)
             library("ktor.client.contentNegotiation", "io.ktor", "ktor-client-content-negotiation").version(versions.ktor)
             library("ktor.serialization", "io.ktor", "ktor-serialization-kotlinx-json").version(versions.ktor)
             library("ktor.client.auth", "io.ktor", "ktor-client-auth").version(versions.ktor)
             library("ktor.client.websockets", "io.ktor", "ktor-client-websockets").version(versions.ktor)
+
+            library("settings.core", "com.russhwolf", "multiplatform-settings-no-arg").version(versions.settings)
+            library("settings.serialization", "com.russhwolf", "multiplatform-settings-serialization").version(versions.settings)
+            library("settings.coroutines", "com.russhwolf", "multiplatform-settings-coroutines").version(versions.settings)
 
             library("android.coreKtx", "androidx.core", "core-ktx").version(versions.android.coreKtx)
             library("android.activityCompose", "androidx.activity", "activity-compose").version(versions.android.activity)

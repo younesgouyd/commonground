@@ -1,7 +1,6 @@
 package com.commonground.client.multiplatform.ui
 
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -20,7 +19,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavDestination
 import androidx.navigation.NavDestination.Companion.hasRoute
@@ -30,7 +28,6 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
-import com.commonground.client.multiplatform.data.PlatformFileStorage
 import com.commonground.client.multiplatform.data.RepoStore
 import com.commonground.client.multiplatform.ui.destinations.createevent.CreateEvent
 import com.commonground.client.multiplatform.ui.destinations.createevent.CreateEventNavActions
@@ -63,13 +60,11 @@ import com.commonground.client.multiplatform.ui.widgets.ProfileNavActions
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MainUi(
-    modifier: Modifier = Modifier,
-    fileStorage: PlatformFileStorage
+    modifier: Modifier = Modifier
 ) {
     val navController = rememberNavController()
     val appViewModel = viewModel {
         MainUiViewModel(
-            fileStorage = fileStorage,
             onLogout = { navController.navigate(Route.Login) { popUpTo(0) { inclusive = true } } }
         )
     }

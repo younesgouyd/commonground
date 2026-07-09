@@ -28,7 +28,7 @@ class DataInitializer(
         val passwordEncoder = BCryptPasswordEncoder()
         val defaultEncodedPassword = passwordEncoder.encode("12345678")!!
 
-        val numOfUsers = 50
+        val numOfUsers = 500
         val usersToSave = (1..numOfUsers).map { i ->
             User(
                 username = "user_$i",
@@ -61,7 +61,7 @@ class DataInitializer(
         }
         // -------------------------------
 
-        val totalEvents = 100
+        val totalEvents = 20000
         val batchSize = 10
         for (chunkStart in 1..totalEvents step batchSize) {
             val chunkEnd = minOf(chunkStart + batchSize - 1, totalEvents)

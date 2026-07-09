@@ -4,7 +4,6 @@ import com.commonground.client.multiplatform.data.HttpClientHolder
 import com.commonground.core.models.UpdateProfileRequest
 import com.commonground.core.models.User
 import com.commonground.core.models.Users
-import io.ktor.client.*
 import io.ktor.client.call.*
 import io.ktor.client.request.*
 import io.ktor.client.request.forms.*

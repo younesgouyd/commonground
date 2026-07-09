@@ -269,7 +269,7 @@ private fun CreateEventForm(
                 delay(2.seconds)
                 visible = true
             }
-            if (platform != Platform.JVM || visible) {
+            if (platform == Platform.ANDROID || visible) {
                 CoordinatesForm(
                     modifier = Modifier.fillMaxWidth(),
                     value = coordinates,

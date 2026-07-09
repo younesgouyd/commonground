@@ -146,7 +146,7 @@ private fun DateField(
                 TextButton(
                     content = { Text("OK") },
                     onClick = {
-                        val selectedDate = pickerState.getSelectedDate()?.toKotlinLocalDate() // TODO
+                        val selectedDate = pickerState.selectedDateMillis?.let { Instant.fromEpochMilliseconds(it).toLocalDateTime(TimeZone.UTC).date }
                         if (selectedDate != null) {
                             onValueChange(selectedDate)
                         }

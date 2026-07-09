@@ -1,13 +1,12 @@
 package com.commonground.client.desktop
 
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.window.*
-import com.commonground.client.multiplatform.data.JvmFileStorage
 import com.commonground.client.multiplatform.ui.MainUi
 
 fun main() {
-    val fileStorage = JvmFileStorage()
-
     application {
         Window(
             state = rememberWindowState(
@@ -16,7 +15,7 @@ fun main() {
             ),
             onCloseRequest = { exitApplication() }
         ) {
-            MainUi(fileStorage = fileStorage)
+            MainUi(Modifier.fillMaxSize())
         }
     }
 }

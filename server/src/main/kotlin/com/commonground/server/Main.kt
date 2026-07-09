@@ -9,10 +9,10 @@ import org.springframework.data.jpa.repository.config.EnableJpaAuditing
 class CommonGroundApplication {
 
     // FOR TESTING — uncomment to seed test data on startup
-    // @Bean
-    // fun runner(dataInitializer: DataInitializer) = CommandLineRunner {
-    //     dataInitializer.populateTestData()
-    // }
+//     @Bean
+//     fun runner(dataInitializer: DataInitializer) = CommandLineRunner {
+//        dataInitializer.populateTestData()
+//    }
 }
 
 fun main(args: Array<String>) {

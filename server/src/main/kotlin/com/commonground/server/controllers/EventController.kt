@@ -1,10 +1,6 @@
 package com.commonground.server.controllers
 
-import com.commonground.core.models.CreateEventRequest
-import com.commonground.core.models.Event
-import com.commonground.core.models.Events
-import com.commonground.core.models.SaveEventRequest
-import com.commonground.core.models.Users
+import com.commonground.core.models.*
 import com.commonground.server.services.EventService
 import org.springframework.security.core.annotation.AuthenticationPrincipal
 import org.springframework.web.bind.annotation.*

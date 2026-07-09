@@ -11,9 +11,7 @@ import androidx.compose.ui.unit.em
 import com.commonground.client.multiplatform.Platform
 import com.commonground.client.multiplatform.data.LocationManager
 import com.commonground.client.multiplatform.platform
-import com.commonground.client.multiplatform.ui.LazyList
-import com.commonground.client.multiplatform.ui.MapViewport
-import com.commonground.client.multiplatform.ui.queryEventViewport
+import com.commonground.client.multiplatform.ui.*
 import com.commonground.core.models.Event
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.delay
@@ -110,18 +108,19 @@ fun Map(
         delay(2.seconds)
         visible = true
     }
-
     if (platform != Platform.JVM || visible) {
+        val appTheme = ThemeState.current.value
+        val mapTheme = if (appTheme == ThemeMode.Dark || appTheme == ThemeMode.System && isSystemInDarkTheme()) "fiord" else "liberty"
         MaplibreMap(
             modifier = modifier,
-            baseStyle = BaseStyle.Uri("https://tiles.openfreemap.org/styles/${if (isSystemInDarkTheme()) "fiord" else "liberty"}"),
+            baseStyle = BaseStyle.Uri("https://tiles.openfreemap.org/styles/$mapTheme"),
             cameraState = cameraState,
             options = MapOptions(
                 ornamentOptions = OrnamentOptions.AllEnabled
             ),
             onMapLoadFinished = { mapLoaded = true }
         ) {
-            if (platform != Platform.JVM) {
+            if (platform == Platform.ANDROID) {
                 SymbolLayer(
                     id = "events-layer",
                     source = rememberGeoJsonSource(geoJsonData),

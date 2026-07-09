@@ -23,9 +23,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import com.commonground.client.multiplatform.data.LocationManager
-import com.commonground.client.multiplatform.ui.AdaptiveUi
-import com.commonground.client.multiplatform.ui.getWindowSizeClass
-import com.commonground.client.multiplatform.ui.queryEventViewport
+import com.commonground.client.multiplatform.ui.*
 import com.commonground.core.models.Coordinates
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.debounce
@@ -201,9 +199,11 @@ private fun Content(
             ),
             contentAlignment = Alignment.Center
         ) {
+            val appTheme = ThemeState.current.value
+            val mapTheme = if (appTheme == ThemeMode.Dark || appTheme == ThemeMode.System && isSystemInDarkTheme()) "fiord" else "liberty"
             MaplibreMap(
                 modifier = Modifier.fillMaxSize(),
-                baseStyle = BaseStyle.Uri("https://tiles.openfreemap.org/styles/${if (isSystemInDarkTheme()) "fiord" else "liberty"}"),
+                baseStyle = BaseStyle.Uri("https://tiles.openfreemap.org/styles/$mapTheme"),
                 cameraState = cameraState,
                 options = MapOptions(
                     ornamentOptions = OrnamentOptions.AllEnabled

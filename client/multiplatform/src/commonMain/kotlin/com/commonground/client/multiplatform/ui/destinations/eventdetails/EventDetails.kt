@@ -3,9 +3,7 @@ package com.commonground.client.multiplatform.ui.destinations.eventdetails
 import androidx.compose.animation.*
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.ui.draw.clip
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -17,6 +15,8 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
@@ -28,6 +28,7 @@ import com.commonground.client.multiplatform.ui.formatted
 import com.commonground.client.multiplatform.ui.toBackendUrl
 import com.commonground.client.multiplatform.ui.widgets.Creator
 import com.commonground.client.multiplatform.ui.widgets.Image
+import com.commonground.client.multiplatform.ui.widgets.ImagePreviewDialog
 import com.commonground.client.multiplatform.ui.widgets.SystemFilePicker
 import com.commonground.core.models.ImageUrl
 import com.commonground.core.models.User
@@ -106,6 +107,7 @@ private fun WideLoaded(
                     EventImage(
                         modifier = Modifier.fillMaxSize(),
                         image = event.image,
+                        isLoggedInUserEvent = state.isLoggedInUserEvent,
                         updateImage = state.updateImage
                     )
                 }
@@ -250,18 +252,33 @@ private fun WideLoaded(
 private fun EventImage(
     modifier: Modifier = Modifier,
     image: ImageUrl?,
+    isLoggedInUserEvent: Boolean,
     updateImage: suspend (ByteArray) -> ImageUrl?
 ) {
     val scope = rememberCoroutineScope()
     var image2 by remember(image) { mutableStateOf(image) }
     var showSystemFilePicker by remember { mutableStateOf(false) }
+    var showExpandedImage by remember { mutableStateOf(false) }
 
     image2?.let { img ->
-        Image(
-            modifier = modifier.fillMaxSize(),
-            url = img.toBackendUrl(),
-            contentScale = ContentScale.FillWidth
-        )
+        Surface(
+            modifier = Modifier.fillMaxSize(),
+            color = Color.Transparent,
+            onClick = { showExpandedImage = true }
+        ) {
+            Image(
+                modifier = Modifier.fillMaxSize(),
+                url = img.toBackendUrl(),
+                contentScale = ContentScale.FillWidth
+            )
+        }
+
+        if (showExpandedImage) {
+            ImagePreviewDialog(
+                imageUrl = img,
+                onDismiss = { showExpandedImage = false }
+            )
+        }
     } ?: Surface(
         modifier = modifier.fillMaxSize(),
         color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.6f)
@@ -283,10 +300,12 @@ private fun EventImage(
                     style = MaterialTheme.typography.labelLarge,
                     color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.5f)
                 )
-                TextButton(
-                    content = { Text("Set an image") },
-                    onClick = { showSystemFilePicker = true }
-                )
+                if (isLoggedInUserEvent) {
+                    TextButton(
+                        content = { Text("Set an image") },
+                        onClick = { showSystemFilePicker = true }
+                    )
+                }
             }
         }
     }
@@ -339,6 +358,7 @@ private fun CompactLoaded(
                     EventImage(
                         modifier = Modifier.fillMaxSize(),
                         image = event.image,
+                        isLoggedInUserEvent = state.isLoggedInUserEvent,
                         updateImage = state.updateImage
                     )
                 }

@@ -5,16 +5,14 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.commonground.client.multiplatform.LogoutUseCase
-import com.commonground.client.multiplatform.data.PlatformFileStorage
 import com.commonground.client.multiplatform.data.RepoStore
 import com.commonground.core.models.User
 import kotlinx.coroutines.launch
 
 class MainUiViewModel(
-    fileStorage: PlatformFileStorage,
     private val onLogout: () -> Unit
 ) : ViewModel() {
-    val repoStore = RepoStore(fileStorage, onLogout)
+    val repoStore = RepoStore(onLogout)
 
     private val authRepo get() = repoStore.authRepo
 

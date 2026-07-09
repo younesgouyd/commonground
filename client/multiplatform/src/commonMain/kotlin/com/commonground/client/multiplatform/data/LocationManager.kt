@@ -3,7 +3,6 @@ package com.commonground.client.multiplatform.data
 import com.commonground.core.models.Coordinates
 import io.ktor.client.*
 import io.ktor.client.call.*
-import io.ktor.client.engine.cio.*
 import io.ktor.client.plugins.*
 import io.ktor.client.plugins.contentnegotiation.*
 import io.ktor.client.plugins.logging.*
@@ -14,7 +13,7 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 
 object LocationManager {
-    private val client = HttpClient(CIO) {
+    private val client = HttpClient {
         install(Logging) { level = LogLevel.ALL }
         install(ContentNegotiation) { json(Json { ignoreUnknownKeys = true }) }
         defaultRequest {

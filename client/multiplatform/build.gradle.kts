@@ -32,6 +32,9 @@ kotlin {
         androidResources.enable = true
     }
     jvm()
+    js {
+        browser()
+    }
     sourceSets {
         commonMain.dependencies {
             implementation(project(":core"))
@@ -52,11 +55,14 @@ kotlin {
             // ktor
             implementation(libs.ktor.serialization)
             implementation(libs.ktor.client.core)
-            implementation(libs.ktor.client.engine)
             implementation(libs.ktor.client.logging)
             implementation(libs.ktor.client.contentNegotiation)
             implementation(libs.ktor.client.auth)
             implementation(libs.ktor.client.websockets)
+
+            implementation(libs.settings.core)
+            implementation(libs.settings.serialization)
+            implementation(libs.settings.coroutines)
         }
         jvmMain.dependencies {
             implementation(libs.coroutines.desktop)
@@ -64,6 +70,7 @@ kotlin {
                 exclude("org.jetbrains.compose.material") // todo
             }
             implementation(libs.logback.jvm)
+            implementation(libs.ktor.client.engine.cio)
             val maplibrebindings = libs.maplibre.nativeBindingsJni.get()
             runtimeOnly(maplibrebindings.toString()) {
                 capabilities {
@@ -73,9 +80,13 @@ kotlin {
         }
         androidMain.dependencies {
             implementation(libs.coroutines.android)
+            implementation(libs.ktor.client.engine.cio)
             implementation(libs.android.coreKtx)
             implementation(libs.android.activityCompose)
             implementation(libs.logback.android)
+        }
+        webMain.dependencies {
+            implementation(libs.ktor.client.engine.js)
         }
     }
 }
