@@ -13,6 +13,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.commonground.client.multiplatform.Platform
+import com.commonground.client.multiplatform.platform
 import com.commonground.client.multiplatform.ui.AdaptiveUi
 import com.commonground.client.multiplatform.ui.toBackendUrl
 import com.commonground.client.multiplatform.ui.widgets.*
@@ -296,12 +298,20 @@ private fun UpdateEventForm(
     }
     AdaptiveUi(
         wide = {
-            CoordinatesForm(
-                modifier = Modifier.fillMaxWidth(),
-                value = coordinates,
-                error = if (coordinates == null) "You must set valid coordinates." else null,
-                onValueChange = { coordinates = it }
-            )
+            if (platform == Platform.ANDROID) {
+                CoordinatesSection(
+                    modifier = Modifier.fillMaxWidth(),
+                    value = coordinates,
+                    onValueChange = { coordinates = it }
+                )
+            } else {
+                CoordinatesForm(
+                    modifier = Modifier.fillMaxWidth(),
+                    value = coordinates,
+                    error = if (coordinates == null) "You must set valid coordinates." else null,
+                    onValueChange = { coordinates = it }
+                )
+            }
         },
         compact = {
             CoordinatesSection(

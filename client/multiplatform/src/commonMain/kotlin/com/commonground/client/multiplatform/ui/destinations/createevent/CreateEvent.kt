@@ -269,7 +269,13 @@ private fun CreateEventForm(
                 delay(2.seconds)
                 visible = true
             }
-            if (platform == Platform.ANDROID || visible) {
+            if (platform == Platform.ANDROID) {
+                CoordinatesSection(
+                    modifier = Modifier.fillMaxWidth(),
+                    value = coordinates,
+                    onValueChange = { coordinates = it }
+                )
+            } else if (visible) {
                 CoordinatesForm(
                     modifier = Modifier.fillMaxWidth(),
                     value = coordinates,

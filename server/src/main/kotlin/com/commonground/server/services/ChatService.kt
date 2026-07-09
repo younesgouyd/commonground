@@ -77,7 +77,7 @@ class ChatService(
         val messages = chatMessageRepository.findByEventIdOrderByCreatedAtAsc(
             eventId = eventId,
             pageable = PageRequest.of(0, 100)
-        ).content.map(ChatMessageEntity::toModel).reversed() // newest first for initial load
+        ).content.map(ChatMessageEntity::toModel)
         val payload = ChatWsMessage(type = ChatWsMessage.TYPE_HISTORY, messages = messages)
         val json = Json.encodeToString(ChatWsMessage.serializer(), payload)
         session.sendMessage(TextMessage(json))

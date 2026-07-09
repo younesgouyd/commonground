@@ -56,6 +56,7 @@ import com.commonground.client.multiplatform.ui.destinations.updateevent.UpdateE
 import com.commonground.client.multiplatform.ui.destinations.user.User
 import com.commonground.client.multiplatform.ui.destinations.user.UserViewModel
 import com.commonground.client.multiplatform.ui.widgets.ProfileNavActions
+import com.commonground.core.models.User
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -93,7 +94,7 @@ fun MainUi(
     val themeMode by ThemeState.current
     CommonGroundTheme(themeMode = themeMode) {
         if (isAuthFlow) {
-            NavGraph(navController, repoStore, startDestination!!)
+            NavGraph(navController, repoStore, startDestination!!, appViewModel.currentUser.value)
         } else {
             AdaptiveUi(
                 wide = {
@@ -112,6 +113,7 @@ fun MainUi(
                         modifier = modifier,
                         inHome = inHome,
                         navController = navController,
+                        viewModel = appViewModel,
                         currentDestination = currentDestination,
                         repoStore = repoStore,
                         startDestination = startDestination
@@ -162,7 +164,7 @@ private fun Wide(
             },
             content = { padding ->
                 Box(modifier = Modifier.padding(padding).fillMaxSize()) {
-                    NavGraph(navController, repoStore, startDestination!!)
+                    NavGraph(navController, repoStore, startDestination!!, viewModel.currentUser.value)
                 }
             }
         )
@@ -174,6 +176,7 @@ private fun Compact(
     modifier: Modifier = Modifier,
     inHome: Boolean,
     navController: NavHostController,
+    viewModel: MainUiViewModel,
     currentDestination: NavDestination?,
     repoStore: RepoStore,
     startDestination: Route?
@@ -219,14 +222,19 @@ private fun Compact(
         },
         content = { padding ->
             Box(modifier = Modifier.padding(padding).fillMaxSize()) {
-                NavGraph(navController, repoStore, startDestination!!)
+                NavGraph(navController, repoStore, startDestination!!, viewModel.currentUser.value)
             }
         }
     )
 }
 
 @Composable
-private fun NavGraph(navController: NavHostController, repoStore: RepoStore, startDestination: Route) {
+private fun NavGraph(
+    navController: NavHostController,
+    repoStore: RepoStore,
+    startDestination: Route,
+    loggedInUser: User?
+) {
     NavHost(navController = navController, startDestination = startDestination) {
         composable<Route.Login> {
             Login(
@@ -293,7 +301,6 @@ private fun NavGraph(navController: NavHostController, repoStore: RepoStore, sta
                 navActions = object : OnboardingNavActions {}
             )
         }
-
         composable<Route.Home> {
             Home(
                 viewModel = viewModel { HomeViewModel(repoStore.eventRepo) },
@@ -330,7 +337,7 @@ private fun NavGraph(navController: NavHostController, repoStore: RepoStore, sta
                 },
                 navActions = object : ProfileNavActions {
                     override fun toEvent(id: String) { navController.navigate(Route.Event(id)) }
-                    override fun toUser(id: String) { navController.navigate(Route.User(id)) }
+                    override fun toUser(id: String) { if (loggedInUser?.id != id) { navController.navigate(Route.User(id)) } }
                     override fun toCreateEvent() { navController.navigate(Route.CreateEvent) }
                 }
             )
@@ -353,7 +360,13 @@ private fun NavGraph(navController: NavHostController, repoStore: RepoStore, sta
                     )
                 },
                 navActions = object : EventDetailsNavActions {
-                    override fun toUser(id: String) { navController.navigate(Route.User(id)) }
+                    override fun toUser(id: String) {
+                        if (loggedInUser?.id == id) {
+                            navController.navigate(Route.Profile)
+                        } else {
+                            navController.navigate(Route.User(id))
+                        }
+                    }
                     override fun toUpdateEvent() { navController.navigate(Route.UpdateEvent(eventRoute.id)) }
                     override fun onBack() { navController.popBackStack() }
                 }
@@ -369,7 +382,13 @@ private fun NavGraph(navController: NavHostController, repoStore: RepoStore, sta
                     )
                 },
                 navActions = object : ProfileNavActions {
-                    override fun toUser(id: String) { navController.navigate(Route.User(id)) }
+                    override fun toUser(id: String) {
+                        if (loggedInUser?.id == id) {
+                            navController.navigate(Route.Profile)
+                        } else {
+                            navController.navigate(Route.User(id))
+                        }
+                    }
                     override fun toEvent(id: String) { navController.navigate(Route.Event(id)) }
                     override fun toCreateEvent() { navController.navigate(Route.CreateEvent) }
                 }

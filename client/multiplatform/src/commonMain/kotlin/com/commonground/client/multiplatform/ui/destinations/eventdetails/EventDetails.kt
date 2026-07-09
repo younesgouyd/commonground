@@ -8,8 +8,11 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -20,6 +23,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardCapitalization
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -886,12 +892,24 @@ private fun ChatSection(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 OutlinedTextField(
+                    modifier = Modifier.weight(1f),
                     value = state.newMessage,
                     onValueChange = viewModel::onNewMessageChange,
                     placeholder = { Text("Type a message…") },
                     singleLine = true,
                     shape = RoundedCornerShape(12.dp),
-                    modifier = Modifier.weight(1f),
+                    keyboardOptions = KeyboardOptions(
+                        capitalization = KeyboardCapitalization.Sentences,
+                        keyboardType = KeyboardType.Text,
+                        imeAction = ImeAction.Send
+                    ),
+                    keyboardActions = KeyboardActions(
+                        onSend = {
+                            if (state.newMessage.isNotBlank()) {
+                                viewModel.sendMessage()
+                            }
+                        }
+                    ),
                     colors = OutlinedTextFieldDefaults.colors(
                         unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant
                     )
@@ -902,7 +920,7 @@ private fun ChatSection(
                     enabled = state.newMessage.isNotBlank(),
                     shape = RoundedCornerShape(14.dp)
                 ) {
-                    Icon(Icons.Default.Send, "Send", Modifier.size(20.dp))
+                    Icon(Icons.AutoMirrored.Default.Send, "Send", Modifier.size(20.dp))
                 }
             }
         }
